@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fhp.org/schema/match-explanation.schema.json",
+  "title": "Fair Hiring Protocol - Match Explanation",
+  "type": "object",
+  "required": [
+    "candidate_id",
+    "job_id",
+    "protocol_version",
+    "match_status",
+    "scores",
+    "skill_alignment",
+    "constraint_evaluation",
+    "preference_alignment",
+    "bias_correction",
+    "final_score",
+    "summary"
+  ],
+  "properties": {
+    "candidate_id": { "type": "string" },
+    "job_id": { "type": "string" },
+
+    "protocol_version": {
+      "type": "string",
+      "description": "Version of the Fair Hiring Protocol used."
+    },
+
+    "match_status": {
+      "type": "string",
+      "enum": ["matched", "rejected_constraints", "rejected_must_have", "rejected_low_score"],
+      "description": "High-level outcome."
+    },
+
+    "scores": {
+      "type": "object",
+      "description": "Breakdown of scoring components before bias correction.",
+      "required": [
+        "must_have_score",
+        "nice_to_have_score",
+        "transferable_compensation",
+        "experience_relevance",
+        "preference_score"
+      ],
+      "properties": {
+        "must_have_score": { "type": "number" },
+        "nice_to_have_score": { "type": "number" },
+        "transferable_compensation": { "type": "number" },
+        "experience_relevance": { "type": "number" },
+        "preference_score": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+
+    "skill_alignment": {
+      "type": "object",
+      "description": "Detailed mapping of candidate skills to job requirements.",
+      "required": ["must_have", "nice_to_have", "inferred_used"],
+      "properties": {
+        "must_have": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["skill", "satisfied", "evidence"],
+            "properties": {
+              "skill": { "type": "string" },
+              "satisfied": { "type": "boolean" },
+              "evidence": {
+                "type": "string",
+                "description": "Where the system found proof (role, project, portfolio, etc.)."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "nice_to_have": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["skill", "matched", "weight", "evidence"],
+            "properties": {
+              "skill": { "type": "string" },
+              "matched": { "type": "boolean" },
+              "weight": { "type": "number" },
+              "evidence": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "inferred_used": {
+          "type": "array",
+          "description": "AI-inferred skills that contributed to the match.",
+          "items": {
+            "type": "object",
+            "required": ["skill", "source"],
+            "properties": {
+              "skill": { "type": "string" },
+              "source": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "constraint_evaluation": {
+      "type": "object",
+      "description": "How constraints were evaluated.",
+      "required": ["passed", "details"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["constraint", "passed", "reason"],
+            "properties": {
+              "constraint": { "type": "string" },
+              "passed": { "type": "boolean" },
+              "reason": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "preference_alignment": {
+      "type": "object",
+      "description": "How candidate and company preferences aligned.",
+      "required": ["score", "details"],
+      "properties": {
+        "score": { "type": "number" },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["preference", "alignment", "reason"],
+            "properties": {
+              "preference": { "type": "string" },
+              "alignment": { "type": "string", "enum": ["aligned", "partial", "not_aligned"] },
+              "reason": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "bias_correction": {
+      "type": "object",
+      "description": "Bias detection and correction applied.",
+      "required": ["correction_applied", "details"],
+      "properties": {
+        "correction_applied": { "type": "boolean" },
+        "details": {
+          "type": ["string", "null"],
+          "description": "Explanation of what bias was detected and how it was corrected."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "final_score": {
+      "type": "number",
+      "description": "Final score after bias correction."
+    },
+
+    "summary": {
+      "type": "object",
+      "description": "Human-readable summary of the match.",
+      "required": ["strengths", "gaps", "fit_assessment"],
+      "properties": {
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fit_assessment": {
+          "type": "string",
+          "description": "Short narrative summary."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

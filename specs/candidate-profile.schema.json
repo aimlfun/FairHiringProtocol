@@ -1,0 +1,392 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fhp.org/schema/candidate-profile.schema.json",
+  "title": "Fair Hiring Protocol - Candidate Profile",
+  "type": "object",
+  "required": ["id", "core", "skills", "experience", "preferences", "constraints"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Canonical candidate identifier (UUID or similar)."
+    },
+
+    "meta": {
+      "type": "object",
+      "description": "System-level metadata.",
+      "properties": {
+        "version": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "protocol_version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "core": {
+      "type": "object",
+      "description": "Minimal identity and visibility.",
+      "required": ["visibility"],
+      "properties": {
+        "name": {
+          "type": ["string", "null"],
+          "description": "Optional; may be hidden or pseudonymous."
+        },
+        "primary_contact": {
+          "type": ["string", "null"],
+          "description": "Email or relay; not used in matching."
+        },
+        "location_preference": {
+          "type": ["string", "null"],
+          "description": "High-level location preference (e.g. 'UK', 'EU', 'Remote-first')."
+        },
+        "work_authorization": {
+          "type": ["string", "null"],
+          "description": "Optional summary of work authorization constraints."
+        },
+        "visibility": {
+          "type": "object",
+          "required": ["profile_visibility", "anonymity_mode"],
+          "properties": {
+            "profile_visibility": {
+              "type": "string",
+              "enum": ["private", "trusted_companies", "all_fhp_companies"]
+            },
+            "anonymity_mode": {
+              "type": "string",
+              "enum": ["full", "partial", "none"],
+              "description": "Full = no name/contact until candidate opts in."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "skills": {
+      "type": "object",
+      "description": "Core skill representation.",
+      "required": ["self_declared", "inferred", "transferable"],
+      "properties": {
+        "self_declared": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "proficiency"],
+            "properties": {
+              "name": { "type": "string" },
+              "category": { "type": ["string", "null"] },
+              "proficiency": {
+                "type": "string",
+                "enum": ["learning", "comfortable", "confident", "expert_experience", "expert_formal"]
+              },
+              "years_of_use": { "type": ["number", "null"] },
+              "last_used_year": { "type": ["integer", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "inferred": {
+          "type": "array",
+          "description": "AI-inferred skills; candidate can accept/reject.",
+          "items": {
+            "type": "object",
+            "required": ["name", "source", "status"],
+            "properties": {
+              "name": { "type": "string" },
+              "source": {
+                "type": "string",
+                "enum": ["cv", "project", "role_description", "portfolio", "other"]
+              },
+              "status": {
+                "type": "string",
+                "enum": ["accepted", "rejected", "pending"]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "transferable": {
+          "type": "array",
+          "description": "Non-domain-specific skills.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "evidence": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "experience": {
+      "type": "object",
+      "description": "Structured experience, not just employment.",
+      "required": ["roles"],
+      "properties": {
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "type", "start_date"],
+            "properties": {
+              "title": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["employment", "freelance", "contract", "internship", "volunteer", "self_employed", "other"]
+              },
+              "organization": { "type": ["string", "null"] },
+              "domain": { "type": ["string", "null"] },
+              "start_date": { "type": "string", "format": "date" },
+              "end_date": { "type": ["string", "null"], "format": "date" },
+              "current": { "type": ["boolean", "null"] },
+              "responsibilities": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "skills_used": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "achievements": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "impact_summary": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "projects": {
+          "type": "array",
+          "description": "Non-role-tied work: OSS, personal, etc.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["string", "null"] },
+              "skills_used": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "outcomes": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "links": {
+                "type": "array",
+                "items": { "type": "string", "format": "uri" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "non_traditional": {
+          "type": "array",
+          "description": "Caregiving, community work, etc.",
+          "items": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string" },
+              "skills_demonstrated": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "preferences": {
+      "type": "object",
+      "required": ["work_mode", "employment_type"],
+      "properties": {
+        "work_mode": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["remote", "hybrid", "onsite"]
+          }
+        },
+        "employment_type": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["full_time", "part_time", "contract", "fractional"]
+          }
+        },
+        "industries": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "company_size": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["startup", "scaleup", "sme", "enterprise", "non_profit", "public_sector"]
+          }
+        },
+        "role_preferences": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "salary": {
+          "type": "object",
+          "properties": {
+            "currency": { "type": "string" },
+            "min": { "type": ["number", "null"] },
+            "preferred": { "type": ["number", "null"] },
+            "is_flexible": { "type": ["boolean", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "career_goals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["leadership", "hands_on", "domain_switch", "stability", "high_growth", "research", "teaching", "other"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "constraints": {
+      "type": "object",
+      "required": ["availability"],
+      "properties": {
+        "availability": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["immediate", "notice_period", "specific_date"]
+            },
+            "notice_period_weeks": { "type": ["integer", "null"] },
+            "available_from": { "type": ["string", "null"], "format": "date" }
+          },
+          "additionalProperties": false
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "regions": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "willing_to_relocate": { "type": ["boolean", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "schedule": {
+          "type": "object",
+          "properties": {
+            "max_hours_per_week": { "type": ["integer", "null"] },
+            "time_zone": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "legal": {
+          "type": "object",
+          "properties": {
+            "requires_visa_sponsorship": { "type": ["boolean", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "demographics": {
+      "type": "object",
+      "description": "Optional; used only for bias monitoring.",
+      "properties": {
+        "age_range": {
+          "type": ["string", "null"],
+          "enum": [null, "under_25", "25_34", "35_44", "45_54", "55_64", "65_plus"]
+        },
+        "gender": { "type": ["string", "null"] },
+        "ethnicity": { "type": ["string", "null"] },
+        "disability": { "type": ["string", "null"] },
+        "socioeconomic_background": { "type": ["string", "null"] },
+        "education_level": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "portfolio": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "url"],
+            "properties": {
+              "label": { "type": "string" },
+              "url": { "type": "string", "format": "uri" },
+              "description": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "assessments": {
+          "type": "array",
+          "description": "Optional, non-pass/fail demonstrations.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "summary": { "type": ["string", "null"] },
+              "skills_demonstrated": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["relationship"],
+            "properties": {
+              "relationship": { "type": "string" },
+              "context": { "type": ["string", "null"] },
+              "skills_observed": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "narrative": {
+      "type": "object",
+      "description": "Human narrative; not used for scoring.",
+      "properties": {
+        "about": { "type": ["string", "null"] },
+        "what_i_enjoy": { "type": ["string", "null"] },
+        "what_i_want_next": { "type": ["string", "null"] },
+        "ideal_environment": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

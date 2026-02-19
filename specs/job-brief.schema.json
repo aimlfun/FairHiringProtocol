@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fhp.org/schema/job-brief.schema.json",
+  "title": "Fair Hiring Protocol - Job Brief",
+  "type": "object",
+  "required": ["id", "meta", "core", "requirements", "constraints"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Canonical job identifier (UUID or similar)."
+    },
+
+    "meta": {
+      "type": "object",
+      "description": "System-level metadata.",
+      "required": ["version", "created_at", "protocol_version"],
+      "properties": {
+        "version": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" },
+        "protocol_version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "core": {
+      "type": "object",
+      "description": "High-level job identity and summary.",
+      "required": ["title", "summary", "department", "company"],
+      "properties": {
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "department": { "type": "string" },
+        "company": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "size": {
+              "type": ["string", "null"],
+              "enum": ["startup", "scaleup", "sme", "enterprise", "non_profit", "public_sector", null]
+            },
+            "industry": { "type": ["string", "null"] },
+            "culture_notes": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "requirements": {
+      "type": "object",
+      "description": "Structured requirements for matching.",
+      "required": ["skills", "responsibilities"],
+      "properties": {
+        "skills": {
+          "type": "object",
+          "required": ["must_have", "nice_to_have"],
+          "properties": {
+            "must_have": {
+              "type": "array",
+              "description": "Hard requirements; must be satisfied before scoring.",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "proficiency_required": {
+                    "type": ["string", "null"],
+                    "enum": ["comfortable", "confident", "expert", null]
+                  },
+                  "years_experience_min": { "type": ["number", "null"] }
+                },
+                "additionalProperties": false
+              }
+            },
+            "nice_to_have": {
+              "type": "array",
+              "description": "Soft requirements; contribute to score but not mandatory.",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "weight": {
+                    "type": ["number", "null"],
+                    "description": "Relative importance (0.0–1.0)."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+
+        "responsibilities": {
+          "type": "array",
+          "description": "What the candidate will actually do.",
+          "items": { "type": "string" }
+        },
+
+        "experience_level": {
+          "type": "string",
+          "enum": ["junior", "mid", "senior", "lead", "principal", "director", "vp", "cxo"],
+          "description": "Seniority level; used for semantic matching."
+        },
+
+        "domain": {
+          "type": ["string", "null"],
+          "description": "Domain or discipline (e.g. 'backend engineering', 'product design')."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "constraints": {
+      "type": "object",
+      "description": "Hard constraints that must be satisfied.",
+      "required": ["work_mode", "employment_type", "salary"],
+      "properties": {
+        "work_mode": {
+          "type": "string",
+          "enum": ["remote", "hybrid", "onsite"]
+        },
+        "employment_type": {
+          "type": "string",
+          "enum": ["full_time", "part_time", "contract", "fractional"]
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "regions": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "requires_relocation": { "type": ["boolean", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "salary": {
+          "type": "object",
+          "required": ["currency", "min", "max"],
+          "properties": {
+            "currency": { "type": "string" },
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "legal": {
+          "type": "object",
+          "properties": {
+            "visa_sponsorship_available": { "type": ["boolean", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "schedule": {
+          "type": "object",
+          "properties": {
+            "hours_per_week": { "type": ["integer", "null"] },
+            "time_zone_overlap_required": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "preferences": {
+      "type": "object",
+      "description": "Soft preferences that influence scoring.",
+      "properties": {
+        "company_size_preference": {
+          "type": ["string", "null"],
+          "enum": ["startup", "scaleup", "sme", "enterprise", null]
+        },
+        "industry_preference": { "type": ["string", "null"] },
+        "culture_keywords": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "fairness": {
+      "type": "object",
+      "description": "Fairness compliance and transparency.",
+      "required": ["no_arbitrary_filters"],
+      "properties": {
+        "no_arbitrary_filters": {
+          "type": "boolean",
+          "const": true,
+          "description": "Company confirms they are not filtering by age, gender, ethnicity, university, etc."
+        },
+        "bias_monitoring_opt_in": {
+          "type": ["boolean", "null"],
+          "description": "Company agrees to fairness audits."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
