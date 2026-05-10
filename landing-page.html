@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fair Hiring Protocol — Hiring that finally works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300;1,9..144,600&family=Instrument+Sans:wght@400;500;600&family=Instrument+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:      #0e0c0a;
+  --paper:    #f7f3ec;
+  --warm:     #f0e8d6;
+  --rule:     #d4c9b0;
+  --mid:      #7a6e5e;
+  --light:    #b5a898;
+  --teal:     #1a5c5c;
+  --teal-hi:  #23807f;
+  --teal-dim: #e0eeee;
+  --gold:     #c8880a;
+  --gold-dim: #fdf4e0;
+  --serif:    'Fraunces', Georgia, serif;
+  --sans:     'Instrument Sans', sans-serif;
+  --mono:     'Instrument Mono', monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+
+/* ── Noise texture overlay ── */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 48px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(247,243,236,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--rule);
+}
+
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-diamond{
+  width:22px;height:22px;
+  background:var(--teal);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+  flex-shrink:0;
+}
+.nav-wordmark{
+  font-family:var(--serif);
+  font-size:17px;font-weight:700;
+  color:var(--ink);letter-spacing:-0.01em;
+}
+.nav-version{
+  font-family:var(--mono);font-size:10px;
+  color:var(--light);letter-spacing:0.1em;
+  padding:2px 6px;border:1px solid var(--rule);
+  border-radius:2px;margin-left:4px;
+}
+
+.nav-links{display:flex;gap:4px;align-items:center}
+.nav-link{
+  font-size:13px;color:var(--mid);
+  text-decoration:none;padding:6px 12px;
+  border-radius:4px;transition:all 0.15s;
+}
+.nav-link:hover{color:var(--ink);background:var(--warm)}
+
+.nav-cta{
+  background:var(--teal);color:#fff;
+  font-size:13px;font-weight:600;
+  padding:8px 18px;border-radius:5px;
+  text-decoration:none;transition:background 0.15s;
+  letter-spacing:0.01em;border:none;cursor:pointer;
+  font-family:var(--sans);
+}
+.nav-cta:hover{background:var(--teal-hi)}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:120px 48px 80px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Large decorative background text */
+.hero-bg-word{
+  position:absolute;
+  font-family:var(--serif);font-size:22vw;font-weight:700;
+  color:rgba(26,92,92,0.04);
+  letter-spacing:-0.04em;line-height:1;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  white-space:nowrap;pointer-events:none;user-select:none;
+}
+
+.hero-eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.2em;
+  text-transform:uppercase;color:var(--teal);
+  margin-bottom:24px;
+  animation:fadeUp 0.6s ease both;
+}
+
+.hero-headline{
+  font-family:var(--serif);
+  font-size:clamp(42px,7vw,88px);
+  font-weight:700;line-height:1.05;
+  letter-spacing:-0.03em;
+  color:var(--ink);
+  margin-bottom:12px;
+  max-width:900px;
+  animation:fadeUp 0.6s 0.1s ease both;
+}
+
+.hero-headline em{
+  font-style:italic;font-weight:300;
+  color:var(--teal);
+}
+
+.hero-sub{
+  font-size:18px;color:var(--mid);
+  max-width:560px;line-height:1.6;
+  margin-bottom:48px;
+  animation:fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-actions{
+  display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp 0.6s 0.3s ease both;
+}
+
+.btn-candidate{
+  display:flex;align-items:center;gap:10px;
+  background:var(--teal);color:#fff;
+  font-size:15px;font-weight:600;
+  padding:14px 28px;border-radius:6px;
+  text-decoration:none;transition:all 0.2s;
+  letter-spacing:0.01em;border:none;cursor:pointer;font-family:var(--sans);
+}
+.btn-candidate:hover{background:var(--teal-hi);transform:translateY(-1px);box-shadow:0 8px 24px rgba(26,92,92,0.3)}
+
+.btn-company{
+  display:flex;align-items:center;gap:10px;
+  background:transparent;color:var(--ink);
+  font-size:15px;font-weight:600;
+  padding:14px 28px;border-radius:6px;
+  text-decoration:none;transition:all 0.2s;
+  letter-spacing:0.01em;
+  border:1.5px solid var(--ink);cursor:pointer;font-family:var(--sans);
+}
+.btn-company:hover{background:var(--ink);color:var(--paper);transform:translateY(-1px)}
+
+.hero-trust{
+  display:flex;gap:32px;margin-top:64px;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp 0.6s 0.4s ease both;
+}
+
+.trust-item{
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--mid);font-family:var(--mono);
+  letter-spacing:0.06em;
+}
+.trust-check{color:var(--teal);font-size:14px}
+
+/* ── SPLIT SECTION ── */
+.split{
+  display:grid;grid-template-columns:1fr 1fr;
+  border-top:2px solid var(--ink);
+}
+
+.split-pane{
+  padding:80px 64px;
+  position:relative;
+  transition:background 0.3s;
+}
+
+.split-pane:first-child{border-right:1px solid var(--rule)}
+.split-pane:hover{background:var(--warm)}
+
+.split-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--light);margin-bottom:20px;
+}
+
+.split-headline{
+  font-family:var(--serif);font-size:clamp(28px,3.5vw,42px);
+  font-weight:700;line-height:1.15;letter-spacing:-0.02em;
+  color:var(--ink);margin-bottom:20px;
+}
+.split-headline em{font-style:italic;font-weight:300;color:var(--teal)}
+
+.split-body{
+  font-size:15px;color:var(--mid);line-height:1.7;
+  margin-bottom:32px;max-width:440px;
+}
+
+.split-list{
+  display:flex;flex-direction:column;gap:12px;
+  margin-bottom:40px;
+}
+
+.split-item{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:14px;color:var(--ink);line-height:1.5;
+}
+.split-icon{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;flex-shrink:0;margin-top:1px;
+}
+.icon-teal{background:var(--teal-dim);color:var(--teal)}
+.icon-gold{background:var(--gold-dim);color:var(--gold)}
+
+.split-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:600;letter-spacing:0.02em;
+  padding:12px 24px;border-radius:5px;
+  text-decoration:none;transition:all 0.15s;
+  border:none;cursor:pointer;font-family:var(--sans);
+}
+.cta-teal{background:var(--teal);color:#fff}
+.cta-teal:hover{background:var(--teal-hi)}
+.cta-dark{background:var(--ink);color:var(--paper)}
+.cta-dark:hover{background:#2a2520}
+
+/* ── HOW IT WORKS ── */
+.how{
+  padding:100px 48px;
+  background:var(--ink);color:var(--paper);
+  overflow:hidden;position:relative;
+}
+
+.how-bg{
+  position:absolute;top:-40px;right:-80px;
+  font-family:var(--serif);font-size:280px;font-weight:700;
+  color:rgba(255,255,255,0.03);line-height:1;
+  pointer-events:none;
+}
+
+.section-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(255,255,255,0.3);
+  margin-bottom:16px;
+}
+
+.how-headline{
+  font-family:var(--serif);font-size:clamp(32px,4vw,52px);
+  font-weight:700;line-height:1.1;letter-spacing:-0.02em;
+  margin-bottom:64px;max-width:600px;
+}
+.how-headline em{font-style:italic;font-weight:300;color:var(--teal-hi)}
+
+.how-steps{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:2px;background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.how-step{
+  background:var(--ink);
+  padding:40px 36px;
+  position:relative;
+  transition:background 0.2s;
+}
+.how-step:hover{background:#1a1610}
+
+.step-num{
+  font-family:var(--serif);font-size:52px;font-weight:700;
+  color:rgba(255,255,255,0.06);line-height:1;
+  margin-bottom:16px;letter-spacing:-0.03em;
+}
+
+.step-title{
+  font-family:var(--serif);font-size:19px;font-weight:700;
+  margin-bottom:10px;letter-spacing:-0.01em;
+}
+
+.step-body{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6}
+
+/* ── FAIRNESS SECTION ── */
+.fairness{
+  padding:100px 48px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:center;
+  border-top:2px solid var(--ink);
+}
+
+.fairness-copy .section-label{color:var(--light)}
+
+.fairness-headline{
+  font-family:var(--serif);font-size:clamp(30px,3.5vw,46px);
+  font-weight:700;line-height:1.1;letter-spacing:-0.02em;
+  margin-bottom:20px;
+}
+.fairness-headline em{font-style:italic;font-weight:300;color:var(--teal)}
+
+.fairness-body{font-size:15px;color:var(--mid);line-height:1.7;margin-bottom:28px}
+
+.fairness-metrics{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--rule);border:1px solid var(--rule);
+}
+
+.metric-cell{
+  background:var(--paper);padding:24px 20px;text-align:center;
+}
+.metric-cell:hover{background:var(--warm)}
+
+.metric-val{
+  font-family:var(--serif);font-size:32px;font-weight:700;
+  color:var(--teal);line-height:1;margin-bottom:6px;
+}
+.metric-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--mid);
+}
+
+.fairness-visual{
+  background:var(--teal);
+  padding:48px;border-radius:2px;
+  color:#fff;position:relative;overflow:hidden;
+}
+
+.fv-bg{
+  position:absolute;bottom:-20px;right:-20px;
+  font-family:var(--serif);font-size:120px;font-weight:700;
+  color:rgba(255,255,255,0.06);line-height:1;
+  pointer-events:none;
+}
+
+.fv-title{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.16em;
+  text-transform:uppercase;color:rgba(255,255,255,0.5);
+  margin-bottom:20px;
+}
+
+.fv-pipeline{display:flex;flex-direction:column;gap:12px}
+
+.fv-stage{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 16px;
+  background:rgba(255,255,255,0.08);
+  border-radius:4px;
+  font-size:13px;
+}
+.fv-stage-num{
+  font-family:var(--mono);font-size:11px;
+  color:rgba(255,255,255,0.4);width:20px;flex-shrink:0;
+}
+.fv-stage-name{font-weight:500;flex:1}
+.fv-stage-status{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.08em;
+  padding:2px 8px;border-radius:2px;
+}
+.status-done{background:rgba(35,128,127,0.3);color:#7fd8d7}
+.status-active{background:rgba(200,136,10,0.2);color:#f0b030;
+  animation:pulse 2s infinite}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* ── GOVERNANCE STRIP ── */
+.gov{
+  padding:80px 48px;
+  background:var(--warm);
+  border-top:1px solid var(--rule);
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:48px;
+}
+
+.gov-item{}
+.gov-icon{
+  width:44px;height:44px;
+  background:var(--paper);border:1px solid var(--rule);
+  border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:18px;margin-bottom:16px;
+}
+.gov-title{
+  font-family:var(--serif);font-size:18px;font-weight:700;
+  margin-bottom:8px;letter-spacing:-0.01em;
+}
+.gov-body{font-size:13px;color:var(--mid);line-height:1.6}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--ink);color:rgba(255,255,255,0.4);
+  padding:48px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:20px;
+  border-top:2px solid rgba(255,255,255,0.05);
+}
+
+.footer-logo{display:flex;align-items:center;gap:8px}
+.footer-wordmark{
+  font-family:var(--serif);font-size:15px;font-weight:700;
+  color:rgba(255,255,255,0.7);
+}
+
+.footer-links{display:flex;gap:24px;font-size:12px;font-family:var(--mono);letter-spacing:0.06em}
+.footer-links a{color:rgba(255,255,255,0.3);text-decoration:none}
+.footer-links a:hover{color:rgba(255,255,255,0.7)}
+
+.footer-copy{font-size:11px;font-family:var(--mono);letter-spacing:0.06em}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(14,12,10,0.75);
+  backdrop-filter:blur(4px);z-index:1000;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open{display:flex}
+
+.modal{
+  background:var(--paper);width:100%;max-width:480px;
+  border-radius:8px;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,0.3);
+  animation:modalIn 0.25s ease;
+}
+
+@keyframes modalIn{
+  from{opacity:0;transform:scale(0.96) translateY(12px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+.modal-header{
+  padding:28px 32px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+
+.modal-title{
+  font-family:var(--serif);font-size:22px;font-weight:700;
+  letter-spacing:-0.02em;
+}
+
+.modal-close{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--warm);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:var(--mid);transition:all 0.15s;
+}
+.modal-close:hover{background:var(--rule);color:var(--ink)}
+
+/* Role toggle */
+.role-toggle{
+  display:flex;gap:0;margin:24px 32px 0;
+  background:var(--warm);border-radius:6px;padding:4px;
+}
+.role-btn{
+  flex:1;padding:9px 16px;border-radius:4px;
+  font-size:13px;font-weight:500;
+  border:none;cursor:pointer;background:transparent;
+  color:var(--mid);transition:all 0.15s;font-family:var(--sans);
+}
+.role-btn.active{
+  background:white;color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,0.12);
+}
+
+/* Tab content */
+.modal-tabs{overflow:hidden}
+.modal-tab{display:none;padding:24px 32px 32px}
+.modal-tab.active{display:block}
+
+/* Auth mode toggle (sign in / register) */
+.auth-mode{
+  display:flex;gap:0;margin-bottom:24px;
+  border-bottom:1px solid var(--rule);
+}
+.mode-btn{
+  padding:8px 0;margin-right:24px;
+  font-size:14px;font-weight:500;
+  border:none;background:transparent;
+  cursor:pointer;font-family:var(--sans);
+  color:var(--light);border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all 0.15s;
+}
+.mode-btn.active{color:var(--ink);border-bottom-color:var(--teal)}
+
+/* Form */
+.form-group{margin-bottom:16px}
+.form-label{
+  display:block;font-size:12px;font-weight:500;
+  color:var(--mid);margin-bottom:6px;letter-spacing:0.04em;
+  text-transform:uppercase;font-family:var(--mono);
+}
+.form-input{
+  width:100%;padding:10px 14px;
+  background:white;border:1.5px solid var(--rule);
+  border-radius:5px;font-size:14px;
+  font-family:var(--sans);color:var(--ink);
+  transition:border-color 0.15s;outline:none;
+}
+.form-input:focus{border-color:var(--teal)}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.form-check{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;color:var(--mid);line-height:1.5;margin-bottom:16px;
+}
+.form-check input{margin-top:2px;accent-color:var(--teal);flex-shrink:0}
+
+.form-submit{
+  width:100%;padding:13px;border-radius:6px;
+  background:var(--teal);color:#fff;
+  font-size:14px;font-weight:600;letter-spacing:0.02em;
+  border:none;cursor:pointer;font-family:var(--sans);
+  transition:background 0.15s;
+}
+.form-submit:hover{background:var(--teal-hi)}
+
+.form-divider{
+  display:flex;align-items:center;gap:12px;
+  font-size:12px;color:var(--light);margin:16px 0;
+  font-family:var(--mono);letter-spacing:0.08em;
+}
+.form-divider::before,.form-divider::after{
+  content:'';flex:1;height:1px;background:var(--rule);
+}
+
+.form-footer{
+  text-align:center;margin-top:16px;
+  font-size:12px;color:var(--mid);
+}
+.form-footer a{color:var(--teal);text-decoration:none;font-weight:500}
+
+.company-field{display:none}
+.company-field.visible{display:block}
+
+/* ── responsive ── */
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .hero{padding:100px 24px 60px}
+  .split{grid-template-columns:1fr}
+  .split-pane:first-child{border-right:none;border-bottom:1px solid var(--rule)}
+  .how-steps{grid-template-columns:1fr}
+  .fairness{grid-template-columns:1fr;padding:60px 24px}
+  .gov{grid-template-columns:1fr;padding:60px 24px}
+  footer{flex-direction:column}
+  .hero-trust{gap:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-diamond"></div>
+    <span class="nav-wordmark">Fair Hiring Protocol</span>
+    <span class="nav-version">v1.0</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#fairness" class="nav-link">Fairness</a>
+    <a href="#governance" class="nav-link">Governance</a>
+    <a href="#" class="nav-link" onclick="openModal('candidate');return false">Sign in</a>
+    <button class="nav-cta" onclick="openModal('candidate')">Get started</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-word">FAIR</div>
+
+  <p class="hero-eyebrow">Open · Transparent · Community-governed</p>
+  <h1 class="hero-headline">Hiring that finally<br><em>works fairly.</em></h1>
+  <p class="hero-sub">An open standard for bias-aware, skills-first matching. Every decision explained. Every outcome auditable. Candidates protected by design.</p>
+
+  <div class="hero-actions">
+    <button class="btn-candidate" onclick="openModal('candidate')">
+      <span>🔍</span> I'm looking for a job
+    </button>
+    <button class="btn-company" onclick="openModal('company')">
+      <span>🏢</span> I'm hiring
+    </button>
+  </div>
+
+  <div class="hero-trust">
+    <div class="trust-item"><span class="trust-check">✓</span> Free for candidates, always</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Skills, not pedigree</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Every decision explained</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Right to appeal any outcome</div>
+    <div class="trust-item"><span class="trust-check">✓</span> No ghosting — SLA enforced</div>
+  </div>
+</section>
+
+<!-- SPLIT: CANDIDATE / COMPANY -->
+<section class="split">
+  <div class="split-pane">
+    <p class="split-label">For candidates</p>
+    <h2 class="split-headline">You are more than<br><em>your last job title.</em></h2>
+    <p class="split-body">FHP matches you on what you can actually do. Your skills, your proficiency levels, your preferences. Not where you went to university, not your employer's brand, not an employment gap from years ago.</p>
+    <div class="split-list">
+      <div class="split-item">
+        <div class="split-icon icon-teal">✓</div>
+        <span>Full explanation for every match outcome — no black boxes</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-teal">✓</div>
+        <span>Your identity is hidden from employers until you choose to share it</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-teal">✓</div>
+        <span>Companies are bound to respond. Ghosting triggers automatic enforcement</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-teal">✓</div>
+        <span>Appeal any outcome within 30 days — human review guaranteed</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-teal">✓</div>
+        <span>Download your data, correct it, or delete it — any time, instantly</span>
+      </div>
+    </div>
+    <button class="split-cta cta-teal" onclick="openModal('candidate')">Create your profile →</button>
+  </div>
+
+  <div class="split-pane">
+    <p class="split-label">For companies</p>
+    <h2 class="split-headline">Find people who can<br><em>actually do the job.</em></h2>
+    <p class="split-body">Stop filtering on credentials that predict nothing. FHP surfaces candidates based on real skill alignment. You get ranked matches with transparent scoring, auditable decisions, and a compliance framework that protects you too.</p>
+    <div class="split-list">
+      <div class="split-item">
+        <div class="split-icon icon-gold">◆</div>
+        <span>Skill-first matching — 98 skills, 14 domains, transferable skill recognition</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-gold">◆</div>
+        <span>Bias monitoring built in — DIR, EOD, and SDS metrics, computed nightly</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-gold">◆</div>
+        <span>Full audit trail for every hiring decision — defensible, documented</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-gold">◆</div>
+        <span>Salary ranges required — no more vague "competitive" postings</span>
+      </div>
+      <div class="split-item">
+        <div class="split-icon icon-gold">◆</div>
+        <span>EU AI Act compliant by design — conformity documentation included</span>
+      </div>
+    </div>
+    <button class="split-cta cta-dark" onclick="openModal('company')">Register your company →</button>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-bg">09</div>
+  <p class="section-label">The matching pipeline</p>
+  <h2 class="how-headline">Nine stages.<br><em>Every one auditable.</em></h2>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="step-num">01</div>
+      <div class="step-title">Normalise</div>
+      <div class="step-body">Skill IDs are validated against the FHP ontology. Salaries converted to a common basis. Location data resolved.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">02</div>
+      <div class="step-title">Expand</div>
+      <div class="step-body">Skills are expanded with synonyms and related terms. Python matches Python 3. React matches ReactJS. No penalisation for naming conventions.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">03</div>
+      <div class="step-title">Constrain</div>
+      <div class="step-body">Hard requirements are checked. A missing must-have skill stops the pipeline here with a specific, plain-language explanation.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">04</div>
+      <div class="step-title">Score skills</div>
+      <div class="step-body">Must-have and nice-to-have skills are scored against declared proficiency using a public mathematical formula.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">05</div>
+      <div class="step-title">Transfer</div>
+      <div class="step-body">72 ontology-defined transfer relationships recognise related skills. Docker experience counts towards Kubernetes. Spark counts towards data engineering.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">06</div>
+      <div class="step-title">Align preferences</div>
+      <div class="step-body">Salary, work mode, and location compatibility contribute to the composite score. Hard mismatches are handled at Stage 3.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">07</div>
+      <div class="step-title">Detect bias</div>
+      <div class="step-body">Three fairness metrics — DIR, EOD, SDS — are checked for the candidate's demographic cohort. Data-insufficient cohorts are flagged, not guessed at.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">08</div>
+      <div class="step-title">Correct bias</div>
+      <div class="step-body">Where systemic scoring disparities are detected, a proportional correction is applied. Capped at ±15 points. Transparent in the governance record.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">09</div>
+      <div class="step-title">Explain</div>
+      <div class="step-body">Three audience-appropriate explanations are generated: one for the candidate, one for the employer, one for the governance record. Every outcome has one.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAIRNESS -->
+<section class="fairness" id="fairness">
+  <div class="fairness-copy">
+    <p class="section-label">Built-in fairness</p>
+    <h2 class="fairness-headline">Equal treatment,<br><em>not equal outcomes.</em></h2>
+    <p class="fairness-body">FHP detects and corrects for systematic scoring disparities across demographic groups. It doesn't enforce quotas — it enforces consistent treatment. A qualified candidate from any background receives the same score as an equally qualified candidate from any other.</p>
+    <p class="fairness-body">Three metrics — Disparate Impact Ratio, Equal Opportunity Difference, and Score Distribution Skew — are computed nightly across every company and every job. Breaches trigger automatic escalation to the Fairness Oversight Board.</p>
+    <div class="fairness-metrics">
+      <div class="metric-cell">
+        <div class="metric-val">DIR</div>
+        <div class="metric-label">Disparate Impact</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-val">EOD</div>
+        <div class="metric-label">Equal Opportunity</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-val">SDS</div>
+        <div class="metric-label">Score Distribution</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fairness-visual">
+    <div class="fv-bg">FHP</div>
+    <p class="fv-title">Live pipeline — match in progress</p>
+    <div class="fv-pipeline">
+      <div class="fv-stage">
+        <span class="fv-stage-num">01</span>
+        <span class="fv-stage-name">Normalisation</span>
+        <span class="fv-stage-status status-done">✓ done</span>
+      </div>
+      <div class="fv-stage">
+        <span class="fv-stage-num">02</span>
+        <span class="fv-stage-name">Semantic expansion</span>
+        <span class="fv-stage-status status-done">✓ done</span>
+      </div>
+      <div class="fv-stage">
+        <span class="fv-stage-num">03</span>
+        <span class="fv-stage-name">Constraint satisfaction</span>
+        <span class="fv-stage-status status-done">✓ passed</span>
+      </div>
+      <div class="fv-stage">
+        <span class="fv-stage-num">04</span>
+        <span class="fv-stage-name">Skill scoring</span>
+        <span class="fv-stage-status status-done">✓ done</span>
+      </div>
+      <div class="fv-stage">
+        <span class="fv-stage-num">05</span>
+        <span class="fv-stage-name">Transfer compensation</span>
+        <span class="fv-stage-status status-active">● running</span>
+      </div>
+      <div class="fv-stage">
+        <span class="fv-stage-num">06–09</span>
+        <span class="fv-stage-name">Preference · Bias · Explain</span>
+        <span class="fv-stage-status" style="color:rgba(255,255,255,0.25);font-family:var(--mono);font-size:10px">pending</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GOVERNANCE -->
+<section class="gov" id="governance">
+  <div class="gov-item">
+    <div class="gov-icon">⚖</div>
+    <h3 class="gov-title">Protocol Council</h3>
+    <p class="gov-body">Six-member governing body. Stewards the protocol, approves changes, maintains the canonical version. No single company can control it. All votes are public.</p>
+  </div>
+  <div class="gov-item">
+    <div class="gov-icon">🔍</div>
+    <h3 class="gov-title">Fairness Oversight Board</h3>
+    <p class="gov-body">Independent watchdog with veto power. Fairness researchers, civil rights advocates, disability advocates, labour representatives. Publishes quarterly audit reports.</p>
+  </div>
+  <div class="gov-item">
+    <div class="gov-icon">🔧</div>
+    <h3 class="gov-title">Technical Working Group</h3>
+    <p class="gov-body">Open membership. Maintains schemas, ontology, and the reference implementation. Conducts technical reviews of all appeals. Cannot modify fairness logic.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <div class="nav-diamond" style="width:18px;height:18px;background:rgba(255,255,255,0.3)"></div>
+    <span class="footer-wordmark">Fair Hiring Protocol</span>
+  </div>
+  <div class="footer-links">
+    <a href="#">Spec</a>
+    <a href="#">GitHub</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Governance</a>
+    <a href="#">Contact</a>
+  </div>
+  <div class="footer-copy">v1.0.0 · CC BY 4.0 / Apache 2.0 · Open standard</div>
+</footer>
+
+<!-- ── REGISTER / SIGN IN MODAL ── -->
+<div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">Get started</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Role toggle: candidate / company -->
+    <div class="role-toggle">
+      <button class="role-btn active" id="btn-candidate" onclick="switchRole('candidate')">
+        🔍 Looking for a job
+      </button>
+      <button class="role-btn" id="btn-company" onclick="switchRole('company')">
+        🏢 Hiring
+      </button>
+    </div>
+
+    <!-- Tab content -->
+    <div class="modal-tabs">
+
+      <!-- CANDIDATE TAB -->
+      <div class="modal-tab active" id="tab-candidate">
+        <div class="auth-mode">
+          <button class="mode-btn active" onclick="switchMode('candidate','register')">Create account</button>
+          <button class="mode-btn" onclick="switchMode('candidate','login')">Sign in</button>
+        </div>
+
+        <!-- Register -->
+        <div id="candidate-register">
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input class="form-input" type="email" placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Minimum 12 characters">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preferred language</label>
+            <select class="form-input">
+              <option>English (UK)</option>
+              <option>English (US)</option>
+              <option>French</option>
+              <option>German</option>
+              <option>Spanish</option>
+            </select>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="age-confirm">
+            <label for="age-confirm">I confirm I am 18 years of age or older</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="terms-confirm">
+            <label for="terms-confirm">I agree to the <a href="#" style="color:var(--teal)">Terms of Service</a> and <a href="#" style="color:var(--teal)">Privacy Policy</a></label>
+          </div>
+          <button class="form-submit" onclick="handleCandidateRegister()">Create account — it's free</button>
+          <div class="form-footer" style="margin-top:12px;font-size:11px;color:var(--light)">
+            We do not store your name. Your identity is never shared with employers without your consent.
+          </div>
+        </div>
+
+        <!-- Login -->
+        <div id="candidate-login" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input class="form-input" type="email" placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Your password">
+          </div>
+          <button class="form-submit" onclick="handleCandidateLogin()">Sign in</button>
+          <div class="form-footer">
+            <a href="#">Forgot password?</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPANY TAB -->
+      <div class="modal-tab" id="tab-company">
+        <div class="auth-mode">
+          <button class="mode-btn active" onclick="switchMode('company','register')">Register company</button>
+          <button class="mode-btn" onclick="switchMode('company','login')">Sign in</button>
+        </div>
+
+        <!-- Register -->
+        <div id="company-register">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Legal company name</label>
+              <input class="form-input" type="text" placeholder="Acme Technologies Ltd">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jurisdiction</label>
+              <select class="form-input">
+                <option value="GB">United Kingdom</option>
+                <option value="US">United States</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="NL">Netherlands</option>
+                <option value="IE">Ireland</option>
+                <option value="SE">Sweden</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Compliance contact email</label>
+            <input class="form-input" type="email" placeholder="compliance@yourcompany.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Minimum 12 characters">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estimated monthly hiring volume</label>
+            <select class="form-input">
+              <option>1–5 roles per month</option>
+              <option>6–20 roles per month</option>
+              <option>21–50 roles per month</option>
+              <option>51+ roles per month</option>
+            </select>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="compliance-confirm">
+            <label for="compliance-confirm">I accept the <a href="#" style="color:var(--teal)">FHP Company Compliance Agreement</a>, including salary range requirements, SLA commitments, and prohibited filter attestations</label>
+          </div>
+          <button class="form-submit" onclick="handleCompanyRegister()">Register company</button>
+        </div>
+
+        <!-- Login -->
+        <div id="company-login" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Compliance contact email</label>
+            <input class="form-input" type="email" placeholder="compliance@yourcompany.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" placeholder="Your password">
+          </div>
+          <button class="form-submit" onclick="handleCompanyLogin()">Sign in</button>
+          <div class="form-footer"><a href="#">Forgot password?</a></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(role) {
+  document.getElementById('modal').classList.add('open');
+  switchRole(role);
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── Role switching ─────────────────────────────────────────────────────────────
+function switchRole(role) {
+  ['candidate','company'].forEach(r => {
+    document.getElementById(`btn-${r}`).classList.toggle('active', r === role);
+    document.getElementById(`tab-${r}`).classList.toggle('active', r === role);
+  });
+  document.getElementById('modal-title').textContent =
+    role === 'candidate' ? 'Find your next role' : 'Start hiring fairly';
+}
+
+// ── Mode switching (register / login) ─────────────────────────────────────────
+function switchMode(role, mode) {
+  const tab = document.getElementById(`tab-${role}`);
+  tab.querySelectorAll('.mode-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && mode === 'register') || (i === 1 && mode === 'login'));
+  });
+  document.getElementById(`${role}-register`).style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById(`${role}-login`).style.display    = mode === 'login'    ? 'block' : 'none';
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────────
+// After successful auth these would redirect to the appropriate portal
+function handleCandidateRegister() {
+  alert('✓ Registration successful — redirecting to candidate portal...\n\n(In production: POST /v1/auth/register → redirect to candidate-portal.html)');
+  closeModal();
+}
+function handleCandidateLogin() {
+  alert('✓ Signed in — redirecting to candidate portal...\n\n(In production: POST /v1/auth/login → redirect to candidate-portal.html)');
+  closeModal();
+}
+function handleCompanyRegister() {
+  alert('✓ Company registered — redirecting to company dashboard...\n\n(In production: POST /v1/auth/register → redirect to company-dashboard.html)');
+  closeModal();
+}
+function handleCompanyLogin() {
+  alert('✓ Signed in — redirecting to company dashboard...\n\n(In production: POST /v1/auth/login → redirect to company-dashboard.html)');
+  closeModal();
+}
+
+// ── Nav scroll highlight ───────────────────────────────────────────────────────
+const navEl = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  navEl.style.boxShadow = window.scrollY > 40 ? '0 2px 20px rgba(0,0,0,0.08)' : '';
+});
+</script>
+</body>
+</html>

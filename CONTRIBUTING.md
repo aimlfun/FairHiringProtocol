@@ -72,8 +72,12 @@ Harassment, discrimination, or attempts to undermine fairness will not be tolera
 
 ## 5. Licensing
 
-All contributions are made under the project’s open-source license.
-By contributing, you agree that your work becomes part of the public standard.
+FHP uses a dual licence model:
+
+- **Specification and schemas** (`/specs`, `/proposals`, `/ontology`, `/docs`, `/audits`) are licensed under **Creative Commons Attribution 4.0 International (CC BY 4.0)**. Anyone may implement the protocol, but must attribute the Fair Hiring Protocol project.
+- **Reference implementation** (`/reference-impl`) is licensed under the **Apache License 2.0**. You may use, modify, and distribute the code freely, including in commercial products, with attribution and patent protection.
+
+By contributing, you agree that your work is made available under these licences and becomes part of the public standard. Contributions to the fairness core may not be relicensed under proprietary terms by any party, including companies that implement or extend the protocol.
 
 ---
 

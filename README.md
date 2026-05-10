@@ -107,7 +107,7 @@ FHP flips the system:
 
 This is how we upend the recruitment industry — fairly.
 
-## Repository Structure
+## Repository Structure *(target — partially exists today)*
 ```
 fair-hiring-protocol/
 ├─ README.md
@@ -115,39 +115,120 @@ fair-hiring-protocol/
 ├─ GOVERNANCE.md
 ├─ CODE_OF_CONDUCT.md
 │
-├─ specs/ is the canonical source of truth
-│  ├─ fhp-overview.md
-│  ├─ candidate-profile.schema.json
-│  ├─ job-brief.schema.json
-│  ├─ match-explanation.schema.json
-│  ├─ scoring-spec.md
-│  ├─ bias-correction-spec.md
-│  ├─ candidate-rights-charter.md
-│  ├─ company-compliance.md
-│  └─ governance-charter.md
+├─ api/ is the FHP REST APIs 
+│  ├─ config/
+│  ├─ db/          Postgres helper
+│  ├─ errors/      Standard error helpers
+│  ├─ middleware/
+│  └─ routes/      REST APIs
 │
-├─ proposals/ is where FHP P documents live (PRs against this folder)
-│  ├─ FHP-P-2025-001-example.md
-│  └─ template.md
+├─ architecture/
+│  ├─ api.md
+│  ├─ dashboard.md
+│  ├─ mcp.md
+│  └─ README.md
+|
+├─ audits/
+│  └─ sample-reports/  placeholder
 │
-├─ reference-impl/ is optional but powerful: a minimal, clean implementation others can follow
-│  ├─ api/
+├─ db/  database scripts (Postgres)
+│  ├─ migrations/
+│  ├─ partitions/
+│  ├─ roles/
+│  ├─ seeds/
+│  └─ README.md
+│
+├─ diagrams/  
+│  └─ stop-ghosting-candidates.png
+│
+├─ design-notes/
+│  ├─ explanation-engine/
+│  ├─ ghosting/
 │  ├─ matching-engine/
-│  ├─ ontology/
-│  └─ tests/
+│  ├─ multi-modal-match/
+│  ├─ altruism.md
+│  ├─ candidate-experience.md
+│  ├─ candidate-vs-company.md
+│  ├─ company-experience.md
+│  ├─ data.md
+│  ├─ disagreement-rules.md
+│  ├─ example-rules.md
+│  ├─ fairness.md
+│  ├─ for-candidates.md
+│  ├─ for-companies.md
+│  ├─ for-implementers.md
+│  ├─ governance-enforcement-pipeline.md
+│  ├─ no-forking.md
+│  ├─ trace-rules.md
+│  └─ what-recruiters-do.md
+│
+├─ draw.io/ source of diagrams (created in draw.io)
+│
+├─ legal/ covers the legal obligations (**must be reviewed by legal**)
+│  ├─ data-processing-agreement.md
+│  ├─ dpia.md
+│  ├─ eu-ai-act-conformity.md
+│  ├─ privacy-policy.md
+│  ├─ pseudonymisation-procedure.md
+│  └─ terms-of-service.md
 │
 ├─ ontology/ is versioned and governed like a standard.
 │  ├─ skills.json
 │  └─ mapping-rules.md
 │
-├─ audits/
-│  ├─ fairness-metrics.md
-│  └─ sample-reports/
+├─ proposals/ is where FHP P documents live (PRs against this folder)
+│  ├─ FHP-P-2025-001-funding-model.md
+│  └─ template.md
 │
-└─ docs/
-   ├─ for-candidates.md
-   ├─ for-companies.md
-   └─ for-implementers.md
+├─ protocols/ one of **the** most important folders: this defines FHP policy
+│  ├─ FHP-A-2025-001.md - API surface
+│  ├─ FHP-C-2025-001.md - Canonical Specification
+│  ├─ FHP-FS-2025-001.md - The Fairness Score
+│  ├─ FHP-G-2025-001.md - Governance Model
+│  ├─ FHP-MFS-2025-001.md - Standards
+│  ├─ FHP-SRR-2025-001.md - Structure Rejection Reasons & Appeals
+│  └─ README.md
+│
+├─ reference-impl/ is optional but powerful: a minimal, clean implementation others can follow
+│  ├─ appeals/
+│  ├─ bias/
+│  ├─ fairness/
+│  ├─ matching-engine/
+│  ├─ ontology/
+│  ├─ shared/
+│  ├─ sla/
+│  └─ tests/
+│
+├─ specs/ is the canonical source of truth
+│  ├─ bias-correction-spec.md
+│  ├─ candidate-profile.schema.json
+│  ├─ candidate-rights-charter.md
+│  ├─ company-compliance.md
+│  ├─ database-architecture.md
+│  ├─ fairness-metrics.schema.json
+│  ├─ fhp-overview.md
+│  ├─ ghosting-event.schema.json
+│  ├─ governance-charter.md
+│  ├─ governance-escalation-spec.md
+│  ├─ identity-model.schema.json
+│  ├─ job-brief.schema.json
+│  ├─ legal-compliance.md
+│  ├─ match-explanation.schema.json
+│  ├─ matching-engine-spec.md
+│  ├─ multi-model-inference-spec.md
+│  ├─ scoring-spec.md
+│  └─ trace.schema.json
+│
+├─ api-gap-analysis.md -  WIP gaps in the API prior to build.
+├─ candidate-app.html - **mockup** candidate experience
+├─ company-dashboard.html - **mockup** company experience
+├─ CONTRIBUTING.md
+├─ governance-dashboard.html - **mockup** governance dashboard
+├─ landing-page.html - **mockup** entry point for candidates and companies
+├─ LICENSE-reference-impl.txt
+├─ LICENSE-specs.txt
+├─ README.md (**this**)
+└─ todo.md
 ```
 
 ## How Matching Works (High Level)
@@ -222,10 +303,12 @@ See `CONTRIBUTING.md` for details.
 
 ### License
 
-FHP is released under a **permissive open-source license** (to be chosen), ensuring:
--	free use
--	free implementation
--	**no proprietary forks of the fairness core**
+FHP uses a **dual licence model**:
+
+- **Specification and schemas** are licensed under **CC BY 4.0** — free to implement, attribution required.
+- **Reference implementation** is licensed under **Apache 2.0** — free to use commercially, with attribution and patent protection.
+
+No party may create a proprietary fork of the fairness core.
 
 
 ### Vision
@@ -240,15 +323,13 @@ A world where hiring finally **works**.
 
 ### Funding
 
-Very little is free. This will use tokens, and infrastructure (database, servers etc).
+FHP is a public good. The aspiration is that it should be free for candidates and free for companies to participate in.
 
-Paid advertising is one route. If candidates come, it could work. 
+Sustaining the infrastructure - compute, storage, the matching pipeline - requires a funding model that does not compromise the protocol's independence. The right model is an open question that the community needs to resolve together.
 
-Getting a few mega corps to offset their tax supporting a "charity", might also work.
+Approaches under consideration include: foundation or charitable trust models, grant funding from public boides, voluntary contributions from compliant employers, and infrastructure sponsorship with strict governance firewalls. Corporate capture safeguards in the governance model apply equally to any funding arrangement.
 
-Can you help? Want to host? Subsidise.
-
-**If this is to take off, aspirational state is free - you shouldn't have to pay to find a job, nor should companies to find candidates.**
+**This is a tracked item.** See the to-do list for the formal investigation task.
 
 ### Join Us
 
