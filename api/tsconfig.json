@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target":           "ES2022",
+    "module":           "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib":              ["ES2022"],
+    "outDir":           "./dist",
+    "rootDir":          "../",
+    "strict":           true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns":          true,
+    "esModuleInterop":  true,
+    "skipLibCheck":     true,
+    "resolveJsonModule": true,
+    "declaration":      true,
+    "sourceMap":        true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl":          "./src",
+    "paths": {
+      "@config":     ["config/index.ts"],
+      "@db":         ["db/index.ts"],
+      "@errors":     ["errors/index.ts"],
+      "@middleware/*":["middleware/*"],
+      "@routes/*":   ["routes/*"],
+      "@services/*": ["services/*"],
+      "@repositories/*": ["repositories/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "../reference-impl/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests"]
+}
