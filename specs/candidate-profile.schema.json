@@ -1,392 +1,255 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://fhp.org/schema/candidate-profile.schema.json",
-  "title": "Fair Hiring Protocol - Candidate Profile",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/candidate-profile.schema.json",
+  "title": "FHP Candidate Profile",
+  "description": "The canonical representation of a candidate in the Fair Hiring Protocol. All fields are under candidate control. No inferred or derived fields from third-party sources are permitted.",
   "type": "object",
-  "required": ["id", "core", "skills", "experience", "preferences", "constraints"],
+  "required": ["fhp_version", "candidate_id", "created_at", "skills"],
+  "additionalProperties": false,
+
   "properties": {
-    "id": {
+
+    "fhp_version": {
       "type": "string",
-      "description": "Canonical candidate identifier (UUID or similar)."
+      "description": "The FHP spec version this profile conforms to.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "example": "1.0.0"
     },
 
-    "meta": {
-      "type": "object",
-      "description": "System-level metadata.",
-      "properties": {
-        "version": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" },
-        "updated_at": { "type": "string", "format": "date-time" },
-        "protocol_version": { "type": "string" }
-      },
-      "additionalProperties": false
+    "candidate_id": {
+      "type": "string",
+      "description": "A globally unique, opaque identifier for this candidate. Must be a UUID v4. Never derived from PII.",
+      "format": "uuid"
     },
 
-    "core": {
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of profile creation."
+    },
+
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last profile update."
+    },
+
+    "identity": {
       "type": "object",
-      "description": "Minimal identity and visibility.",
-      "required": ["visibility"],
+      "description": "Minimal identity information used for communication only. Never used in matching or scoring.",
+      "additionalProperties": false,
       "properties": {
-        "name": {
-          "type": ["string", "null"],
-          "description": "Optional; may be hidden or pseudonymous."
+        "display_name": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The name the candidate wishes to be addressed by."
         },
-        "primary_contact": {
-          "type": ["string", "null"],
-          "description": "Email or relay; not used in matching."
+        "contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary contact email. Not shared with employers without explicit candidate consent."
         },
-        "location_preference": {
-          "type": ["string", "null"],
-          "description": "High-level location preference (e.g. 'UK', 'EU', 'Remote-first')."
+        "contact_phone": {
+          "type": "string",
+          "description": "Optional phone number. E.164 format preferred.",
+          "maxLength": 32
         },
-        "work_authorization": {
-          "type": ["string", "null"],
-          "description": "Optional summary of work authorization constraints."
-        },
-        "visibility": {
-          "type": "object",
-          "required": ["profile_visibility", "anonymity_mode"],
-          "properties": {
-            "profile_visibility": {
-              "type": "string",
-              "enum": ["private", "trusted_companies", "all_fhp_companies"]
-            },
-            "anonymity_mode": {
-              "type": "string",
-              "enum": ["full", "partial", "none"],
-              "description": "Full = no name/contact until candidate opts in."
-            }
-          },
-          "additionalProperties": false
+        "preferred_language": {
+          "type": "string",
+          "description": "IETF BCP 47 language tag for communication preferences.",
+          "example": "en-GB"
         }
-      },
-      "additionalProperties": false
+      }
     },
 
     "skills": {
-      "type": "object",
-      "description": "Core skill representation.",
-      "required": ["self_declared", "inferred", "transferable"],
-      "properties": {
-        "self_declared": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["name", "proficiency"],
-            "properties": {
-              "name": { "type": "string" },
-              "category": { "type": ["string", "null"] },
-              "proficiency": {
-                "type": "string",
-                "enum": ["learning", "comfortable", "confident", "expert_experience", "expert_formal"]
-              },
-              "years_of_use": { "type": ["number", "null"] },
-              "last_used_year": { "type": ["integer", "null"] }
-            },
-            "additionalProperties": false
-          }
-        },
-        "inferred": {
-          "type": "array",
-          "description": "AI-inferred skills; candidate can accept/reject.",
-          "items": {
-            "type": "object",
-            "required": ["name", "source", "status"],
-            "properties": {
-              "name": { "type": "string" },
-              "source": {
-                "type": "string",
-                "enum": ["cv", "project", "role_description", "portfolio", "other"]
-              },
-              "status": {
-                "type": "string",
-                "enum": ["accepted", "rejected", "pending"]
+      "type": "array",
+      "description": "The candidate's skill set. This is the primary matching surface. Each skill must reference an entry in the FHP Skill Ontology.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["ontology_id", "proficiency"],
+        "additionalProperties": false,
+        "properties": {
+          "ontology_id": {
+            "type": "string",
+            "description": "Reference to a skill in the FHP Skill Ontology (e.g. 'fhp:skill:python', 'fhp:skill:project-management').",
+            "pattern": "^fhp:skill:[a-z0-9-]+$"
+          },
+          "proficiency": {
+            "type": "string",
+            "description": "Self-assessed proficiency level using the FHP standard scale.",
+            "enum": ["aware", "practitioner", "proficient", "expert", "authority"]
+          },
+          "years_of_experience": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60,
+            "description": "Approximate years of active use. Optional. Not used as a filter — used only to contextualise proficiency."
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Optional pointers to evidence of this skill. Does not affect match score directly — used in explanation generation.",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["portfolio_url", "open_source_url", "publication_url", "certification", "free_text"]
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 1024
+                }
               }
-            },
-            "additionalProperties": false
-          }
-        },
-        "transferable": {
-          "type": "array",
-          "description": "Non-domain-specific skills.",
-          "items": {
-            "type": "object",
-            "required": ["name"],
-            "properties": {
-              "name": { "type": "string" },
-              "evidence": { "type": ["string", "null"] }
-            },
-            "additionalProperties": false
+            }
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "experience": {
-      "type": "object",
-      "description": "Structured experience, not just employment.",
-      "required": ["roles"],
-      "properties": {
-        "roles": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["title", "type", "start_date"],
-            "properties": {
-              "title": { "type": "string" },
-              "type": {
-                "type": "string",
-                "enum": ["employment", "freelance", "contract", "internship", "volunteer", "self_employed", "other"]
-              },
-              "organization": { "type": ["string", "null"] },
-              "domain": { "type": ["string", "null"] },
-              "start_date": { "type": "string", "format": "date" },
-              "end_date": { "type": ["string", "null"], "format": "date" },
-              "current": { "type": ["boolean", "null"] },
-              "responsibilities": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "skills_used": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "achievements": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "impact_summary": { "type": ["string", "null"] }
-            },
-            "additionalProperties": false
-          }
-        },
-        "projects": {
-          "type": "array",
-          "description": "Non-role-tied work: OSS, personal, etc.",
-          "items": {
-            "type": "object",
-            "required": ["name"],
-            "properties": {
-              "name": { "type": "string" },
-              "description": { "type": ["string", "null"] },
-              "skills_used": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "outcomes": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "links": {
-                "type": "array",
-                "items": { "type": "string", "format": "uri" }
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "non_traditional": {
-          "type": "array",
-          "description": "Caregiving, community work, etc.",
-          "items": {
-            "type": "object",
-            "required": ["description"],
-            "properties": {
-              "description": { "type": "string" },
-              "skills_demonstrated": {
-                "type": "array",
-                "items": { "type": "string" }
-              }
-            },
-            "additionalProperties": false
+    "work_history": {
+      "type": "array",
+      "description": "Optional narrative work history. Used for context and explanation only — never as a filter. Job titles and employer names are not used in matching.",
+      "items": {
+        "type": "object",
+        "required": ["role_description", "start_date"],
+        "additionalProperties": false,
+        "properties": {
+          "role_description": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "A free-text description of the role (not a job title). E.g. 'Led backend infrastructure for a payment processing team'."
+          },
+          "employer_type": {
+            "type": "string",
+            "description": "Broad category of employer. Used only for context, never for prestige filtering.",
+            "enum": ["startup", "scale_up", "enterprise", "public_sector", "non_profit", "self_employed", "academia", "other"]
+          },
+          "start_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "YYYY-MM start date."
+          },
+          "end_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "YYYY-MM end date. Omit if current role."
+          },
+          "is_current": {
+            "type": "boolean",
+            "default": false
+          },
+          "skills_used": {
+            "type": "array",
+            "description": "References to ontology skill IDs practised in this role.",
+            "items": {
+              "type": "string",
+              "pattern": "^fhp:skill:[a-z0-9-]+$"
+            }
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
 
     "preferences": {
       "type": "object",
-      "required": ["work_mode", "employment_type"],
+      "description": "Candidate's stated work preferences. Used in preference alignment stage of matching pipeline.",
+      "additionalProperties": false,
       "properties": {
-        "work_mode": {
+        "work_modes": {
           "type": "array",
+          "description": "Acceptable work arrangements, in order of preference.",
           "items": {
             "type": "string",
-            "enum": ["remote", "hybrid", "onsite"]
-          }
+            "enum": ["remote", "hybrid", "on_site"]
+          },
+          "minItems": 1
         },
-        "employment_type": {
+        "locations": {
           "type": "array",
+          "description": "Acceptable work locations. Use ISO 3166-2 region codes or free-text city names.",
           "items": {
-            "type": "string",
-            "enum": ["full_time", "part_time", "contract", "fractional"]
+            "type": "string"
           }
-        },
-        "industries": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "company_size": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["startup", "scaleup", "sme", "enterprise", "non_profit", "public_sector"]
-          }
-        },
-        "role_preferences": {
-          "type": "array",
-          "items": { "type": "string" }
         },
         "salary": {
           "type": "object",
+          "description": "Salary expectations. Ranges are preferred over point values.",
+          "additionalProperties": false,
+          "required": ["currency", "minimum"],
           "properties": {
-            "currency": { "type": "string" },
-            "min": { "type": ["number", "null"] },
-            "preferred": { "type": ["number", "null"] },
-            "is_flexible": { "type": ["boolean", "null"] }
-          },
-          "additionalProperties": false
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$",
+              "description": "ISO 4217 currency code."
+            },
+            "minimum": {
+              "type": "number",
+              "minimum": 0
+            },
+            "preferred": {
+              "type": "number",
+              "minimum": 0
+            },
+            "period": {
+              "type": "string",
+              "enum": ["annual", "daily", "hourly"],
+              "default": "annual"
+            }
+          }
         },
-        "career_goals": {
+        "employment_types": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["leadership", "hands_on", "domain_switch", "stability", "high_growth", "research", "teaching", "other"]
+            "enum": ["permanent", "contract", "part_time", "internship", "apprenticeship"]
           }
+        },
+        "notice_period_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 365,
+          "description": "Current notice period in days."
+        },
+        "open_to_relocation": {
+          "type": "boolean",
+          "default": false
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "constraints": {
+    "privacy": {
       "type": "object",
-      "required": ["availability"],
+      "description": "Candidate's privacy and consent settings. Governs how their profile may be used.",
+      "additionalProperties": false,
       "properties": {
-        "availability": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": ["immediate", "notice_period", "specific_date"]
-            },
-            "notice_period_weeks": { "type": ["integer", "null"] },
-            "available_from": { "type": ["string", "null"], "format": "date" }
-          },
-          "additionalProperties": false
+        "searchable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the candidate's profile can be surfaced to employers in proactive searches."
         },
-        "location": {
-          "type": "object",
-          "properties": {
-            "regions": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "willing_to_relocate": { "type": ["boolean", "null"] }
-          },
-          "additionalProperties": false
+        "anonymised_matching": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, identity fields are withheld from employers until the candidate explicitly approves contact."
         },
-        "schedule": {
-          "type": "object",
-          "properties": {
-            "max_hours_per_week": { "type": ["integer", "null"] },
-            "time_zone": { "type": ["string", "null"] }
-          },
-          "additionalProperties": false
+        "data_retention_days": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 730,
+          "default": 365,
+          "description": "How long the candidate's data should be retained after their last active session."
         },
-        "legal": {
-          "type": "object",
-          "properties": {
-            "requires_visa_sponsorship": { "type": ["boolean", "null"] }
-          },
-          "additionalProperties": false
+        "consented_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the candidate's explicit consent to the FHP terms."
         }
-      },
-      "additionalProperties": false
-    },
-
-    "demographics": {
-      "type": "object",
-      "description": "Optional; used only for bias monitoring.",
-      "properties": {
-        "age_range": {
-          "type": ["string", "null"],
-          "enum": [null, "under_25", "25_34", "35_44", "45_54", "55_64", "65_plus"]
-        },
-        "gender": { "type": ["string", "null"] },
-        "ethnicity": { "type": ["string", "null"] },
-        "disability": { "type": ["string", "null"] },
-        "socioeconomic_background": { "type": ["string", "null"] },
-        "education_level": { "type": ["string", "null"] }
-      },
-      "additionalProperties": false
-    },
-
-    "evidence": {
-      "type": "object",
-      "properties": {
-        "portfolio": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["label", "url"],
-            "properties": {
-              "label": { "type": "string" },
-              "url": { "type": "string", "format": "uri" },
-              "description": { "type": ["string", "null"] }
-            },
-            "additionalProperties": false
-          }
-        },
-        "assessments": {
-          "type": "array",
-          "description": "Optional, non-pass/fail demonstrations.",
-          "items": {
-            "type": "object",
-            "required": ["name"],
-            "properties": {
-              "name": { "type": "string" },
-              "summary": { "type": ["string", "null"] },
-              "skills_demonstrated": {
-                "type": "array",
-                "items": { "type": "string" }
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "references": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["relationship"],
-            "properties": {
-              "relationship": { "type": "string" },
-              "context": { "type": ["string", "null"] },
-              "skills_observed": {
-                "type": "array",
-                "items": { "type": "string" }
-              }
-            },
-            "additionalProperties": false
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-
-    "narrative": {
-      "type": "object",
-      "description": "Human narrative; not used for scoring.",
-      "properties": {
-        "about": { "type": ["string", "null"] },
-        "what_i_enjoy": { "type": ["string", "null"] },
-        "what_i_want_next": { "type": ["string", "null"] },
-        "ideal_environment": { "type": ["string", "null"] }
-      },
-      "additionalProperties": false
+      }
     }
-  },
-  "additionalProperties": false
+  }
 }

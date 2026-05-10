@@ -88,10 +88,10 @@ The ontology is versioned independently:
 # 7. Contribution Rules
 
 All ontology changes must:
-- be evidence based  
-- include examples  
-- include equivalence justification  
-- undergo TWG review  
+- be evidence based
+- include examples
+- include equivalence justification
+- undergo TWG review
 
 ---
 

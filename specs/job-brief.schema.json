@@ -1,207 +1,309 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://fhp.org/schema/job-brief.schema.json",
-  "title": "Fair Hiring Protocol - Job Brief",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/job-brief.schema.json",
+  "title": "FHP Job Brief",
+  "description": "The canonical representation of a job opportunity in the Fair Hiring Protocol. Companies must complete all required fields. Vague or exclusionary requirements are not permitted. Salary ranges are mandatory.",
   "type": "object",
-  "required": ["id", "meta", "core", "requirements", "constraints"],
+  "required": ["fhp_version", "job_id", "company_id", "created_at", "title", "role_summary", "skills_required", "salary", "work_mode", "location", "employment_type"],
+  "additionalProperties": false,
+
   "properties": {
-    "id": {
+
+    "fhp_version": {
       "type": "string",
-      "description": "Canonical job identifier (UUID or similar)."
+      "description": "The FHP spec version this job brief conforms to.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
 
-    "meta": {
-      "type": "object",
-      "description": "System-level metadata.",
-      "required": ["version", "created_at", "protocol_version"],
-      "properties": {
-        "version": { "type": "string" },
-        "created_at": { "type": "string", "format": "date-time" },
-        "updated_at": { "type": ["string", "null"], "format": "date-time" },
-        "protocol_version": { "type": "string" }
-      },
-      "additionalProperties": false
+    "job_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "A globally unique, opaque identifier for this job posting. UUID v4."
     },
 
-    "core": {
-      "type": "object",
-      "description": "High-level job identity and summary.",
-      "required": ["title", "summary", "department", "company"],
-      "properties": {
-        "title": { "type": "string" },
-        "summary": { "type": "string" },
-        "department": { "type": "string" },
-        "company": {
-          "type": "object",
-          "required": ["name"],
-          "properties": {
-            "name": { "type": "string" },
-            "size": {
-              "type": ["string", "null"],
-              "enum": ["startup", "scaleup", "sme", "enterprise", "non_profit", "public_sector", null]
-            },
-            "industry": { "type": ["string", "null"] },
-            "culture_notes": { "type": ["string", "null"] }
+    "company_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The FHP-issued identifier for the posting company."
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this job brief should be deactivated. Required to prevent ghost listings."
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "paused", "filled", "cancelled"],
+      "default": "draft"
+    },
+
+    "title": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "A plain-language job title. Must describe the actual work, not a marketing label. Titles like 'Rockstar Developer' or 'Ninja' are rejected at validation."
+    },
+
+    "role_summary": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "A plain-text description of the role, its responsibilities, and the team context. Must describe work, not candidate personality traits."
+    },
+
+    "skills_required": {
+      "type": "array",
+      "description": "The skills the role requires, each tagged as must-have or nice-to-have. All skill references must resolve in the FHP Skill Ontology.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["ontology_id", "requirement_level", "minimum_proficiency"],
+        "additionalProperties": false,
+        "properties": {
+          "ontology_id": {
+            "type": "string",
+            "pattern": "^fhp:skill:[a-z0-9-]+$"
           },
-          "additionalProperties": false
+          "requirement_level": {
+            "type": "string",
+            "enum": ["must_have", "nice_to_have"],
+            "description": "must_have skills are scored against the constraint satisfaction threshold. nice_to_have skills contribute to the preference alignment score."
+          },
+          "minimum_proficiency": {
+            "type": "string",
+            "enum": ["aware", "practitioner", "proficient", "expert", "authority"],
+            "description": "The minimum acceptable proficiency level on the FHP scale. Must be justifiable by the role's actual responsibilities."
+          },
+          "context": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Optional explanation of why this skill is required and how it will be used. Improves matching quality and candidate experience."
+          }
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "requirements": {
+    "salary": {
       "type": "object",
-      "description": "Structured requirements for matching.",
-      "required": ["skills", "responsibilities"],
+      "description": "Salary range. Both minimum and maximum are required. Ranges must be honest — posting a £40k–£200k range to obscure the real budget is a compliance violation.",
+      "required": ["currency", "minimum", "maximum", "period"],
+      "additionalProperties": false,
       "properties": {
-        "skills": {
-          "type": "object",
-          "required": ["must_have", "nice_to_have"],
-          "properties": {
-            "must_have": {
-              "type": "array",
-              "description": "Hard requirements; must be satisfied before scoring.",
-              "items": {
-                "type": "object",
-                "required": ["name"],
-                "properties": {
-                  "name": { "type": "string" },
-                  "proficiency_required": {
-                    "type": ["string", "null"],
-                    "enum": ["comfortable", "confident", "expert", null]
-                  },
-                  "years_experience_min": { "type": ["number", "null"] }
-                },
-                "additionalProperties": false
-              }
-            },
-            "nice_to_have": {
-              "type": "array",
-              "description": "Soft requirements; contribute to score but not mandatory.",
-              "items": {
-                "type": "object",
-                "required": ["name"],
-                "properties": {
-                  "name": { "type": "string" },
-                  "weight": {
-                    "type": ["number", "null"],
-                    "description": "Relative importance (0.0–1.0)."
-                  }
-                },
-                "additionalProperties": false
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "period": {
+          "type": "string",
+          "enum": ["annual", "daily", "hourly"]
+        },
+        "includes_bonus": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, the range includes variable/bonus pay. Fixed base must be disclosed separately in notes."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 512
+        }
+      }
+    },
+
+    "work_mode": {
+      "type": "string",
+      "enum": ["remote", "hybrid", "on_site"],
+      "description": "The work arrangement for this role."
+    },
+
+    "hybrid_details": {
+      "type": "object",
+      "description": "Required when work_mode is 'hybrid'.",
+      "additionalProperties": false,
+      "properties": {
+        "days_on_site_per_week": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "flexible_days": {
+          "type": "boolean",
+          "description": "Whether the on-site days are fixed or flexible."
+        }
+      }
+    },
+
+    "location": {
+      "type": "object",
+      "description": "Where the work will be performed. Required even for remote roles (for tax/legal jurisdiction context).",
+      "required": ["country"],
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "ISO 3166-1 alpha-2 country code."
+        },
+        "region": {
+          "type": "string",
+          "description": "ISO 3166-2 region/state code or free text."
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "remote_regions_permitted": {
+          "type": "array",
+          "description": "For remote roles: the countries/regions from which candidates may work. Empty means unrestricted.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+
+    "employment_type": {
+      "type": "string",
+      "enum": ["permanent", "contract", "part_time", "internship", "apprenticeship"]
+    },
+
+    "contract_details": {
+      "type": "object",
+      "description": "Required when employment_type is 'contract'.",
+      "additionalProperties": false,
+      "properties": {
+        "duration_months": {
+          "type": "number",
+          "minimum": 0
+        },
+        "inside_ir35": {
+          "type": "boolean",
+          "description": "UK only: IR35 status."
+        },
+        "renewal_possible": {
+          "type": "boolean"
+        }
+      }
+    },
+
+    "team_context": {
+      "type": "object",
+      "description": "Optional but strongly encouraged. Helps candidates make informed decisions.",
+      "additionalProperties": false,
+      "properties": {
+        "team_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reports_to_role": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The role this position reports to — described by function, not title."
+        },
+        "direct_reports": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of direct reports, if any."
+        },
+        "tech_stack_summary": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "A brief description of the tools, platforms and languages in active use."
+        }
+      }
+    },
+
+    "process": {
+      "type": "object",
+      "description": "The hiring process the candidate will go through. Transparency here is a compliance requirement.",
+      "additionalProperties": false,
+      "properties": {
+        "stages": {
+          "type": "array",
+          "description": "Ordered list of process stages.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 512
+              },
+              "duration_estimate_minutes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "is_async": {
+                "type": "boolean",
+                "description": "True if candidates can complete this stage on their own schedule."
               }
             }
-          },
-          "additionalProperties": false
+          }
         },
-
-        "responsibilities": {
-          "type": "array",
-          "description": "What the candidate will actually do.",
-          "items": { "type": "string" }
-        },
-
-        "experience_level": {
+        "target_start_date": {
           "type": "string",
-          "enum": ["junior", "mid", "senior", "lead", "principal", "director", "vp", "cxo"],
-          "description": "Seniority level; used for semantic matching."
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+          "description": "YYYY-MM target start month."
         },
-
-        "domain": {
-          "type": ["string", "null"],
-          "description": "Domain or discipline (e.g. 'backend engineering', 'product design')."
+        "response_sla_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "description": "Maximum days within which the company commits to respond to any applicant at any stage. Governs ghosting SLA enforcement."
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "constraints": {
+    "prohibited_filters": {
       "type": "object",
-      "description": "Hard constraints that must be satisfied.",
-      "required": ["work_mode", "employment_type", "salary"],
+      "description": "FHP compliance assertions. The company attests that none of these filters are applied in evaluating candidates against this brief.",
+      "additionalProperties": false,
       "properties": {
-        "work_mode": {
-          "type": "string",
-          "enum": ["remote", "hybrid", "onsite"]
-        },
-        "employment_type": {
-          "type": "string",
-          "enum": ["full_time", "part_time", "contract", "fractional"]
-        },
-        "location": {
-          "type": "object",
-          "properties": {
-            "regions": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "requires_relocation": { "type": ["boolean", "null"] }
-          },
-          "additionalProperties": false
-        },
-        "salary": {
-          "type": "object",
-          "required": ["currency", "min", "max"],
-          "properties": {
-            "currency": { "type": "string" },
-            "min": { "type": "number" },
-            "max": { "type": "number" }
-          },
-          "additionalProperties": false
-        },
-        "legal": {
-          "type": "object",
-          "properties": {
-            "visa_sponsorship_available": { "type": ["boolean", "null"] }
-          },
-          "additionalProperties": false
-        },
-        "schedule": {
-          "type": "object",
-          "properties": {
-            "hours_per_week": { "type": ["integer", "null"] },
-            "time_zone_overlap_required": { "type": ["string", "null"] }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-
-    "preferences": {
-      "type": "object",
-      "description": "Soft preferences that influence scoring.",
-      "properties": {
-        "company_size_preference": {
-          "type": ["string", "null"],
-          "enum": ["startup", "scaleup", "sme", "enterprise", null]
-        },
-        "industry_preference": { "type": ["string", "null"] },
-        "culture_keywords": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
-      },
-      "additionalProperties": false
-    },
-
-    "fairness": {
-      "type": "object",
-      "description": "Fairness compliance and transparency.",
-      "required": ["no_arbitrary_filters"],
-      "properties": {
-        "no_arbitrary_filters": {
+        "no_degree_requirement": {
           "type": "boolean",
           "const": true,
-          "description": "Company confirms they are not filtering by age, gender, ethnicity, university, etc."
+          "description": "Company confirms no educational credential is required unless it is a legal or regulatory requirement of the role."
         },
-        "bias_monitoring_opt_in": {
-          "type": ["boolean", "null"],
-          "description": "Company agrees to fairness audits."
+        "no_institution_preference": {
+          "type": "boolean",
+          "const": true,
+          "description": "Company confirms no preference for candidates from specific universities or institutions."
+        },
+        "no_graduation_year_filter": {
+          "type": "boolean",
+          "const": true,
+          "description": "Company confirms years-since-graduation is not used as a filter."
+        },
+        "no_unpaid_work": {
+          "type": "boolean",
+          "const": true,
+          "description": "Company confirms no unpaid work (including 'take-home tasks' exceeding 2 hours) is required."
         }
-      },
-      "additionalProperties": false
+      }
     }
-  },
-  "additionalProperties": false
+
+  }
 }

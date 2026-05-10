@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/trace.schema.json",
+  "title": "FHP Pipeline Trace",
+  "description": "An immutable, append-only audit record of every decision made during a single execution of the FHP matching pipeline. One trace is produced per match event. Traces are stored permanently and are the evidentiary basis for appeals, audits, and governance investigations. They are never modified after creation.",
+  "type": "object",
+  "required": ["fhp_version", "trace_id", "match_id", "candidate_id", "job_id", "pipeline_version", "started_at", "completed_at", "status", "stages"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "fhp_version":       { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "trace_id":          { "type": "string", "format": "uuid" },
+    "match_id":          { "type": "string", "format": "uuid" },
+    "candidate_id":      { "type": "string", "format": "uuid" },
+    "job_id":            { "type": "string", "format": "uuid" },
+
+    "pipeline_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "The exact version of the matching pipeline that produced this trace. Enables bit-exact replay of any historical match."
+    },
+
+    "started_at":   { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Wall-clock duration of the full pipeline run in milliseconds."
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["completed", "failed", "aborted"],
+      "description": "'completed' means all stages ran to conclusion (even if the outcome was not_matched). 'failed' means an unrecoverable error occurred. 'aborted' means the pipeline was intentionally stopped early (e.g. a must_have constraint failed at stage 3 and further scoring was unnecessary)."
+    },
+
+    "failure_reason": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Required when status is 'failed'. A technical description of the error. Never shown to candidates or employers — governance only."
+    },
+
+    "models_used": {
+      "type": "array",
+      "description": "The AI/ML models invoked during this pipeline run. Required for reproducibility and multi-model validation audit trails.",
+      "items": {
+        "type": "object",
+        "required": ["model_id", "stage", "provider"],
+        "additionalProperties": false,
+        "properties": {
+          "model_id":   { "type": "string", "description": "The specific model identifier including version (e.g. 'fhp-skill-expander-v2.1.0')." },
+          "provider":   { "type": "string", "description": "The organisation or system that provides this model." },
+          "stage":      { "type": "string", "description": "Which pipeline stage invoked this model." },
+          "version":    { "type": "string" },
+          "invoked_at": { "type": "string", "format": "date-time" },
+          "latency_ms": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+
+    "stages": {
+      "type": "array",
+      "description": "Ordered log of every pipeline stage that executed. Stages are appended in execution order. A stage that was skipped (e.g. due to early abort) is recorded with status 'skipped' rather than omitted.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["stage_name", "stage_order", "status", "started_at"],
+        "additionalProperties": false,
+        "properties": {
+
+          "stage_name": {
+            "type": "string",
+            "enum": [
+              "normalisation",
+              "semantic_expansion",
+              "constraint_satisfaction",
+              "skill_scoring",
+              "transferable_skill_compensation",
+              "preference_alignment",
+              "bias_detection",
+              "bias_correction",
+              "explanation_generation"
+            ]
+          },
+
+          "stage_order": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+
+          "status": {
+            "type": "string",
+            "enum": ["completed", "skipped", "failed"]
+          },
+
+          "started_at":   { "type": "string", "format": "date-time" },
+          "completed_at": { "type": "string", "format": "date-time" },
+          "duration_ms":  { "type": "integer", "minimum": 0 },
+
+          "input_snapshot": {
+            "type": "object",
+            "description": "A minimal snapshot of the inputs this stage received. Sufficient to reproduce the stage's output in isolation. Must not contain PII.",
+            "additionalProperties": true
+          },
+
+          "output_snapshot": {
+            "type": "object",
+            "description": "A minimal snapshot of the outputs this stage produced. Sufficient to verify downstream stages received correct inputs.",
+            "additionalProperties": true
+          },
+
+          "decisions": {
+            "type": "array",
+            "description": "The discrete decisions made within this stage. Each decision is individually logged with its rationale.",
+            "items": {
+              "type": "object",
+              "required": ["decision_type", "value", "rationale"],
+              "additionalProperties": false,
+              "properties": {
+                "decision_type": { "type": "string", "maxLength": 128 },
+                "value":         { "type": ["string", "number", "boolean"] },
+                "rationale":     { "type": "string", "maxLength": 1024 },
+                "confidence":    { "type": "number", "minimum": 0, "maximum": 1 },
+                "ontology_ids":  {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Skill ontology IDs relevant to this decision."
+                }
+              }
+            }
+          },
+
+          "warnings": {
+            "type": "array",
+            "description": "Non-fatal anomalies observed during this stage. Logged for audit but do not halt the pipeline.",
+            "items": {
+              "type": "object",
+              "required": ["code", "message"],
+              "additionalProperties": false,
+              "properties": {
+                "code":    { "type": "string" },
+                "message": { "type": "string", "maxLength": 512 }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "appeal_flags": {
+      "type": "object",
+      "description": "Fields populated if this trace is the subject of a candidate appeal.",
+      "additionalProperties": false,
+      "properties": {
+        "under_appeal": { "type": "boolean", "default": false },
+        "appeal_id":    { "type": "string", "format": "uuid" },
+        "reviewed_by":  { "type": "string", "description": "Governance role identifier of the reviewer, never a personal name." },
+        "reviewed_at":  { "type": "string", "format": "date-time" },
+        "review_outcome": {
+          "type": "string",
+          "enum": ["upheld", "overturned", "partially_overturned", "pending"]
+        },
+        "review_notes": { "type": "string", "maxLength": 2048 }
+      }
+    },
+
+    "checksum": {
+      "type": "string",
+      "description": "SHA-256 hash of the canonical JSON serialisation of this trace (excluding this field). Used to detect tampering. Verified on every read by the governance layer.",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/ghosting-event.schema.json",
+  "title": "FHP Ghosting Event",
+  "description": "Records a candidate communication failure — any instance where a company has not responded to a candidate within the committed SLA window. Ghosting events are automatically created by the platform when SLA deadlines are breached. They feed into company compliance scores and are visible on company fairness dashboards. Persistent ghosting patterns trigger governance escalation.",
+  "type": "object",
+  "required": ["fhp_version", "ghosting_id", "candidate_id", "company_id", "job_id", "match_id", "stage_name", "sla_deadline", "detected_at", "severity", "status"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "fhp_version":   { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "ghosting_id":   { "type": "string", "format": "uuid" },
+    "candidate_id":  { "type": "string", "format": "uuid" },
+    "company_id":    { "type": "string", "format": "uuid" },
+    "job_id":        { "type": "string", "format": "uuid" },
+    "match_id":      { "type": "string", "format": "uuid" },
+
+    "stage_name": {
+      "type": "string",
+      "description": "The hiring process stage at which the candidate was ghosted.",
+      "enum": [
+        "initial_match_acknowledgement",
+        "application_review",
+        "screening_call",
+        "technical_assessment",
+        "interview_stage",
+        "offer_stage",
+        "post_rejection_feedback"
+      ]
+    },
+
+    "last_contact_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The timestamp of the last communication from the company to the candidate. Null if the company never communicated at all."
+    },
+
+    "sla_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The exact datetime by which the company was required to respond, derived from the response_sla_days field of the job brief and the stage entry timestamp."
+    },
+
+    "detected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the platform's SLA monitor detected the breach. This is always at or after sla_deadline."
+    },
+
+    "overdue_hours": {
+      "type": "number",
+      "minimum": 0,
+      "description": "How many hours past the SLA deadline the ghosting was detected."
+    },
+
+    "severity": {
+      "type": "string",
+      "enum": ["minor", "significant", "severe"],
+      "description": "minor: 0–24 hours overdue. significant: 24–72 hours overdue. severe: 72+ hours overdue, or any ghosting at offer_stage or post_rejection_feedback."
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["open", "resolved", "escalated", "disputed"],
+      "description": "open: SLA breached, no response yet. resolved: company responded after the breach (late but not ignored). escalated: referred to governance. disputed: company contests the ghosting record."
+    },
+
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the company eventually responded. Required when status is 'resolved'."
+    },
+
+    "resolution_type": {
+      "type": "string",
+      "enum": ["late_response", "rejection_sent", "offer_sent", "candidate_withdrew", "company_disputed_and_upheld", "company_disputed_and_overturned"],
+      "description": "How the ghosting event was resolved."
+    },
+
+    "candidate_notified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the candidate was notified by the platform that their SLA had been breached and they are entitled to escalate."
+    },
+
+    "escalation": {
+      "type": "object",
+      "description": "Populated when status is 'escalated'.",
+      "additionalProperties": false,
+      "properties": {
+        "escalated_at":   { "type": "string", "format": "date-time" },
+        "escalated_by":   { "type": "string", "enum": ["candidate", "platform_monitor", "governance_body"] },
+        "escalation_id":  { "type": "string", "format": "uuid", "description": "Reference to the governance escalation record." },
+        "outcome":        { "type": "string", "enum": ["warning_issued", "strike_recorded", "company_suspended", "pending"] },
+        "outcome_at":     { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "platform_actions_taken": {
+      "type": "array",
+      "description": "Automated actions the platform took in response to this ghosting event.",
+      "items": {
+        "type": "object",
+        "required": ["action", "taken_at"],
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "candidate_sla_notification_sent",
+              "company_reminder_sent",
+              "company_warning_sent",
+              "job_brief_sla_flag_set",
+              "compliance_score_updated",
+              "governance_escalation_triggered"
+            ]
+          },
+          "taken_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+
+    "company_strike_count_at_detection": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The company's cumulative ghosting strike count at the moment this event was detected. Used to determine escalation thresholds."
+    }
+
+  }
+}

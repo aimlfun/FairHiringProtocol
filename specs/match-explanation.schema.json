@@ -1,193 +1,279 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://fhp.org/schema/match-explanation.schema.json",
-  "title": "Fair Hiring Protocol - Match Explanation",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/match-explanation.schema.json",
+  "title": "FHP Match Explanation",
+  "description": "The canonical explanation produced by the FHP matching engine for every match event. Explanations are produced for both the candidate and the employer. They are immutable once generated and must be stored alongside the trace. No match outcome may be delivered without an accompanying explanation.",
   "type": "object",
-  "required": [
-    "candidate_id",
-    "job_id",
-    "protocol_version",
-    "match_status",
-    "scores",
-    "skill_alignment",
-    "constraint_evaluation",
-    "preference_alignment",
-    "bias_correction",
-    "final_score",
-    "summary"
-  ],
-  "properties": {
-    "candidate_id": { "type": "string" },
-    "job_id": { "type": "string" },
+  "required": ["fhp_version", "explanation_id", "match_id", "candidate_id", "job_id", "generated_at", "outcome", "scores", "skill_breakdown", "bias_assessment", "audience"],
+  "additionalProperties": false,
 
-    "protocol_version": {
+  "properties": {
+
+    "fhp_version": {
       "type": "string",
-      "description": "Version of the Fair Hiring Protocol used."
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
 
-    "match_status": {
+    "explanation_id": {
       "type": "string",
-      "enum": ["matched", "rejected_constraints", "rejected_must_have", "rejected_low_score"],
-      "description": "High-level outcome."
+      "format": "uuid"
+    },
+
+    "match_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The match event this explanation describes."
+    },
+
+    "candidate_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+
+    "job_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "pipeline_version": {
+      "type": "string",
+      "description": "The version of the FHP matching pipeline that produced this explanation. Enables reproducibility audits.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+
+    "outcome": {
+      "type": "object",
+      "required": ["decision", "overall_score"],
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["matched", "not_matched", "borderline"],
+          "description": "'matched' means the candidate clears the constraint threshold and is surfaced to the employer. 'not_matched' means at least one must_have constraint was not satisfied. 'borderline' means the candidate clears constraints but falls within the bias-correction review band."
+        },
+        "overall_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Composite normalised score from 0.0 to 1.0 after all pipeline stages including bias correction."
+        },
+        "pre_correction_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Score before bias correction was applied. Retained for auditability. Equal to overall_score when no correction was applied."
+        },
+        "not_matched_reasons": {
+          "type": "array",
+          "description": "Required when decision is 'not_matched'. Each entry explains one unmet must_have constraint.",
+          "items": {
+            "type": "object",
+            "required": ["reason_code", "human_readable"],
+            "additionalProperties": false,
+            "properties": {
+              "reason_code": {
+                "type": "string",
+                "enum": [
+                  "missing_must_have_skill",
+                  "below_minimum_proficiency",
+                  "constraint_location_mismatch",
+                  "constraint_salary_mismatch",
+                  "constraint_work_mode_mismatch",
+                  "constraint_employment_type_mismatch"
+                ]
+              },
+              "human_readable": {
+                "type": "string",
+                "maxLength": 512,
+                "description": "A plain-language explanation of why this constraint was not met. Written to be useful to the candidate, not defensive for the company."
+              },
+              "ontology_id": {
+                "type": "string",
+                "description": "For skill-related reasons: the skill ontology ID that was missing or below threshold."
+              },
+              "required_proficiency": {
+                "type": "string",
+                "enum": ["aware", "practitioner", "proficient", "expert", "authority"]
+              },
+              "candidate_proficiency": {
+                "type": ["string", "null"],
+                "enum": ["aware", "practitioner", "proficient", "expert", "authority", null],
+                "description": "The candidate's declared proficiency, or null if skill was absent entirely."
+              }
+            }
+          }
+        }
+      }
     },
 
     "scores": {
       "type": "object",
-      "description": "Breakdown of scoring components before bias correction.",
-      "required": [
-        "must_have_score",
-        "nice_to_have_score",
-        "transferable_compensation",
-        "experience_relevance",
-        "preference_score"
-      ],
+      "description": "Breakdown of scores from each pipeline stage.",
+      "required": ["skill_score", "transferable_skill_score", "preference_alignment_score"],
+      "additionalProperties": false,
       "properties": {
-        "must_have_score": { "type": "number" },
-        "nice_to_have_score": { "type": "number" },
-        "transferable_compensation": { "type": "number" },
-        "experience_relevance": { "type": "number" },
-        "preference_score": { "type": "number" }
-      },
-      "additionalProperties": false
+        "skill_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Score from direct skill matching (must_have + nice_to_have weighted sum)."
+        },
+        "transferable_skill_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Score contribution from transferable skills identified by the ontology."
+        },
+        "preference_alignment_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Score from alignment between candidate preferences and job attributes (salary, location, work mode)."
+        },
+        "bias_correction_delta": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "description": "The signed adjustment applied by the bias correction layer. 0.0 means no correction was applied. Positive = score adjusted upward, negative = adjusted downward."
+        }
+      }
     },
 
-    "skill_alignment": {
+    "skill_breakdown": {
+      "type": "array",
+      "description": "Per-skill scoring detail. One entry for each skill referenced in the job brief.",
+      "items": {
+        "type": "object",
+        "required": ["ontology_id", "requirement_level", "matched"],
+        "additionalProperties": false,
+        "properties": {
+          "ontology_id": {
+            "type": "string",
+            "pattern": "^fhp:skill:[a-z0-9-]+$"
+          },
+          "requirement_level": {
+            "type": "string",
+            "enum": ["must_have", "nice_to_have"]
+          },
+          "matched": {
+            "type": "boolean",
+            "description": "Whether this skill was satisfied (directly or via transferable skill)."
+          },
+          "match_type": {
+            "type": "string",
+            "enum": ["direct", "transferable", "semantic_expansion", "none"],
+            "description": "How the skill was matched. 'direct' = exact ontology match. 'transferable' = matched via ontology transfer rule. 'semantic_expansion' = matched via expanded skill synonym. 'none' = unmatched."
+          },
+          "candidate_proficiency": {
+            "type": ["string", "null"],
+            "enum": ["aware", "practitioner", "proficient", "expert", "authority", null]
+          },
+          "required_proficiency": {
+            "type": "string",
+            "enum": ["aware", "practitioner", "proficient", "expert", "authority"]
+          },
+          "score_contribution": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "This skill's weighted contribution to the overall skill_score."
+          },
+          "transferable_via": {
+            "type": ["string", "null"],
+            "description": "If match_type is 'transferable': the candidate's ontology skill ID that transferred to this requirement."
+          }
+        }
+      }
+    },
+
+    "bias_assessment": {
       "type": "object",
-      "description": "Detailed mapping of candidate skills to job requirements.",
-      "required": ["must_have", "nice_to_have", "inferred_used"],
+      "description": "The output of the bias detection stage. Always present. If no bias was detected, triggered is false and all metrics are null.",
+      "required": ["triggered", "metrics_evaluated"],
+      "additionalProperties": false,
       "properties": {
-        "must_have": {
+        "triggered": {
+          "type": "boolean",
+          "description": "Whether bias correction was applied to this match."
+        },
+        "metrics_evaluated": {
           "type": "array",
+          "description": "Which fairness metrics were evaluated for this match.",
           "items": {
-            "type": "object",
-            "required": ["skill", "satisfied", "evidence"],
-            "properties": {
-              "skill": { "type": "string" },
-              "satisfied": { "type": "boolean" },
-              "evidence": {
-                "type": "string",
-                "description": "Where the system found proof (role, project, portfolio, etc.)."
-              }
-            },
-            "additionalProperties": false
+            "type": "string",
+            "enum": ["disparate_impact_ratio", "equal_opportunity_difference", "score_distribution_skew"]
           }
         },
-        "nice_to_have": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["skill", "matched", "weight", "evidence"],
-            "properties": {
-              "skill": { "type": "string" },
-              "matched": { "type": "boolean" },
-              "weight": { "type": "number" },
-              "evidence": { "type": ["string", "null"] }
+        "correction_applied": {
+          "type": "object",
+          "description": "Present only when triggered is true.",
+          "additionalProperties": false,
+          "properties": {
+            "metric": {
+              "type": "string",
+              "enum": ["disparate_impact_ratio", "equal_opportunity_difference", "score_distribution_skew"]
             },
-            "additionalProperties": false
-          }
-        },
-        "inferred_used": {
-          "type": "array",
-          "description": "AI-inferred skills that contributed to the match.",
-          "items": {
-            "type": "object",
-            "required": ["skill", "source"],
-            "properties": {
-              "skill": { "type": "string" },
-              "source": { "type": "string" }
+            "direction": {
+              "type": "string",
+              "enum": ["upward", "downward"]
             },
-            "additionalProperties": false
+            "magnitude": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "human_readable": {
+              "type": "string",
+              "maxLength": 512,
+              "description": "A plain-language explanation of why correction was applied. Shown to governance bodies and auditors, not to employers."
+            }
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "constraint_evaluation": {
-      "type": "object",
-      "description": "How constraints were evaluated.",
-      "required": ["passed", "details"],
-      "properties": {
-        "passed": { "type": "boolean" },
-        "details": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["constraint", "passed", "reason"],
-            "properties": {
-              "constraint": { "type": "string" },
-              "passed": { "type": "boolean" },
-              "reason": { "type": "string" }
-            },
-            "additionalProperties": false
+    "audience": {
+      "type": "string",
+      "enum": ["candidate", "employer", "governance"],
+      "description": "Which audience this explanation instance is rendered for. The same match produces three explanation objects with different field visibility. 'candidate' includes not_matched_reasons and skill_breakdown but not bias_assessment detail. 'employer' includes skill_breakdown but not bias_assessment or candidate PII. 'governance' is the full record."
+    },
+
+    "plain_language_summary": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "A human-readable summary of the match outcome, tailored to the audience. Must be factual, specific, and constructive — never generic ('you were not selected at this time')."
+    },
+
+    "next_steps": {
+      "type": "array",
+      "description": "For candidate-audience explanations when decision is not_matched: actionable suggestions.",
+      "items": {
+        "type": "object",
+        "required": ["suggestion"],
+        "additionalProperties": false,
+        "properties": {
+          "suggestion": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "related_skill_ontology_id": {
+            "type": "string",
+            "description": "If the suggestion relates to a specific skill gap."
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
 
-    "preference_alignment": {
-      "type": "object",
-      "description": "How candidate and company preferences aligned.",
-      "required": ["score", "details"],
-      "properties": {
-        "score": { "type": "number" },
-        "details": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["preference", "alignment", "reason"],
-            "properties": {
-              "preference": { "type": "string" },
-              "alignment": { "type": "string", "enum": ["aligned", "partial", "not_aligned"] },
-              "reason": { "type": "string" }
-            },
-            "additionalProperties": false
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-
-    "bias_correction": {
-      "type": "object",
-      "description": "Bias detection and correction applied.",
-      "required": ["correction_applied", "details"],
-      "properties": {
-        "correction_applied": { "type": "boolean" },
-        "details": {
-          "type": ["string", "null"],
-          "description": "Explanation of what bias was detected and how it was corrected."
-        }
-      },
-      "additionalProperties": false
-    },
-
-    "final_score": {
-      "type": "number",
-      "description": "Final score after bias correction."
-    },
-
-    "summary": {
-      "type": "object",
-      "description": "Human-readable summary of the match.",
-      "required": ["strengths", "gaps", "fit_assessment"],
-      "properties": {
-        "strengths": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "gaps": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "fit_assessment": {
-          "type": "string",
-          "description": "Short narrative summary."
-        }
-      },
-      "additionalProperties": false
+    "appeal_eligible": {
+      "type": "boolean",
+      "description": "Whether the candidate is eligible to appeal this outcome. Always true for not_matched decisions.",
+      "default": true
     }
-  },
-  "additionalProperties": false
+
+  }
 }

@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fair-hiring-protocol.org/schemas/v1/fairness-metrics.schema.json",
+  "title": "FHP Fairness Metrics Record",
+  "description": "The output of the nightly fairness computation job. One record is produced per company per job brief per computation run. Records are immutable once written. Trends across records over time are the primary signal for bias detection and governance review. No individual candidate data is included — metrics are computed over cohorts only.",
+  "type": "object",
+  "required": ["fhp_version", "audit_id", "computed_at", "computation_window", "scope", "cohort_counts", "metrics", "thresholds", "flags"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "fhp_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "audit_id":    { "type": "string", "format": "uuid" },
+    "computed_at": { "type": "string", "format": "date-time" },
+    "pipeline_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+
+    "computation_window": {
+      "type": "object",
+      "description": "The time window over which match events were aggregated for this computation.",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "format": "date-time" },
+        "to":   { "type": "string", "format": "date-time" },
+        "window_type": {
+          "type": "string",
+          "enum": ["daily", "rolling_7d", "rolling_30d", "rolling_90d"],
+          "description": "The aggregation window type. Rolling windows provide more stable signal than daily snapshots."
+        }
+      }
+    },
+
+    "scope": {
+      "type": "object",
+      "description": "What this record covers. Records may be scoped to a single job, a company, or the entire platform.",
+      "required": ["level"],
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["job", "company", "platform"]
+        },
+        "job_id":     { "type": "string", "format": "uuid" },
+        "company_id": { "type": "string", "format": "uuid" }
+      }
+    },
+
+    "cohort_counts": {
+      "type": "object",
+      "description": "Aggregate counts of match events per cohort. Cohorts are defined by protected characteristic groups. Counts below the minimum_cohort_size threshold are suppressed (set to null) to prevent re-identification of individuals.",
+      "additionalProperties": false,
+      "properties": {
+        "total_matches_evaluated": { "type": "integer", "minimum": 0 },
+        "minimum_cohort_size":     {
+          "type": "integer",
+          "default": 20,
+          "description": "The minimum cohort size below which per-cohort data is suppressed."
+        },
+        "cohorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["cohort_id", "characteristic", "match_count", "matched_count"],
+            "additionalProperties": false,
+            "properties": {
+              "cohort_id":     { "type": "string", "description": "An opaque label for this cohort. Never a demographic label that could re-identify individuals." },
+              "characteristic": {
+                "type": "string",
+                "enum": ["gender_group", "age_group", "ethnicity_group", "disability_group", "location_group", "employment_gap_group"],
+                "description": "The protected characteristic this cohort is defined by. Groups are coarse-grained to prevent re-identification."
+              },
+              "match_count":   { "type": ["integer", "null"], "minimum": 0, "description": "Total candidates in this cohort evaluated. Null if below minimum_cohort_size." },
+              "matched_count": { "type": ["integer", "null"], "minimum": 0, "description": "Candidates in this cohort who received a 'matched' decision. Null if suppressed." },
+              "mean_score":    { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Mean overall score for this cohort. Null if suppressed." },
+              "score_p25":     { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+              "score_p75":     { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "metrics": {
+      "type": "object",
+      "description": "The three canonical FHP fairness metrics. Each is computed for every cohort pair where both cohorts meet the minimum size threshold.",
+      "additionalProperties": false,
+      "properties": {
+
+        "disparate_impact_ratio": {
+          "type": "object",
+          "description": "DIR = (match rate of disadvantaged group) / (match rate of advantaged group). The 80% rule: a DIR below 0.8 indicates potential adverse impact. DIR above 1.25 may indicate over-correction.",
+          "additionalProperties": false,
+          "properties": {
+            "value":               { "type": ["number", "null"], "description": "The computed DIR. Null if insufficient data." },
+            "reference_cohort_id": { "type": "string", "description": "The cohort used as the denominator (the reference/advantaged group)." },
+            "comparison_cohort_id":{ "type": "string" },
+            "threshold_lower":     { "type": "number", "default": 0.8 },
+            "threshold_upper":     { "type": "number", "default": 1.25 },
+            "within_bounds":       { "type": ["boolean", "null"] }
+          }
+        },
+
+        "equal_opportunity_difference": {
+          "type": "object",
+          "description": "EOD = (true positive rate of group A) - (true positive rate of group B), where true positive = qualified candidate correctly matched. Target: |EOD| < 0.05. Values outside this range indicate unequal opportunity.",
+          "additionalProperties": false,
+          "properties": {
+            "value":               { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+            "group_a_cohort_id":   { "type": "string" },
+            "group_b_cohort_id":   { "type": "string" },
+            "threshold_abs":       { "type": "number", "default": 0.05, "description": "Maximum acceptable absolute EOD." },
+            "within_bounds":       { "type": ["boolean", "null"] }
+          }
+        },
+
+        "score_distribution_skew": {
+          "type": "object",
+          "description": "SDS measures whether the score distribution of one cohort is systematically shifted relative to another. Computed as the difference in mean scores between cohorts after controlling for skill parity. Target: |SDS| < 0.03.",
+          "additionalProperties": false,
+          "properties": {
+            "value":               { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+            "reference_cohort_id": { "type": "string" },
+            "comparison_cohort_id":{ "type": "string" },
+            "skill_parity_controlled": { "type": "boolean", "description": "Whether the comparison controlled for underlying skill distribution differences between cohorts." },
+            "threshold_abs":       { "type": "number", "default": 0.03 },
+            "within_bounds":       { "type": ["boolean", "null"] }
+          }
+        }
+
+      }
+    },
+
+    "thresholds": {
+      "type": "object",
+      "description": "The threshold values in effect at the time this record was computed. Stored here because thresholds may change between protocol versions.",
+      "additionalProperties": false,
+      "properties": {
+        "dir_lower":     { "type": "number" },
+        "dir_upper":     { "type": "number" },
+        "eod_abs":       { "type": "number" },
+        "sds_abs":       { "type": "number" },
+        "protocol_version_at_computation": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    },
+
+    "flags": {
+      "type": "object",
+      "description": "Computed flags summarising the fairness state. Used by dashboards and governance triggers.",
+      "required": ["any_metric_breached", "governance_review_required"],
+      "additionalProperties": false,
+      "properties": {
+        "any_metric_breached": {
+          "type": "boolean",
+          "description": "True if any metric is outside its bounds."
+        },
+        "governance_review_required": {
+          "type": "boolean",
+          "description": "True if this record should be reviewed by the Fairness Oversight Board. Triggered when any metric breach persists for 3+ consecutive computation windows, or when severity is high."
+        },
+        "metrics_breached": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["disparate_impact_ratio", "equal_opportunity_difference", "score_distribution_skew"]
+          }
+        },
+        "consecutive_breach_windows": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many consecutive computation windows have had at least one metric breach for this scope."
+        },
+        "suppressed_cohorts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of cohorts suppressed due to being below minimum_cohort_size. High suppression counts indicate insufficient data volume for reliable fairness measurement."
+        }
+      }
+    },
+
+    "ghosting_summary": {
+      "type": "object",
+      "description": "A summary of ghosting events within this computation scope and window. Included here so governance dashboards have a single record to query.",
+      "additionalProperties": false,
+      "properties": {
+        "total_ghosting_events":  { "type": "integer", "minimum": 0 },
+        "open_events":            { "type": "integer", "minimum": 0 },
+        "severe_events":          { "type": "integer", "minimum": 0 },
+        "escalated_events":       { "type": "integer", "minimum": 0 },
+        "mean_overdue_hours":     { "type": ["number", "null"], "minimum": 0 },
+        "sla_compliance_rate":    {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Proportion of interactions where the company responded within SLA. 1.0 = perfect compliance."
+        }
+      }
+    }
+
+  }
+}
