@@ -709,6 +709,139 @@
   .audit-msg span { color: var(--text-hi); font-weight: 500; }
 
   .audit-tag { align-self: start; }
+
+  /* ── JOB DIALOG ── */
+  .dialog-overlay {
+    position: fixed; inset: 0; background: rgba(5,8,20,0.82);
+    backdrop-filter: blur(4px); z-index: 400;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .dialog-overlay.open { display: flex; }
+  .job-dialog {
+    background: var(--bg-card); border: 1px solid var(--border-hi);
+    border-radius: 6px; width: 100%; max-width: 760px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: dialogIn 0.22s ease;
+  }
+  @keyframes dialogIn {
+    from { opacity:0; transform: scale(0.97) translateY(12px); }
+    to   { opacity:1; transform: scale(1)    translateY(0);    }
+  }
+  .dialog-header {
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+  }
+  .dialog-title { font-size: 15px; font-weight: 600; color: var(--text-hi); letter-spacing: 0.01em; }
+  .dialog-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+  .dialog-close {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: var(--bg-hover); border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 14px; display: flex;
+    align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .dialog-close:hover { background: var(--border); color: var(--text); }
+  .dialog-body { padding: 20px 22px; }
+  .dialog-footer {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; bottom: 0; background: var(--bg-card);
+  }
+  .dialog-section {
+    margin-bottom: 22px; padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dialog-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .dialog-section-title {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 14px;
+  }
+  .field-group { margin-bottom: 13px; }
+  .field-label {
+    display: block; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 5px;
+  }
+  .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; padding: 8px 11px;
+    background: var(--bg-hover); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: var(--sans);
+    font-size: 12px; outline: none; transition: border-color 0.15s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: var(--blue);
+  }
+  .field-select option { background: var(--bg-card); }
+  .field-textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .field-row { display: grid; gap: 12px; }
+  .field-row-2 { grid-template-columns: 1fr 1fr; }
+  .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .notice-box {
+    padding: 9px 12px; border-radius: 4px; font-size: 11px; line-height: 1.5;
+    margin-bottom: 13px;
+  }
+  .notice-prohibited {
+    background: var(--red-dim); border: 1px solid var(--red);
+    color: var(--text); border-left-width: 3px;
+  }
+  .notice-required {
+    background: var(--amber-dim); border: 1px solid var(--amber-dim);
+    color: var(--amber); border-left-width: 3px;
+  }
+  /* Skills builder */
+  .skill-requirement-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .skill-req-item {
+    display: grid; grid-template-columns: 1fr 120px 100px auto;
+    gap: 8px; align-items: center;
+    padding: 8px 10px; background: var(--bg-hover);
+    border: 1px solid var(--border); border-radius: 4px;
+  }
+  .skill-req-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .skill-req-domain { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+  .skill-tag-must {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: var(--blue-dim); color: var(--blue); text-align: center;
+  }
+  .skill-tag-nice {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: rgba(30,45,82,0.8); color: var(--text-dim); text-align: center;
+  }
+  .skill-remove-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 13px; padding: 2px 6px; transition: color 0.15s;
+  }
+  .skill-remove-btn:hover { color: var(--red); }
+  /* Attestation checkboxes */
+  .attest-list { display: flex; flex-direction: column; gap: 10px; }
+  .attest-item { display: flex; align-items: flex-start; gap: 10px; }
+  .attest-item input[type=checkbox] { margin-top: 2px; accent-color: var(--blue); flex-shrink: 0; }
+  .attest-label { font-size: 12px; color: var(--text-dim); line-height: 1.5; cursor: pointer; }
+  .attest-label strong { color: var(--text); font-weight: 500; }
+  .attest-req { font-family: var(--mono); font-size: 9px; color: var(--red); margin-left: 4px; }
+  /* Conditional sections */
+  .conditional { display: none; }
+  .conditional.visible { display: block; }
+  /* Dialog save button */
+  .btn-dialog-save {
+    background: var(--blue); color: white; border: none; padding: 9px 20px;
+    border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-dialog-save:hover { background: #5090ff; }
+  .btn-dialog-save:disabled { background: var(--border); color: var(--text-dim); cursor: default; }
+  .btn-dialog-cancel {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    padding: 9px 18px; border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-dialog-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  .validation-msg {
+    font-family: var(--mono); font-size: 10px; color: var(--red);
+  }
+
 </style>
 </head>
 <body>
@@ -985,7 +1118,7 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Active Job Briefs</span>
-          <span class="panel-action">Post new brief →</span>
+          <span class="panel-action" style="cursor:pointer" onclick="openJobDialog()">Post new brief →</span>
         </div>
         <table class="jobs-table">
           <thead>
@@ -1209,7 +1342,7 @@
       <div class="page-title">Active Job Briefs</div>
       <div class="page-subtitle">// 12 active · 4 expiring within 7 days</div>
     </div>
-    <button class="panel-action" style="background:var(--blue);color:white;border:none;padding:8px 16px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:0.08em">+ Post new brief</button>
+    <button class="panel-action" style="background:var(--blue);color:white;border:none;padding:8px 16px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:0.08em" onclick="openJobDialog()">+ Post new brief</button>
   </div>
   <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
     <div class="panel-header"><span class="panel-title">All Active Briefs</span><span class="panel-action">Filter →</span></div>
@@ -1224,7 +1357,7 @@
           <td style="font-family:var(--mono)">31</td>
           <td style="font-family:var(--mono);font-size:11px">£85–110k</td>
           <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dec 01</td>
-          <td><span class="panel-action" style="cursor:pointer">Edit →</span></td>
+          <td><span class="panel-action" style="cursor:pointer" onclick="openJobDialog('Senior Backend Engineer')">Edit →</span></td>
         </tr>
         <tr>
           <td><div class="job-title">Product Manager</div><div class="job-id">Permanent · Hybrid · £75k–£95k</div></td>
@@ -1234,7 +1367,7 @@
           <td style="font-family:var(--mono)">18</td>
           <td style="font-family:var(--mono);font-size:11px">£75–95k</td>
           <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 22 ⚠</td>
-          <td><span class="panel-action" style="cursor:pointer">Edit →</span></td>
+          <td><span class="panel-action" style="cursor:pointer" onclick="openJobDialog('Product Manager')">Edit →</span></td>
         </tr>
         <tr>
           <td><div class="job-title">UX Designer</div><div class="job-id">Permanent · Hybrid · £60k–£80k</div></td>
@@ -1492,5 +1625,641 @@ function showPage(pageId) {
 document.addEventListener('DOMContentLoaded', () => showPage('overview'));
 </script>
 
+
+<!-- ════════════════════════════════════════════════════════════════════
+  ADD / EDIT JOB BRIEF DIALOG
+  API: POST /v1/jobs (new) · PUT /v1/jobs/:jobId (edit)
+════════════════════════════════════════════════════════════════════ -->
+<div class="dialog-overlay" id="job-dialog-overlay" onclick="if(event.target===this)closeJobDialog()">
+  <div class="job-dialog" id="job-dialog">
+
+    <div class="dialog-header">
+      <div>
+        <div class="dialog-title" id="dialog-mode-title">Post new job brief</div>
+        <div class="dialog-subtitle">API: POST /v1/jobs &middot; FHP v1.0 compliant</div>
+      </div>
+      <button class="dialog-close" onclick="closeJobDialog()">&#10005;</button>
+    </div>
+
+    <div class="dialog-body">
+
+      <!-- ── SECTION 1: ROLE BASICS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">01 &mdash; Role</div>
+        <div class="field-group">
+          <label class="field-label" for="jd-title">Job title <span style="color:var(--red)">*</span></label>
+          <input class="field-input" type="text" id="jd-title" oninput="validateJobDialog()" placeholder="e.g. Senior Backend Engineer">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="jd-summary">Role summary <span style="color:var(--red)">*</span></label>
+          <textarea class="field-textarea" id="jd-summary" oninput="validateJobDialog()"
+            placeholder="Describe what the role involves, what the team does, and what success looks like. Be specific — vague descriptions produce poor matches."></textarea>
+          <div class="field-hint">Min 100 characters. This is shown to candidates in their explanation.</div>
+        </div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-employment-type">Employment type <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-employment-type" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="permanent">Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="part_time">Part-time</option>
+              <option value="internship">Internship</option>
+              <option value="apprenticeship">Apprenticeship</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-mode">Work mode <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-work-mode" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="on_site">On-site</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Contract details — shown when employment_type = contract -->
+        <div class="conditional" id="contract-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-contract-months">Contract duration (months)</label>
+              <input class="field-input" type="number" id="jd-contract-months" min="1" placeholder="e.g. 6">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-day-rate">Day rate (optional)</label>
+              <input class="field-input" type="number" id="jd-day-rate" placeholder="e.g. 650">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hybrid details — shown when work_mode = hybrid -->
+        <div class="conditional" id="hybrid-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-days-onsite">Days on-site per week <span style="color:var(--red)">*</span></label>
+              <input class="field-input" type="number" id="jd-days-onsite" min="1" max="4" placeholder="e.g. 2">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-onsite-notes">On-site notes</label>
+              <input class="field-input" type="text" id="jd-onsite-notes" placeholder="e.g. London office, Tuesdays + Thursdays">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: LOCATION & SCHEDULE ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">02 &mdash; Location &amp; Schedule</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-country">Country <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-country">
+              <option value="GB" selected>United Kingdom</option>
+              <option value="US">United States</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="NL">Netherlands</option>
+              <option value="IE">Ireland</option>
+              <option value="AU">Australia</option>
+              <option value="CA">Canada</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-city">City / region</label>
+            <input class="field-input" type="text" id="jd-city" placeholder="e.g. London, Manchester">
+            <div class="field-hint">Leave blank for fully remote roles.</div>
+          </div>
+        </div>
+        <div class="field-row field-row-2" style="margin-top:12px">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-schedule">Work schedule</label>
+            <select class="field-select" id="jd-work-schedule">
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="compressed_hours">Compressed hours</option>
+              <option value="flexitime">Flexitime</option>
+              <option value="shift_work">Shift work</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-right-to-work">Right to work required</label>
+            <select class="field-select" id="jd-right-to-work">
+              <option value="GB">UK right to work</option>
+              <option value="EU">EU / EEA right to work</option>
+              <option value="US">US work authorisation</option>
+              <option value="any">Any (sponsorship available)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: SALARY ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">03 &mdash; Salary</div>
+        <div class="notice-box notice-required">
+          &#9888; Salary range is required. Both minimum and maximum must be provided.
+          Posting &ldquo;competitive&rdquo; or an implausibly wide range is a compliance violation.
+        </div>
+        <div class="field-row field-row-4">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-currency">Currency</label>
+            <select class="field-select" id="jd-currency">
+              <option value="GBP">GBP &pound;</option>
+              <option value="USD">USD &#36;</option>
+              <option value="EUR">EUR &euro;</option>
+              <option value="AUD">AUD &#36;</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-min">Minimum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-min" oninput="validateJobDialog()" placeholder="e.g. 70000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-max">Maximum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-max" oninput="validateJobDialog()" placeholder="e.g. 90000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-period">Period</label>
+            <select class="field-select" id="jd-salary-period">
+              <option value="annual">/ year</option>
+              <option value="daily">/ day</option>
+              <option value="hourly">/ hour</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-sla-days">SLA response commitment (business days) <span style="color:var(--red)">*</span></label>
+              <select class="field-select" id="jd-sla-days">
+                <option value="3">3 days (fast track)</option>
+                <option value="5" selected>5 days (standard)</option>
+                <option value="7">7 days</option>
+                <option value="10">10 days</option>
+              </select>
+              <div class="field-hint">You are contractually bound to respond within this window at every hiring stage. Breaches are logged and escalated automatically.</div>
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-expires">Brief expires</label>
+              <input class="field-input" type="date" id="jd-expires">
+              <div class="field-hint">Leave blank to use the default 90-day window.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: SKILLS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">04 &mdash; Skills</div>
+        <div class="notice-box notice-prohibited">
+          &#10008; <strong>Prohibited:</strong> You may not require a specific degree, institution, graduation year,
+          or &ldquo;years of experience&rdquo; as a hard filter. These are indirect discrimination under the
+          Equality Act 2010. Describe skills and proficiency levels instead.
+        </div>
+
+        <div class="skill-requirement-list" id="skill-req-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Add skill row -->
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input class="field-input" type="text" id="skill-add-input"
+            placeholder="Search skills (e.g. Python, Kubernetes)&#8230;"
+            style="flex:1" oninput="filterDialogSkills(this.value)" onfocus="filterDialogSkills(this.value)">
+          <select class="field-select" id="skill-add-type" style="max-width:130px">
+            <option value="must_have">Must-have</option>
+            <option value="nice_to_have">Nice-to-have</option>
+          </select>
+          <select class="field-select" id="skill-add-proficiency" style="max-width:130px">
+            <option value="aware">Aware</option>
+            <option value="practitioner">Practitioner</option>
+            <option value="proficient" selected>Proficient</option>
+            <option value="expert">Expert</option>
+            <option value="authority">Authority</option>
+          </select>
+          <button class="btn-dialog-save" onclick="addSkillToJob()" style="padding:8px 14px">+ Add</button>
+        </div>
+        <div id="skill-add-suggestions" style="display:none;background:var(--bg-hover);border:1px solid var(--border);border-radius:4px;margin-top:4px;max-height:140px;overflow-y:auto"></div>
+        <div class="field-hint" style="margin-top:6px">At least one must-have skill is required. All skills must resolve in the FHP ontology v1.0.</div>
+      </div>
+
+      <!-- ── SECTION 5: NOTICE PERIOD & PROCESS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">05 &mdash; Process &amp; Notice</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-notice-max">Maximum acceptable notice period</label>
+            <div style="display:flex;gap:6px">
+              <input class="field-input" type="number" id="jd-notice-n" min="0" value="3" style="max-width:70px">
+              <select class="field-select" id="jd-notice-unit" style="max-width:100px">
+                <option value="immediately">immediately</option>
+                <option value="weeks" selected>weeks</option>
+                <option value="months">months</option>
+              </select>
+            </div>
+            <div class="field-hint">Candidates with longer notice periods will not be matched.</div>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-stages">Hiring stages</label>
+            <input class="field-input" type="text" id="jd-stages"
+              placeholder="e.g. Screening call, Technical test, Final interview"
+              value="Screening call, Technical assessment, Final interview">
+            <div class="field-hint">Comma-separated. Shared with candidates so they know what to expect.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 6: COMPLIANCE ATTESTATION ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">06 &mdash; Compliance Attestations</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5">
+          By posting this brief you attest that the following filters are <strong style="color:var(--text)">not</strong> applied
+          when evaluating candidates. These are logged, auditable, and legally binding.
+          All five are required to post.
+        </div>
+        <div class="attest-list" id="attest-list">
+          <div class="attest-item">
+            <input type="checkbox" id="attest-degree" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-degree">
+              <strong>No degree requirement</strong> &mdash; Candidates will not be filtered on the basis of having
+              or not having a university degree, qualification type, or institution attended.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-age" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-age">
+              <strong>No age filter</strong> &mdash; Candidates will not be filtered on the basis of age,
+              graduation year, or years since qualification.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-gaps" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-gaps">
+              <strong>No employment gap penalisation</strong> &mdash; Career breaks, gaps in employment history,
+              or non-linear career paths will not be used as negative filters.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-prestige" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-prestige">
+              <strong>No prestige bias</strong> &mdash; Previous employer name, brand recognition, or
+              perceived company prestige will not influence evaluation outcomes.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-salary" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-salary">
+              <strong>Salary range is accurate</strong> &mdash; The minimum and maximum salary figures
+              provided represent the genuine budget for this role and will be honoured.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+        </div>
+        <div id="attest-warning" style="display:none;margin-top:12px" class="notice-box notice-prohibited">
+          All five attestations are required before a brief can be posted. This is a binding compliance commitment.
+        </div>
+      </div>
+
+    </div><!-- end dialog-body -->
+
+    <div class="dialog-footer">
+      <span class="validation-msg" id="dialog-validation-msg"></span>
+      <div style="display:flex;gap:10px">
+        <button class="btn-dialog-cancel" onclick="closeJobDialog()">Cancel</button>
+        <button class="btn-dialog-save" id="dialog-save-btn" onclick="saveJobBrief()" disabled>
+          Post brief
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end job-dialog -->
+</div><!-- end dialog-overlay -->
+
+<script>
+
+// ════════════════════════════════════════════════════════════
+//  JOB BRIEF DIALOG
+// ════════════════════════════════════════════════════════════
+
+const SKILL_OPTIONS = [
+  {id:'fhp:skill:python',         label:'Python',               domain:'Software Eng'},
+  {id:'fhp:skill:typescript',     label:'TypeScript',           domain:'Software Eng'},
+  {id:'fhp:skill:go',             label:'Go',                   domain:'Software Eng'},
+  {id:'fhp:skill:java',           label:'Java',                 domain:'Software Eng'},
+  {id:'fhp:skill:rust',           label:'Rust',                 domain:'Software Eng'},
+  {id:'fhp:skill:react',          label:'React',                domain:'Software Eng'},
+  {id:'fhp:skill:sql',            label:'Analytical SQL',       domain:'Data & Analytics'},
+  {id:'fhp:skill:spark',          label:'Apache Spark',         domain:'Data & Analytics'},
+  {id:'fhp:skill:dbt',            label:'dbt',                  domain:'Data & Analytics'},
+  {id:'fhp:skill:ml',             label:'Machine Learning',     domain:'Data & Analytics'},
+  {id:'fhp:skill:data-eng',       label:'Data Engineering',     domain:'Data & Analytics'},
+  {id:'fhp:skill:docker',         label:'Docker',               domain:'Infrastructure'},
+  {id:'fhp:skill:kubernetes',     label:'Kubernetes',           domain:'Infrastructure'},
+  {id:'fhp:skill:aws',            label:'AWS',                  domain:'Infrastructure'},
+  {id:'fhp:skill:terraform',      label:'Terraform',            domain:'Infrastructure'},
+  {id:'fhp:skill:product-mgmt',   label:'Product Management',   domain:'Product'},
+  {id:'fhp:skill:ux-design',      label:'UX Design',            domain:'Design'},
+  {id:'fhp:skill:figma',          label:'Figma',                domain:'Design'},
+  {id:'fhp:skill:agile',          label:'Agile / Scrum',        domain:'Process'},
+];
+
+let dialogMode = 'create';   // 'create' | 'edit'
+let dialogJobId = null;
+let jobSkills = [];           // { id, label, domain, type, minProficiency }
+
+function openJobDialog(jobTitle) {
+  if (jobTitle) {
+    dialogMode = 'edit';
+    dialogJobId = 'job:example';
+    document.getElementById('dialog-mode-title').textContent = 'Edit job brief';
+    document.querySelector('.dialog-subtitle').textContent =
+      'API: PUT /v1/jobs/' + dialogJobId + ' · FHP v1.0 compliant';
+    // Pre-fill example data for the edit case
+    prefillJobDialog(jobTitle);
+  } else {
+    dialogMode = 'create';
+    dialogJobId = null;
+    document.getElementById('dialog-mode-title').textContent = 'Post new job brief';
+    document.querySelector('.dialog-subtitle').textContent =
+      'API: POST /v1/jobs · FHP v1.0 compliant';
+    resetJobDialog();
+  }
+  document.getElementById('job-dialog-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderJobSkills();
+  validateJobDialog();
+}
+
+function closeJobDialog() {
+  document.getElementById('job-dialog-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function resetJobDialog() {
+  ['jd-title','jd-summary','jd-city','jd-stages','jd-day-rate','jd-contract-months','jd-onsite-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('jd-employment-type').value = '';
+  document.getElementById('jd-work-mode').value = '';
+  document.getElementById('jd-currency').value = 'GBP';
+  document.getElementById('jd-salary-min').value = '';
+  document.getElementById('jd-salary-max').value = '';
+  document.getElementById('jd-salary-period').value = 'annual';
+  document.getElementById('jd-sla-days').value = '5';
+  document.getElementById('jd-notice-n').value = '3';
+  document.getElementById('jd-notice-unit').value = 'weeks';
+  document.getElementById('jd-work-schedule').value = 'full_time';
+  document.getElementById('jd-right-to-work').value = 'GB';
+  document.getElementById('jd-expires').value = '';
+  document.getElementById('jd-stages').value = 'Screening call, Technical assessment, Final interview';
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  jobSkills = [];
+  toggleConditionalSections();
+}
+
+function prefillJobDialog(title) {
+  const DATA = {
+    'Senior Backend Engineer': {
+      title: 'Senior Backend Engineer', summary: 'Leading backend systems for our core payments platform. You will own the API layer, drive architectural decisions, and mentor junior engineers.',
+      employment_type: 'permanent', work_mode: 'remote', currency: 'GBP',
+      salary_min: '85000', salary_max: '110000', period: 'annual', sla: '5',
+      country: 'GB', city: 'Remote', schedule: 'full_time', rtw: 'GB',
+      notice_n: '4', notice_unit: 'weeks',
+      stages: 'Screening call, Technical assessment, System design interview, Final interview',
+      skills: [
+        {id:'fhp:skill:python',    label:'Python',          domain:'Software Eng',    type:'must_have',    minProficiency:'proficient'},
+        {id:'fhp:skill:docker',    label:'Docker',          domain:'Infrastructure',  type:'must_have',    minProficiency:'practitioner'},
+        {id:'fhp:skill:kubernetes',label:'Kubernetes',      domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+        {id:'fhp:skill:aws',       label:'AWS',             domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+      ],
+    },
+    'Product Manager': {
+      title: 'Product Manager', summary: 'Own the roadmap for our candidate-facing product. Work closely with engineering and design to ship features that make hiring fairer.',
+      employment_type: 'permanent', work_mode: 'hybrid', currency: 'GBP',
+      salary_min: '75000', salary_max: '95000', period: 'annual', sla: '5',
+      country: 'GB', city: 'London', schedule: 'full_time', rtw: 'GB',
+      notice_n: '3', notice_unit: 'months',
+      stages: 'Screening call, Product case study, Stakeholder interview',
+      skills: [
+        {id:'fhp:skill:product-mgmt', label:'Product Management', domain:'Product',  type:'must_have',    minProficiency:'proficient'},
+        {id:'fhp:skill:agile',        label:'Agile / Scrum',      domain:'Process',  type:'must_have',    minProficiency:'practitioner'},
+        {id:'fhp:skill:sql',          label:'Analytical SQL',     domain:'Data',     type:'nice_to_have', minProficiency:'aware'},
+      ],
+    },
+  };
+  const d = DATA[title];
+  if (!d) return;
+  document.getElementById('jd-title').value          = d.title;
+  document.getElementById('jd-summary').value        = d.summary;
+  document.getElementById('jd-employment-type').value = d.employment_type;
+  document.getElementById('jd-work-mode').value      = d.work_mode;
+  document.getElementById('jd-currency').value       = d.currency;
+  document.getElementById('jd-salary-min').value     = d.salary_min;
+  document.getElementById('jd-salary-max').value     = d.salary_max;
+  document.getElementById('jd-salary-period').value  = d.period;
+  document.getElementById('jd-sla-days').value       = d.sla;
+  document.getElementById('jd-country').value        = d.country;
+  document.getElementById('jd-city').value           = d.city;
+  document.getElementById('jd-work-schedule').value  = d.schedule;
+  document.getElementById('jd-right-to-work').value  = d.rtw;
+  document.getElementById('jd-notice-n').value       = d.notice_n;
+  document.getElementById('jd-notice-unit').value    = d.notice_unit;
+  document.getElementById('jd-stages').value         = d.stages;
+  jobSkills = d.skills.map(s => Object.assign({}, s));
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = true;
+  });
+  toggleConditionalSections();
+}
+
+// ── Conditional sections (hybrid / contract details) ──────────────────────────
+function toggleConditionalSections() {
+  const mode    = document.getElementById('jd-work-mode').value;
+  const empType = document.getElementById('jd-employment-type').value;
+  document.getElementById('hybrid-details').classList.toggle('visible', mode === 'hybrid');
+  document.getElementById('contract-details').classList.toggle('visible', empType === 'contract');
+  validateJobDialog();
+}
+
+// ── Skills ────────────────────────────────────────────────────────────────────
+function renderJobSkills() {
+  const list = document.getElementById('skill-req-list');
+  if (!jobSkills.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No skills added yet. At least one must-have skill is required.</div>';
+    return;
+  }
+  const PROF_LABELS = {aware:'Aware',practitioner:'Practitioner',proficient:'Proficient',expert:'Expert',authority:'Authority'};
+  list.innerHTML = jobSkills.map((s, i) => `
+    <div class="skill-req-item">
+      <div>
+        <div class="skill-req-name">${s.label}</div>
+        <div class="skill-req-domain">${s.domain}</div>
+      </div>
+      <div class="${s.type === 'must_have' ? 'skill-tag-must' : 'skill-tag-nice'}">
+        ${s.type === 'must_have' ? 'Must-have' : 'Nice-to-have'}
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">
+        Min: ${PROF_LABELS[s.minProficiency] || s.minProficiency}
+      </div>
+      <button class="skill-remove-btn" onclick="removeJobSkill(${i})">&#10005;</button>
+    </div>`).join('');
+  validateJobDialog();
+}
+
+function removeJobSkill(i) {
+  jobSkills.splice(i, 1);
+  renderJobSkills();
+}
+
+function filterDialogSkills(val) {
+  const sugg = document.getElementById('skill-add-suggestions');
+  if (!val || val.length < 1) { sugg.style.display = 'none'; return; }
+  const matches = SKILL_OPTIONS.filter(s =>
+    s.label.toLowerCase().includes(val.toLowerCase()) &&
+    !jobSkills.find(j => j.id === s.id)
+  );
+  if (!matches.length) { sugg.style.display = 'none'; return; }
+  sugg.style.display = 'block';
+  sugg.innerHTML = matches.map(s => `
+    <div style="padding:7px 11px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
+         onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"
+         onmousedown="selectDialogSkill('${s.id}','${s.label}','${s.domain}')">
+      <span style="font-weight:500;color:var(--text)">${s.label}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${s.domain}</span>
+    </div>`).join('');
+}
+
+function selectDialogSkill(id, label, domain) {
+  document.getElementById('skill-add-input').value = label;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  document.getElementById('skill-add-input').dataset.selectedId = id;
+  document.getElementById('skill-add-input').dataset.selectedDomain = domain;
+}
+
+function addSkillToJob() {
+  const input = document.getElementById('skill-add-input');
+  const label = input.value.trim();
+  if (!label) return;
+  const id     = input.dataset.selectedId || 'fhp:skill:custom-' + Date.now();
+  const domain = input.dataset.selectedDomain || 'Other';
+  const type   = document.getElementById('skill-add-type').value;
+  const prof   = document.getElementById('skill-add-proficiency').value;
+  if (jobSkills.find(s => s.id === id)) { input.value = ''; return; }
+  jobSkills.push({ id, label, domain, type, minProficiency: prof });
+  input.value = '';
+  delete input.dataset.selectedId;
+  delete input.dataset.selectedDomain;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  renderJobSkills();
+}
+
+// ── Attestation validation ────────────────────────────────────────────────────
+function validateAttestations() {
+  const allChecked = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id).checked);
+  document.getElementById('attest-warning').style.display = allChecked ? 'none' : 'block';
+  validateJobDialog();
+}
+
+// ── Overall dialog validation ─────────────────────────────────────────────────
+function validateJobDialog() {
+  const title   = (document.getElementById('jd-title')?.value || '').trim();
+  const summary = (document.getElementById('jd-summary')?.value || '').trim();
+  const empType = document.getElementById('jd-employment-type')?.value;
+  const mode    = document.getElementById('jd-work-mode')?.value;
+  const sMin    = parseFloat(document.getElementById('jd-salary-min')?.value || '0');
+  const sMax    = parseFloat(document.getElementById('jd-salary-max')?.value || '0');
+  const allAttest = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id)?.checked);
+  const hasMustHave = jobSkills.some(s => s.type === 'must_have');
+
+  const msgs = [];
+  if (!title)          msgs.push('Title required');
+  if (summary.length < 50) msgs.push('Summary too short');
+  if (!empType)        msgs.push('Employment type required');
+  if (!mode)           msgs.push('Work mode required');
+  if (!sMin || !sMax)  msgs.push('Salary range required');
+  if (sMin >= sMax)    msgs.push('Max salary must exceed min');
+  if (!hasMustHave)    msgs.push('At least one must-have skill required');
+  if (!allAttest)      msgs.push('All 5 attestations required');
+
+  const msgEl  = document.getElementById('dialog-validation-msg');
+  const saveBtn = document.getElementById('dialog-save-btn');
+  if (msgs.length) {
+    msgEl.textContent = msgs[0];
+    saveBtn.disabled = true;
+  } else {
+    msgEl.textContent = '';
+    saveBtn.disabled = false;
+    saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
+  }
+}
+
+// ── Save / submit ─────────────────────────────────────────────────────────────
+function saveJobBrief() {
+  const payload = {
+    title:           document.getElementById('jd-title').value.trim(),
+    role_summary:    document.getElementById('jd-summary').value.trim(),
+    employment_type: document.getElementById('jd-employment-type').value,
+    work_mode:       document.getElementById('jd-work-mode').value,
+    location: {
+      country: document.getElementById('jd-country').value,
+      city:    document.getElementById('jd-city').value.trim() || undefined,
+    },
+    salary: {
+      currency: document.getElementById('jd-currency').value,
+      minimum:  parseFloat(document.getElementById('jd-salary-min').value),
+      maximum:  parseFloat(document.getElementById('jd-salary-max').value),
+      period:   document.getElementById('jd-salary-period').value,
+    },
+    sla_response_days: parseInt(document.getElementById('jd-sla-days').value),
+    notice_period: {
+      value: parseInt(document.getElementById('jd-notice-n').value),
+      unit:  document.getElementById('jd-notice-unit').value,
+    },
+    skills_required: jobSkills.map(s => ({
+      ontology_id:      s.id,
+      label:            s.label,
+      requirement_type: s.type,
+      min_proficiency:  s.minProficiency,
+    })),
+    prohibited_filters: {
+      no_degree_requirement:     document.getElementById('attest-degree').checked,
+      no_age_filter:             document.getElementById('attest-age').checked,
+      no_employment_gap_penalty: document.getElementById('attest-gaps').checked,
+      no_prestige_bias:          document.getElementById('attest-prestige').checked,
+      salary_range_accurate:     document.getElementById('attest-salary').checked,
+    },
+  };
+
+  const method  = dialogMode === 'edit' ? 'PUT' : 'POST';
+  const endpoint = dialogMode === 'edit'
+    ? '/v1/jobs/' + dialogJobId
+    : '/v1/jobs';
+
+  alert(
+    (dialogMode === 'edit' ? 'Brief updated.' : 'Brief posted.') + '\n' +
+    method + ' ' + endpoint + '\n\n' +
+    JSON.stringify(payload, null, 2).substring(0, 400) + '\u2026'
+  );
+  closeJobDialog();
+}
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('job-dialog-overlay').classList.contains('open')) {
+    closeJobDialog();
+  }
+});
+
+</script>
 </body>
 </html>

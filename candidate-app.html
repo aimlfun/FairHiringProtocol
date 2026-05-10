@@ -770,6 +770,149 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           </table>
         </div>
       </div>
+
+      <!-- FAIRNESS MONITORING — DEMOGRAPHIC DATA -->
+      <div class="pc">
+        <div class="pct" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            Fairness Monitoring Data
+            <span id="demo-status-badge" style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;background:var(--cream-d);color:var(--ink-light)">not provided</span>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--ink-light);line-height:1.6;margin-bottom:14px">
+          FHP cannot police discrimination without knowing who is being discriminated against.
+          Providing this data is <strong>entirely optional</strong> and has <strong>zero effect on your match scores</strong>.
+          It is used only by the nightly fairness computation to detect whether certain groups are
+          being treated differently. You can provide some fields, all, or none.
+        </p>
+
+        <!-- Consent gate — must be accepted before fields are shown -->
+        <div id="demo-consent-gate" style="padding:14px;background:var(--teal-faint);border:1px solid rgba(26,92,92,0.2);border-radius:6px">
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.6;margin-bottom:12px">
+            <strong>Explicit consent required before we collect this data.</strong>
+            Sex, ethnicity, religion, and birth year are special category personal data under GDPR Article 9.
+            This data is stored in a separate, maximally-restricted partition. The matching engine
+            has no access to it &mdash; ever. Only the fairness computation service can read it, in aggregate only.
+            <br><br>
+            <strong>You can withdraw this consent at any time.</strong> Your data will be deleted and your
+            cohort memberships removed. This will not affect your matches.
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:12px">
+            <input type="checkbox" id="demo-consent-check" style="margin-top:3px;accent-color:var(--teal);flex-shrink:0">
+            <label for="demo-consent-check" style="font-size:12px;color:var(--ink-mid);line-height:1.5;cursor:pointer">
+              I voluntarily consent to FHP storing my demographic data (sex, ethnicity, religion,
+              birth year, education) solely for fairness monitoring. I understand this data is never
+              used in matching, never visible to employers, and that I can withdraw this consent at any time.
+            </label>
+          </div>
+          <button class="btn btn-t btn-sm" onclick="activateDemographicsConsent()">Give consent and continue</button>
+        </div>
+
+        <!-- Demographics form — shown after consent is given -->
+        <div id="demo-form" style="display:none;margin-top:16px">
+          <div style="font-size:11px;color:var(--ink-faint);margin-bottom:14px;padding:9px 11px;background:var(--cream);border-radius:4px;border:1px solid var(--rule);line-height:1.5">
+            &#128274; Stored in a restricted partition inaccessible to the matching engine and all employers.
+            Every field is optional &mdash; skip any you do not wish to provide.
+            &ldquo;Not provided&rdquo; means we hold nothing for that field.
+            &ldquo;Prefer not to say&rdquo; is an active signal that is itself a valid fairness data point.
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-lbl">Sex<div class="pref-note">Equality Act 2010 s.11</div></div>
+            <select class="pfld" id="demo-sex">
+              <option value="">Not provided</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="intersex">Intersex</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-lbl">Ethnicity / Race<div class="pref-note">Equality Act 2010 s.9 &middot; ONS 2021</div></div>
+            <select class="pfld" id="demo-ethnicity">
+              <option value="">Not provided</option>
+              <optgroup label="White">
+                <option value="white_british">White British</option>
+                <option value="white_irish">White Irish</option>
+                <option value="white_gypsy_traveller">White Gypsy or Irish Traveller</option>
+                <option value="white_roma">White Roma</option>
+                <option value="white_other">Any other White background</option>
+              </optgroup>
+              <optgroup label="Mixed / Multiple ethnic groups">
+                <option value="mixed_white_black_caribbean">White and Black Caribbean</option>
+                <option value="mixed_white_black_african">White and Black African</option>
+                <option value="mixed_white_asian">White and Asian</option>
+                <option value="mixed_other">Any other Mixed background</option>
+              </optgroup>
+              <optgroup label="Asian / Asian British">
+                <option value="asian_indian">Indian</option>
+                <option value="asian_pakistani">Pakistani</option>
+                <option value="asian_bangladeshi">Bangladeshi</option>
+                <option value="asian_chinese">Chinese</option>
+                <option value="asian_other">Any other Asian background</option>
+              </optgroup>
+              <optgroup label="Black / African / Caribbean">
+                <option value="black_african">African</option>
+                <option value="black_caribbean">Caribbean</option>
+                <option value="black_other">Any other Black background</option>
+              </optgroup>
+              <optgroup label="Other ethnic groups">
+                <option value="other_arab">Arab</option>
+                <option value="other_ethnic_group">Any other ethnic group</option>
+              </optgroup>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-lbl">Religion or belief<div class="pref-note">Equality Act 2010 s.10</div></div>
+            <select class="pfld" id="demo-religion">
+              <option value="">Not provided</option>
+              <option value="no_religion">No religion</option>
+              <option value="christian">Christian (all denominations)</option>
+              <option value="buddhist">Buddhist</option>
+              <option value="hindu">Hindu</option>
+              <option value="jewish">Jewish</option>
+              <option value="muslim">Muslim</option>
+              <option value="sikh">Sikh</option>
+              <option value="other_religion">Other religion or belief</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-lbl">Year of birth<div class="pref-note">Equality Act 2010 s.5 (age)</div></div>
+            <input class="pfld" type="number" id="demo-birthyear" min="1930" max="2008"
+              placeholder="e.g. 1985" style="max-width:120px">
+          </div>
+
+          <div class="pref-row" style="border-bottom:none">
+            <div class="pref-lbl">Education level<div class="pref-note">Socioeconomic monitoring</div></div>
+            <select class="pfld" id="demo-education">
+              <option value="">Not provided</option>
+              <option value="no_formal_qualifications">No formal qualifications</option>
+              <option value="gcse_or_equivalent">GCSEs / O-levels or equivalent</option>
+              <option value="a_level_or_equivalent">A-levels / Highers or equivalent</option>
+              <option value="foundation_degree_hnc_hnd">Foundation degree / HNC / HND</option>
+              <option value="bachelors_degree">Bachelor&apos;s degree</option>
+              <option value="postgraduate_certificate_diploma">Postgraduate certificate / diploma</option>
+              <option value="masters_degree">Master&apos;s degree</option>
+              <option value="doctorate_phd">Doctorate / PhD</option>
+              <option value="professional_qualification">Professional qualification (ACCA, CIMA, SQE&hellip;)</option>
+              <option value="apprenticeship_level_4_plus">Apprenticeship (Level 4+)</option>
+              <option value="self_taught_bootcamp">Self-taught / Bootcamp</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
+            <button class="btn btn-t" onclick="saveDemographics()">Save</button>
+            <button class="btn btn-g" onclick="deleteDemographics()" style="color:var(--rust);border-color:rgba(160,56,32,0.4)">Remove all my data</button>
+            <span id="demo-save-confirm" style="font-size:12px;color:var(--sage);display:none">&#10003; Saved</span>
+          </div>
+        </div>
+      </div>
     </div>
     <aside style="position:sticky;top:62px">
       <div class="sc">
@@ -1197,6 +1340,57 @@ function closeModal() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeMenu(); }
 });
+
+// ── DEMOGRAPHICS ─────────────────────────────────────────────────────────────────
+function activateDemographicsConsent() {
+  const check = document.getElementById('demo-consent-check');
+  if (!check || !check.checked) {
+    alert('Please tick the consent checkbox to continue.');
+    return;
+  }
+  // In production: POST to /v1/candidates/me/consents with consent_type=fairness_metrics
+  document.getElementById('demo-consent-gate').style.display = 'none';
+  document.getElementById('demo-form').style.display = 'block';
+  document.getElementById('demo-status-badge').textContent = 'consent given';
+  document.getElementById('demo-status-badge').style.background = 'var(--sage-bg)';
+  document.getElementById('demo-status-badge').style.color = 'var(--sage)';
+  alert('Consent recorded.\nAPI: POST /v1/candidates/me/consents\n{ consent_type: "fairness_metrics", legal_basis: "GDPR Art. 9(2)(a) explicit consent" }');
+}
+
+function saveDemographics() {
+  const fields = {};
+  const sex       = document.getElementById('demo-sex').value;
+  const ethnicity = document.getElementById('demo-ethnicity').value;
+  const religion  = document.getElementById('demo-religion').value;
+  const birthYear = document.getElementById('demo-birthyear').value;
+  const education = document.getElementById('demo-education').value;
+  if (sex)       fields.sex             = sex;
+  if (ethnicity) fields.ethnicity       = ethnicity;
+  if (religion)  fields.religion        = religion;
+  if (birthYear) fields.birth_year      = parseInt(birthYear);
+  if (education) fields.education_level = education;
+  const fieldsSet = Object.keys(fields);
+  if (fieldsSet.length === 0) {
+    alert('No fields filled in — nothing to save.');
+    return;
+  }
+  document.getElementById('demo-status-badge').textContent = fieldsSet.length + ' field' + (fieldsSet.length > 1 ? 's' : '') + ' provided';
+  document.getElementById('demo-status-badge').style.background = 'var(--teal-dim)';
+  document.getElementById('demo-status-badge').style.color = 'var(--teal)';
+  alert('Saved ' + fieldsSet.length + ' demographic field(s).\nAPI: PUT /v1/candidates/me/demographics\n' + JSON.stringify(fields, null, 2));
+}
+
+function deleteDemographics() {
+  if (!confirm('Remove all demographic data? This removes your cohort memberships but does not withdraw consent.')) return;
+  document.getElementById('demo-status-badge').textContent = 'not provided';
+  document.getElementById('demo-status-badge').style.background = 'var(--cream-d)';
+  document.getElementById('demo-status-badge').style.color = 'var(--ink-light)';
+  ['demo-sex','demo-ethnicity','demo-religion','demo-education'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('demo-birthyear').value = '';
+  alert('Demographic data removed.\nAPI: DELETE /v1/candidates/me/demographics');
+}
 
 // ── INIT ─────────────────────────────────────────────────────────────────────────
 renderSkills();
