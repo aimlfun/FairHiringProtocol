@@ -60,6 +60,12 @@ export const GOVERNANCE = {
   // Minimum cohort size for bias detection to activate
   MIN_COHORT_SIZE: 20,
 
+  // ── Demographics ─────────────────────────────────────────────────────────────
+  // Minimum fraction of candidates who must have provided demographic data for
+  // fairness metrics to be computed for that dimension. Below this rate the
+  // dimension is flagged DATA_INSUFFICIENT and excluded from breach detection.
+  DEMOGRAPHICS_MIN_DISCLOSURE_RATE: 0.20,
+
   // ── SLA windows (business days) ─────────────────────────────────────────────
   // See specs/governance-escalation-spec.md Part A
   SLA_DAYS: {
