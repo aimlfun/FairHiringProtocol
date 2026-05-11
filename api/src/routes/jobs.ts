@@ -19,7 +19,20 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         properties: {
           title:           { type: 'string', maxLength: 128 },
           role_summary:    { type: 'string', maxLength: 2000 },
-          skills_required: { type: 'array', minItems: 1 },
+          skills_required: {
+            type: 'array', minItems: 1,
+            items: {
+              type: 'object',
+              required: ['ontology_id','label','requirement_type','min_proficiency'],
+              properties: {
+                ontology_id:      { type: 'string', description: 'e.g. fhp:skill:python' },
+                label:            { type: 'string' },
+                domain:           { type: 'string' },
+                requirement_type: { type: 'string', enum: ['must_have','nice_to_have'] },
+                min_proficiency:  { type: 'string', enum: ['aware','practitioner','proficient','expert','authority'] },
+              },
+            },
+          },
           salary_currency: { type: 'string', pattern: '^[A-Z]{3}$' },
           salary_minimum:  { type: 'number', minimum: 0 },
           salary_maximum:  { type: 'number', minimum: 0 },
@@ -66,12 +79,12 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         employment_type, response_sla_days, process_stages, expires_at
       ) VALUES (
         ${companyId}, '1.0.0', ${body.title}, ${body.role_summary},
-        ${JSON.stringify(body.skills_required)}::jsonb,
+        ${app.db.json(body.skills_required)},
         ${body.salary_currency}, ${body.salary_minimum}, ${body.salary_maximum},
         ${body.salary_period ?? 'annual'}, ${body.work_mode},
         ${body.location_country}, ${body.location_region ?? null}, ${body.location_city ?? null},
         ${body.employment_type}, ${body.response_sla_days ?? 10},
-        ${body.process_stages ? JSON.stringify(body.process_stages) : null}::jsonb,
+        ${body.process_stages ? app.db.json(body.process_stages) : null},
         ${expiresAt}
       )
       RETURNING *
@@ -120,7 +133,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         role_summary   = COALESCE(${body.role_summary   ?? null}, role_summary),
         salary_minimum = COALESCE(${body.salary_minimum ?? null}, salary_minimum),
         salary_maximum = COALESCE(${body.salary_maximum ?? null}, salary_maximum),
-        process_stages = COALESCE(${body.process_stages ? JSON.stringify(body.process_stages) : null}::jsonb, process_stages),
+        process_stages = COALESCE(${body.process_stages ? app.db.json(body.process_stages) : null}, process_stages),
         updated_at     = NOW()
       WHERE job_id = ${jobId} AND company_id = ${companyId}
       RETURNING *

@@ -29,7 +29,8 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
 
     // Verify match belongs to candidate and get submission deadline
     const match = await app.db`
-      SELECT match_id, job_id, created_at, appeal_deadline
+      SELECT match_id, job_id, created_at,
+             (created_at + INTERVAL '30 days') AS appeal_deadline
       FROM matching.match_events
       WHERE match_id = ${body.match_id} AND candidate_id = ${candidateId}
       LIMIT 1

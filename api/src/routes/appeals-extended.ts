@@ -55,15 +55,15 @@ export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void>
     const rows = await app.db`
       SELECT
         a.appeal_id, a.match_id, a.status, a.ground, a.detail,
-        a.submitted_at, a.resolved_at, a.resolution, a.twg_notes,
-        a.deadline_twg_review, a.deadline_pc_decision,
+        a.submitted_at, a.resolved_at, a.outcome, a.twg_finding AS twg_notes,
+        a.twg_deadline AS deadline_twg_review, a.submission_deadline,
         jb.title AS job_title,
         m.composite_score, m.decision
       FROM matching.appeals a
       JOIN matching.match_events m  ON m.match_id = a.match_id
       JOIN matching.job_briefs   jb ON jb.job_id  = m.job_id
       WHERE a.candidate_id = ${candidateId}
-        ${q.status !== 'all' ? app.db`AND a.status = ${q.status}` : app.db``}
+        ${q.status !== 'all' ? app.db`AND a.status = ${q.status === 'under_twg_review' ? 'twg_review' : q.status}` : app.db``}
       ORDER BY a.submitted_at DESC
       LIMIT  ${q.limit}
       OFFSET ${q.offset}
@@ -173,7 +173,7 @@ export async function ontologyRoutes(app: FastifyInstance): Promise<void> {
 
     const rows = await app.db`
       SELECT
-        skill_id, label, domain, description,
+        skill_id, label, domain,
         -- Include transfer targets so UI can show "also covers X"
         (
           SELECT json_agg(json_build_object(

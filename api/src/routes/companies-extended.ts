@@ -119,7 +119,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       ORDER BY ai.sla_deadline ASC
     `;
 
-    -- KPI aggregates
+    // KPI aggregates
     const kpis = {
       total_active:        interactions.length,
       breached:            interactions.filter((i: any) => i.sla_status === 'breached').length,

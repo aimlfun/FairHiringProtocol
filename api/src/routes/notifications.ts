@@ -224,6 +224,92 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
+
+  /**
+   * POST /v1/candidates/me/consents
+   * Record explicit consent for a specific purpose.
+   * Required before demographic data can be provided (GDPR Art. 9(2)(a)).
+   */
+  app.post('/me/consents', {
+    preHandler: [requireCandidate],
+    schema: {
+      tags: ['candidates'],
+      summary: 'Record explicit consent',
+      body: {
+        type: 'object',
+        required: ['consent_type', 'legal_basis'],
+        properties: {
+          consent_type: {
+            type: 'string',
+            enum: ['matching_service','age_confirmation','fairness_metrics','platform_terms'],
+          },
+          legal_basis: { type: 'string' },
+        },
+      },
+      response: {
+        201: {
+          type: 'object',
+          properties: {
+            consent_id:   { type: 'string' },
+            consent_type: { type: 'string' },
+            given_at:     { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const candidateId = (request.user as any).candidateId as string;
+    const { consent_type, legal_basis } = request.body as {
+      consent_type: string; legal_basis: string;
+    };
+
+    // Upsert — if consent already exists and is not withdrawn, return it
+    // If withdrawn, re-activate by clearing withdrawn_at
+    const existing = await app.db`
+      SELECT consent_id, given_at, withdrawn_at
+      FROM matching.candidate_consents
+      WHERE candidate_id = ${candidateId}
+        AND consent_type = ${consent_type}
+      LIMIT 1
+    `;
+
+    if (existing[0] && !existing[0].withdrawn_at) {
+      // Already active — idempotent return
+      return reply.status(201).send({
+        consent_id:   existing[0].consent_id,
+        consent_type,
+        given_at:     existing[0].given_at,
+      });
+    }
+
+    if (existing[0] && existing[0].withdrawn_at) {
+      // Re-activating a withdrawn consent
+      const [row] = await app.db`
+        UPDATE matching.candidate_consents SET
+          withdrawn_at = NULL,
+          given_at     = NOW()
+        WHERE consent_id = ${existing[0].consent_id as string}
+        RETURNING consent_id, given_at
+      `;
+      return reply.status(201).send({ consent_id: row.consent_id, consent_type, given_at: row.given_at });
+    }
+
+    // New consent record
+    const [row] = await app.db`
+      INSERT INTO matching.candidate_consents
+        (candidate_id, consent_type, legal_basis, given_at)
+      VALUES
+        (${candidateId}, ${consent_type}, ${legal_basis}, NOW())
+      RETURNING consent_id, given_at
+    `;
+
+    return reply.status(201).send({
+      consent_id:   row.consent_id,
+      consent_type,
+      given_at:     row.given_at,
+    });
+  });
+
   /**
    * GET /v1/candidates/me/consents
    * Returns the candidate's consent record for the Data & Privacy page.

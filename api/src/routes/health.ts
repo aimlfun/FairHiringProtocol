@@ -19,7 +19,14 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
             status:      { type: 'string' },
             version:     { type: 'string' },
             environment: { type: 'string' },
-            database:    { type: 'object' },
+            database: {
+              type: 'object',
+              properties: {
+                api:      { type: 'string' },
+                identity: { type: 'string' },
+                fairness: { type: 'string' },
+              },
+            },
             timestamp:   { type: 'string' },
           },
         },

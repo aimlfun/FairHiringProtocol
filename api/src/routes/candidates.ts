@@ -92,19 +92,25 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
       privacy?:      Record<string, unknown>;
     };
 
-    // Build update dynamically — only update provided fields
-    // In Postgres, this uses COALESCE to keep existing values if not provided
+    // Build update dynamically — only update provided fields.
+    // postgres.js requires JSON values to be wrapped in app.db.json() so the
+    // driver sends them with the correct jsonb type binding rather than as text.
+    const skillsVal      = body.skills       ? app.db.json(body.skills)       : null;
+    const workHistoryVal = body.work_history ? app.db.json(body.work_history) : null;
+    const prefsVal       = body.preferences  ? app.db.json(body.preferences)  : null;
+    const privacyVal     = body.privacy      ? app.db.json(body.privacy)      : null;
+
     const rows = await app.db`
       UPDATE matching.candidate_profiles
       SET
-        skills       = COALESCE(${body.skills       ? JSON.stringify(body.skills)       : null}::jsonb, skills),
-        work_history = COALESCE(${body.work_history ? JSON.stringify(body.work_history) : null}::jsonb, work_history),
-        preferences  = COALESCE(${body.preferences  ? JSON.stringify(body.preferences)  : null}::jsonb, preferences),
-        privacy      = COALESCE(${body.privacy      ? JSON.stringify(body.privacy)      : null}::jsonb, privacy),
+        skills       = COALESCE(${skillsVal},      skills),
+        work_history = COALESCE(${workHistoryVal}, work_history),
+        preferences  = COALESCE(${prefsVal},       preferences),
+        privacy      = COALESCE(${privacyVal},     privacy),
         updated_at   = NOW()
       WHERE candidate_id = ${candidateId}
         AND status != 'deleted'
-      RETURNING candidate_id, skills, preferences, privacy, matching_eligible,
+      RETURNING candidate_id, skills, work_history, preferences, privacy, matching_eligible,
                 profile_strength, updated_at
     `;
 
@@ -324,7 +330,7 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         me.overall_score,
         me.bias_correction_triggered,
         me.appeal_eligible,
-        me.appeal_deadline,
+        (me.created_at + INTERVAL '30 days') AS appeal_deadline,
         me.created_at,
         jb.title         AS job_title,
         jb.work_mode,
@@ -384,7 +390,7 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         me.match_id, me.job_id, me.decision, me.overall_score,
         me.pre_correction_score, me.skill_score, me.preference_alignment_score,
         me.bias_correction_triggered, me.bias_correction_delta,
-        me.appeal_eligible, me.appeal_deadline, me.created_at,
+        me.appeal_eligible, (me.created_at + INTERVAL '30 days') AS appeal_deadline, me.created_at,
         jb.title AS job_title, jb.company_id, jb.work_mode,
         jb.location_city, jb.location_country,
         jb.salary_minimum, jb.salary_maximum, jb.salary_currency,

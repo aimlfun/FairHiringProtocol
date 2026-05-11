@@ -139,9 +139,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // Step 3: Create profile record (no PII — uses standard pool)
     await app.db`
       INSERT INTO matching.candidate_profiles
-        (candidate_id, fhp_version, skills, matching_eligible, created_at, updated_at)
+        (candidate_id, fhp_version, status, skills, matching_eligible, created_at, updated_at)
       VALUES
-        (${candidateId}, ${'1.0.0'}, '[]'::jsonb, FALSE, ${now}, ${now})
+        (${candidateId}, ${'1.0.0'}, ${'paused'}, '[]'::jsonb, FALSE, ${now}, ${now})
     `;
 
     // Issue tokens
