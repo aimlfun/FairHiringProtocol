@@ -23,7 +23,7 @@ import swagger        from '@fastify/swagger';
 import swaggerUi      from '@fastify/swagger-ui';
 
 import { config }     from './config/index.ts';
-import { db, identityDb, closeDatabaseConnections } from './db/index.ts';
+import { db, identityDb, fairnessDb, closeDatabaseConnections } from './db/index.ts';
 import { FHPApiError } from './errors/index.ts';
 
 // Route handlers — original
@@ -49,6 +49,7 @@ import {
   referenceRoutes,
 }                                   from './routes/companies-extended.ts';
 import { governanceExtendedRoutes } from './routes/governance-extended.ts';
+import { demographicsRoutes }        from './routes/demographics.ts';
 
 export async function buildApp(): Promise<FastifyInstance> {
 
@@ -108,6 +109,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // except Fastify uses request decoration rather than constructor injection
   app.decorate('db', db);
   app.decorate('identityDb', identityDb);
+  app.decorate('fairnessDb', fairnessDb);  // fhp_fairness_service role — demographics only
 
   // ── OpenAPI / Swagger ────────────────────────────────────────────────────────
   if (config.enableSwagger) {
@@ -259,6 +261,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(companiesExtendedRoutes,  { prefix: '/v1/companies' });
   await app.register(referenceRoutes,          { prefix: '/v1/reference' });
   await app.register(governanceExtendedRoutes, { prefix: '/v1/governance' });
+  await app.register(demographicsRoutes,       { prefix: '/v1/candidates' });
 
   return app;
 }

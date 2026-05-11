@@ -9,6 +9,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     db:         postgres.Sql;
     identityDb: postgres.Sql;
+    fairnessDb: postgres.Sql;
   }
   interface FastifyRequest {
     user: import('./middleware/auth.js').JwtPayload;
