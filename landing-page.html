@@ -850,11 +850,11 @@ footer{
         <div id="candidate-register">
           <div class="form-group">
             <label class="form-label">Email address</label>
-            <input class="form-input" type="email" placeholder="you@example.com">
+            <input class="form-input" type="email" id="creg-email" placeholder="you@example.com">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input class="form-input" type="password" placeholder="Minimum 12 characters">
+            <input class="form-input" type="password" id="creg-password" placeholder="Minimum 12 characters">
           </div>
           <div class="form-group">
             <label class="form-label">Preferred language</label>
@@ -874,7 +874,8 @@ footer{
             <input type="checkbox" id="terms-confirm">
             <label for="terms-confirm">I agree to the <a href="#" style="color:var(--teal)">Terms of Service</a> and <a href="#" style="color:var(--teal)">Privacy Policy</a></label>
           </div>
-          <button class="form-submit" onclick="handleCandidateRegister()">Create account — it's free</button>
+          <div id="creg-error" style="display:none;color:#e05;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(220,0,80,0.08);border-radius:4px"></div>
+          <button class="form-submit" id="creg-btn" onclick="handleCandidateRegister()">Create account — it's free</button>
           <div class="form-footer" style="margin-top:12px;font-size:11px;color:var(--light)">
             We do not store your name. Your identity is never shared with employers without your consent.
           </div>
@@ -884,13 +885,14 @@ footer{
         <div id="candidate-login" style="display:none">
           <div class="form-group">
             <label class="form-label">Email address</label>
-            <input class="form-input" type="email" placeholder="you@example.com">
+            <input class="form-input" type="email" id="clog-email" placeholder="you@example.com">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input class="form-input" type="password" placeholder="Your password">
+            <input class="form-input" type="password" id="clog-password" placeholder="Your password">
           </div>
-          <button class="form-submit" onclick="handleCandidateLogin()">Sign in</button>
+          <div id="clog-error" style="display:none;color:#e05;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(220,0,80,0.08);border-radius:4px"></div>
+          <button class="form-submit" id="clog-btn" onclick="handleCandidateLogin()">Sign in</button>
           <div class="form-footer">
             <a href="#">Forgot password?</a>
           </div>
@@ -1003,23 +1005,105 @@ function switchMode(role, mode) {
   document.getElementById(`${role}-login`).style.display    = mode === 'login'    ? 'block' : 'none';
 }
 
-// ── Navigation ─────────────────────────────────────────────────────────────────
-// After successful auth these would redirect to the appropriate portal
-function handleCandidateRegister() {
-  alert('✓ Registration successful — redirecting to candidate portal...\n\n(In production: POST /v1/auth/register → redirect to candidate-portal.html)');
-  closeModal();
+// ── API base ──────────────────────────────────────────────────────────────────
+const API = 'http://localhost:3000/v1';
+
+// ── Token storage ─────────────────────────────────────────────────────────────
+// Stored in sessionStorage (cleared when tab closes).
+// candidate-app.html and company-dashboard.html read from these keys on load.
+function storeTokens(accessToken, refreshToken, role) {
+  sessionStorage.setItem('fhp_access_token',  accessToken);
+  sessionStorage.setItem('fhp_refresh_token', refreshToken);
+  sessionStorage.setItem('fhp_role',          role);
 }
-function handleCandidateLogin() {
-  alert('✓ Signed in — redirecting to candidate portal...\n\n(In production: POST /v1/auth/login → redirect to candidate-portal.html)');
-  closeModal();
+
+// ── Shared fetch helper ───────────────────────────────────────────────────────
+async function apiPost(path, body) {
+  const res = await fetch(API + path, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Request failed');
+  return data;
 }
+
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(elId) {
+  const el = document.getElementById(elId);
+  if (el) el.style.display = 'none';
+}
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Please wait...' : btn.dataset.label || btn.textContent;
+}
+
+// ── Candidate register ────────────────────────────────────────────────────────
+async function handleCandidateRegister() {
+  hideError('creg-error');
+  const email    = document.getElementById('creg-email')?.value?.trim();
+  const password = document.getElementById('creg-password')?.value;
+  const ageOk    = document.getElementById('age-confirm')?.checked;
+  const termsOk  = document.getElementById('terms-confirm')?.checked;
+
+  if (!email || !password) { showError('creg-error', 'Email and password are required.'); return; }
+  if (!ageOk)               { showError('creg-error', 'You must confirm you are 18 or older.'); return; }
+  if (!termsOk)             { showError('creg-error', 'You must accept the Terms of Service.'); return; }
+  if (password.length < 12) { showError('creg-error', 'Password must be at least 12 characters.'); return; }
+
+  setLoading('creg-btn', true);
+  try {
+    const data = await apiPost('/auth/register', {
+      email,
+      password,
+      age_confirmed:  true,
+      terms_accepted: true,
+    });
+    storeTokens(data.access_token, data.refresh_token, 'candidate');
+    closeModal();
+    window.location.href = 'candidate-app.html';
+  } catch (err) {
+    showError('creg-error', err.message);
+  } finally {
+    setLoading('creg-btn', false);
+  }
+}
+
+// ── Candidate login ───────────────────────────────────────────────────────────
+async function handleCandidateLogin() {
+  hideError('clog-error');
+  const email    = document.getElementById('clog-email')?.value?.trim();
+  const password = document.getElementById('clog-password')?.value;
+
+  if (!email || !password) { showError('clog-error', 'Email and password are required.'); return; }
+
+  setLoading('clog-btn', true);
+  try {
+    const data = await apiPost('/auth/login', { email, password });
+    storeTokens(data.access_token, data.refresh_token, 'candidate');
+    closeModal();
+    window.location.href = 'candidate-app.html';
+  } catch (err) {
+    showError('clog-error', err.message || 'Invalid email or password.');
+  } finally {
+    setLoading('clog-btn', false);
+  }
+}
+
+// ── Company register / login — stubs (next session) ──────────────────────────
 function handleCompanyRegister() {
-  alert('✓ Company registered — redirecting to company dashboard...\n\n(In production: POST /v1/auth/register → redirect to company-dashboard.html)');
-  closeModal();
+  alert('Company registration coming soon.');
 }
 function handleCompanyLogin() {
-  alert('✓ Signed in — redirecting to company dashboard...\n\n(In production: POST /v1/auth/login → redirect to company-dashboard.html)');
-  closeModal();
+  alert('Company login coming soon.');
 }
 
 // ── Nav scroll highlight ───────────────────────────────────────────────────────

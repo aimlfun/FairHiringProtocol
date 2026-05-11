@@ -37,8 +37,7 @@ Last updated: May 2026
 
 ---
 
-## Additional work completed (beyond original TODO)
-
+## Additional work completed (beyond initial TODO)
 - Full REST API — 62 endpoints across 14 route files
 - PostgreSQL schema — 17 migrations, all validated against PostgreSQL 16
 - Legal & compliance docs — Privacy policy, DPIA, DPA, EU AI Act conformity, ToS, Pseudonymisation procedure
@@ -46,61 +45,18 @@ Last updated: May 2026
 - Company authentication — `016_company_auth.sql` · `auth-company.ts`
 - API gap analysis — `api-gap-analysis.md` (complete screen-by-screen mapping)
 - Add/Edit job dialog — fully wired in `company-dashboard.html` with all 6 sections and compliance attestations
+- Deployment instructions (db build, web-server etc)
+- Candidate: attach API to html
 
----
+## Next sprint
+- test more, fix bugs.
 
-## Database — What's missing
-
-**Not 100% complete. Three gaps:**
-
-### 1. `config.skills` table — MISSING
-Referenced by: `GET /v1/ontology/skills`, `GET /v1/ontology/domains`, matching engine Stage 2 (semantic expansion), `reference-impl/ontology/loader.ts`
-
-The skills data exists as `reference-impl/ontology/skills.json` (98 skills, 14 domains, 72 transfer relationships) but has never been loaded into a DB table. The ontology loader reads from the JSON file at runtime — which works for the reference impl but the API route queries `config.skills` as a table.
-
-**Needs:** Migration 018 creating `config.skills` and `config.skill_transfer_relationships`, seeded from `skills.json`.
-
-### 2. `config.rejection_codes` table — MISSING
-Referenced by: `GET /v1/reference/rejection-codes` · `POST /v1/companies/me/interactions/:id/reject` (validates reason codes)
-
-The rejection taxonomy is defined in the spec and used in the company dashboard Rejections page but the DB table and seed data don't exist.
-
-**Needs:** Migration 018 (or 019) creating `config.rejection_codes` with ~15 seeded codes (SR-01 through AS-xx, PR-xx, PL-xx).
-
-### 3. `audit.governance_log` table — MISSING
-Referenced by: `appeals-extended.ts`, `companies-extended.ts`, `governance-extended.ts` — all write structured governance events here.
-
-The existing `audit.audit_log` table has a different schema (company/job/appeal/escalation foreign keys, constrained event_type enum) and is used by the original routes. The newer routes write to `audit.governance_log` which has a more flexible schema (`entity_type`, `entity_id`, `actor_type`, `actor_id`, `summary`, `occurred_at`) suited to cross-entity governance events.
-
-**Needs:** Migration 018 (or 019) creating `audit.governance_log` with the columns the routes expect.
-
----
-
-## API — What's missing
-
-**Functionally 100% complete** for all screens. However three routes will fail at runtime until the DB gaps above are resolved:
-
-| Route | Fails because |
-|-------|--------------|
-| `GET /v1/ontology/skills` | Queries `config.skills` — table doesn't exist |
-| `GET /v1/ontology/domains` | Queries `config.skills` — table doesn't exist |
-| `GET /v1/reference/rejection-codes` | Queries `config.rejection_codes` — table doesn't exist |
-| `POST /v1/companies/me/interactions/:id/reject` | Validates against `config.rejection_codes` — table doesn't exist |
-| `INSERT INTO audit.governance_log` | Table doesn't exist — affects 3 route files |
-
-All other 57 endpoints query tables that exist and are validated.
-
----
-
-## Recommended next: Migration 018
-
-One migration resolves all three DB gaps:
-
-```sql
--- config.skills (from ontology/skills.json)
--- config.skill_transfer_relationships
--- config.rejection_codes (seeded)
--- audit.governance_log
-```
-
-After that, the DB and API are both 100% complete (excluding MMIL).
+## TODO:
+- Sign-in does NOT send an email, and require a verification link for best practice. Will use smtp4dev.
+- Profile strength is static, no API
+- Implement data download
+- Fix save profile
+- Fix "no matches" on dashboard shows blank, no message.
+- Fairness Monitoring: enter > save, F5. Shows blank, by design. The UI is not permitted to read them. We need to change the UI to hide the fields if it knows "fields provided" with a button to re-enter.
+- Not allow users to add skills outside the ontology - otherwise job match won't work.
+- change APIs to use SSL

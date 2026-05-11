@@ -116,6 +116,7 @@ fair-hiring-protocol/
 ├─ CODE_OF_CONDUCT.md
 │
 ├─ api/ is the FHP REST APIs 
+│  ├─ .env (not checked in, cloned from .env.example)
 │  ├─ config/
 │  ├─ db/          Postgres helper
 │  ├─ errors/      Standard error helpers
@@ -131,7 +132,7 @@ fair-hiring-protocol/
 ├─ audits/
 │  └─ sample-reports/  placeholder
 │
-├─ db/  database scripts (Postgres)
+├─ db/ database scripts (Postgres)
 │  ├─ migrations/
 │  ├─ partitions/
 │  ├─ roles/
@@ -171,6 +172,12 @@ fair-hiring-protocol/
 │  ├─ privacy-policy.md
 │  ├─ pseudonymisation-procedure.md
 │  └─ terms-of-service.md
+│
+├─ mockup-ui/ mockups (no db/web-server required)
+│  ├─ candidate-app.html - candidate experience
+│  ├─ company-dashboard.html - company experience
+│  ├─ governance-dashboard.html - governance dashboard
+│  └─ landing-page.html - entry point for candidates and companies
 │
 ├─ ontology/ is versioned and governed like a standard.
 │  ├─ skills.json
@@ -220,11 +227,9 @@ fair-hiring-protocol/
 │  └─ trace.schema.json
 │
 ├─ api-gap-analysis.md -  WIP gaps in the API prior to build.
-├─ candidate-app.html - **mockup** candidate experience
-├─ company-dashboard.html - **mockup** company experience
+├─ build.cmd - drops and rebuilds the DB, runs node.js REST api-server on localhost:3000
+├─ candidate-app.html - candidate UI wired up to REST API / DB
 ├─ CONTRIBUTING.md
-├─ governance-dashboard.html - **mockup** governance dashboard
-├─ landing-page.html - **mockup** entry point for candidates and companies
 ├─ LICENSE-reference-impl.txt
 ├─ LICENSE-specs.txt
 ├─ README.md (**this**)

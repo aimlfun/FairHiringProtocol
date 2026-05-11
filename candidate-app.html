@@ -466,6 +466,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           <button class="btn btn-t" onclick="addSkill()">+</button>
           <div class="sugg" id="sugg"></div>
         </div>
+
       </div>
 
       <!-- TRANSFER CREDITS -->
@@ -485,10 +486,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="pc">
         <div class="pct">Work History <button class="btn btn-o btn-sm" onclick="toggleRoleForm()">+ Add role</button></div>
         <p style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Role descriptions only &mdash; no employer names stored or used in matching. Your identity is protected at all times.</p>
-        <div id="role-list">
-          <div class="role-item"><div class="role-desc">&ldquo;Led backend infrastructure for a payments processing team, scaling to &pound;2bn monthly transaction volume&rdquo;</div><div class="role-meta">2022-03 &#8594; 2024-08 &middot; Senior Engineer &middot; Python, SQL, AWS, Kubernetes</div></div>
-          <div class="role-item"><div class="role-desc">&ldquo;Built and maintained data pipelines for an analytics team serving 20+ internal stakeholders&rdquo;</div><div class="role-meta">2019-06 &#8594; 2022-02 &middot; Data Engineer &middot; Python, Spark, dbt, Airflow</div></div>
-        </div>
+        <div id="role-list"><div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="role-empty">No roles added yet.</div></div>
         <div class="role-form" id="role-form">
           <div class="rfh">Add role</div>
           <div class="fg">
@@ -520,34 +518,55 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
 
       <!-- LICENCES & CERTIFICATIONS -->
       <div class="pc">
-        <div class="pct">Licences &amp; Certifications <button class="btn btn-o btn-sm" onclick="addCert()">+ Add</button></div>
+        <div class="pct">Licences &amp; Certifications <button class="btn btn-o btn-sm" onclick="toggleCertForm()">+ Add</button></div>
         <p style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Legally required licences (driving, medical, FCA authorisation, SIA badge) and professional certifications. These can be required in job briefs and are checked in Stage 3 constraint satisfaction alongside salary and location. Unlike education level, specific certifications are often genuine legal requirements to perform a role.</p>
-        <div id="cert-list">
-          <div class="cert-item"><div style="flex:1"><div class="cname">AWS Solutions Architect &mdash; Associate</div><div class="cdet">Amazon Web Services &middot; Expires 2026-03 &middot; SAA-C03</div></div><span style="font-family:var(--mono);font-size:9px;background:var(--sage-bg);color:var(--sage);padding:2px 6px;border-radius:2px">active</span></div>
-          <div class="cert-item"><div style="flex:1"><div class="cname">dbt Certified Developer</div><div class="cdet">dbt Labs &middot; Expires 2025-12</div></div><span style="font-family:var(--mono);font-size:9px;background:var(--gold-bg);color:var(--gold);padding:2px 6px;border-radius:2px">expiring</span></div>
+        <div id="cert-list"><div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="cert-empty">No licences or certifications added yet.</div></div>
+        <!-- Cert inline form — toggled by + Add button -->
+        <div id="cert-form" style="display:none;margin-top:14px;padding:14px;background:var(--cream);border-radius:6px;border:1px solid var(--rule)">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-mid);margin-bottom:12px">ADD LICENCE / CERTIFICATION</div>
+          <div class="fg" style="margin-bottom:10px">
+            <label class="flbl">Name <span style="color:var(--rust)">*</span></label>
+            <input class="finp" id="cert-name" placeholder="e.g. AWS Solutions Architect — Associate">
+          </div>
+          <div class="fg" style="margin-bottom:10px">
+            <label class="flbl">Issuing body <span style="color:var(--rust)">*</span></label>
+            <input class="finp" id="cert-issuer" placeholder="e.g. Amazon Web Services">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg">
+              <label class="flbl">Reference / credential ID</label>
+              <input class="finp" id="cert-ref" placeholder="e.g. SAA-C03">
+            </div>
+            <div class="fg">
+              <label class="flbl">Expiry (YYYY-MM, blank if none)</label>
+              <input class="finp" type="month" id="cert-expiry">
+            </div>
+          </div>
+          <div class="fg" style="margin-bottom:12px">
+            <label class="flbl">Type</label>
+            <select class="fsel" id="cert-type">
+              <option value="certification">Professional certification</option>
+              <option value="licence">Legal / regulatory licence</option>
+              <option value="membership">Professional membership</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-t" onclick="saveCert()">Add</button>
+            <button class="btn btn-g" onclick="toggleCertForm()">Cancel</button>
+          </div>
         </div>
       </div>
 
-      <!-- EDUCATION -->
-      <div class="pc">
-        <div class="pct">Education <span style="font-size:11px;color:var(--ink-faint);font-weight:400;font-family:var(--sans)">(optional &mdash; not used in matching)</span></div>
-        <div class="edu-notice">
-          <strong>This information is collected for context only and has no effect on your match scores.</strong> Companies using FHP cannot require a specific degree, institution, or graduation year &mdash; this is a prohibited filter because it constitutes indirect age and socioeconomic discrimination under the Equality Act 2010. We collect this so explanations can be contextualised, not to filter you. It is entirely voluntary.
+      <!-- EDUCATION — pointer only -->
+      <div class="pc" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5">
+            <strong style="color:var(--ink)">Education level</strong> is collected in the
+            <strong>Data &amp; Privacy</strong> tab alongside the other fairness monitoring data.
+            It is <strong>not used in matching</strong> and requires explicit consent under GDPR Art. 9.
+          </div>
+          <button class="btn btn-o btn-sm" style="flex-shrink:0;margin-left:12px" onclick="go('data')">Go to Data &amp; Privacy &rarr;</button>
         </div>
-        <select class="fsel">
-          <option>Prefer not to say</option>
-          <option>No formal qualifications</option>
-          <option>GCSEs / O-levels or equivalent</option>
-          <option>A-levels / Highers or equivalent</option>
-          <option>Foundation degree / HNC / HND</option>
-          <option>Bachelor&apos;s degree</option>
-          <option>Postgraduate certificate / diploma</option>
-          <option>Master&apos;s degree</option>
-          <option>Doctorate / PhD</option>
-          <option>Professional qualification (e.g. ACCA, CIMA, SQE)</option>
-          <option>Apprenticeship (Level 4+)</option>
-          <option>Self-taught / Bootcamp</option>
-        </select>
       </div>
 
       <!-- PREFERENCES -->
@@ -555,20 +574,20 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="pct">Preferences</div>
         <div class="pref-row">
           <div class="pref-lbl">Job type</div>
-          <div class="pchips">
-            <div class="pch on" onclick="this.classList.toggle('on')">Permanent</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Contract</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Part-time</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Internship</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Apprenticeship</div>
+          <div class="pchips" id="chips-job-type">
+            <div class="pch on" data-val="permanent" onclick="this.classList.toggle('on')">Permanent</div>
+            <div class="pch" data-val="contract" onclick="this.classList.toggle('on')">Contract</div>
+            <div class="pch" data-val="part_time" onclick="this.classList.toggle('on')">Part-time</div>
+            <div class="pch" data-val="internship" onclick="this.classList.toggle('on')">Internship</div>
+            <div class="pch" data-val="apprenticeship" onclick="this.classList.toggle('on')">Apprenticeship</div>
           </div>
         </div>
         <div class="pref-row">
           <div class="pref-lbl">Work mode</div>
-          <div class="pchips">
-            <div class="pch on" onclick="this.classList.toggle('on')">Remote</div>
-            <div class="pch on" onclick="this.classList.toggle('on')">Hybrid</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">On-site</div>
+          <div class="pchips" id="chips-work-mode">
+            <div class="pch on" data-val="remote" onclick="this.classList.toggle('on')">Remote</div>
+            <div class="pch on" data-val="hybrid" onclick="this.classList.toggle('on')">Hybrid</div>
+            <div class="pch" data-val="on_site" onclick="this.classList.toggle('on')">On-site</div>
           </div>
         </div>
         <div class="pref-row">
@@ -585,9 +604,9 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="pref-row">
           <div class="pref-lbl">Salary minimum<div class="pref-note">Hard constraint in matching</div></div>
           <div class="sal-row">
-            <select class="pfld" style="max-width:72px"><option>GBP &#163;</option><option>USD &#36;</option><option>EUR &#8364;</option><option>AUD &#36;</option></select>
-            <input class="pfld" type="number" value="70000" style="max-width:110px">
-            <select class="pfld" style="max-width:95px"><option>/ year</option><option>/ day</option><option>/ hour</option><option>/ week</option><option>/ month</option></select>
+            <select class="pfld" id="pref-currency" style="max-width:72px"><option value="GBP">GBP &#163;</option><option value="USD">USD &#36;</option><option value="EUR">EUR &#8364;</option><option value="AUD">AUD &#36;</option></select>
+            <input class="pfld" id="pref-salary-min" type="number" value="70000" style="max-width:110px">
+            <select class="pfld" id="pref-salary-period" style="max-width:95px"><option value="annual">/ year</option><option value="daily">/ day</option><option value="hourly">/ hour</option><option value="weekly">/ week</option><option value="monthly">/ month</option></select>
           </div>
         </div>
         <div class="pref-row">
@@ -637,7 +656,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
             <div style="font-size:11px;color:var(--ink-faint);line-height:1.4">Verifying right to work before employment is a legal obligation in most countries. FHP uses this in Stage 3 constraint satisfaction &mdash; roles requiring sponsorship are flagged, not excluded automatically.</div>
           </div>
         </div>
-        <div style="margin-top:16px"><button class="btn btn-t">Save preferences</button></div>
+
       </div>
     </div>
     <aside style="position:sticky;top:62px">
@@ -668,6 +687,13 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       </div>
     </aside>
   </div>
+  <!-- Sticky save bar — always visible while on profile tab -->
+  <div style="position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--rule);padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:10">
+    <button class="btn btn-t" id="profile-save-btn" onclick="saveProfile()" style="padding:9px 22px;font-size:12px">Save profile</button>
+    <span id="profile-save-status" style="font-size:12px;color:var(--sage);display:none">&#10003; Saved</span>
+    <span id="profile-save-error"  style="font-size:12px;color:var(--rust);display:none"></span>
+    <span style="font-size:11px;color:var(--ink-faint);margin-left:auto">Skills, work history, certifications and preferences are saved together</span>
+  </div>
 </div>
 <div id="pg-appeals" class="pg">
   <div class="fc">
@@ -675,27 +701,15 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="st">Appeals</div>
       <div style="font-size:13px;color:var(--ink-light);margin-top:4px">Every not_matched outcome is appealable within 30 days. Human review by the Technical Working Group and Protocol Council is guaranteed &mdash; your right under the Equality Act 2010 and UK GDPR Article 22.</div>
     </div>
-    <div class="ac">
-      <div class="ac-sr">
-        <span class="asbadge asb-twg">TWG Review</span>
-        <span style="font-size:11px;color:var(--ink-light);font-family:var(--mono)">APP-2025-0108</span>
-        <span style="font-size:11px;color:var(--ink-light);margin-left:auto">Due Nov 14, 2025</span>
-      </div>
-      <div class="act">Staff Machine Learning Engineer &mdash; Apex Labs</div>
-      <div class="acs">Ground: Incorrect skill assessment &middot; Submitted Nov 05, 2025</div>
-      <div class="tl">
-        <div class="ts"><div class="td td-d">&#10003;</div><div class="tc2"><div class="tlbl">Submitted</div><div class="tdet">Nov 05 &mdash; accepted and assigned to TWG</div></div></div>
-        <div class="ts"><div class="td td-a">&#9679;</div><div class="tc2"><div class="tlbl">TWG Technical Review</div><div class="tdet">In progress &middot; Reviewing trace for match mx:e5f6&middot;7a8b &middot; deadline Nov 14</div></div></div>
-        <div class="ts"><div class="td td-p">3</div><div class="tc2"><div class="tlbl">Protocol Council Decision</div><div class="tdet">Pending TWG finding &middot; 10 business days from finding</div></div></div>
-        <div class="ts"><div class="td td-p">&#10003;</div><div class="tc2"><div class="tlbl">Resolution</div><div class="tdet">Outcome communicated to you and the company</div></div></div>
-      </div>
-      <button class="btn btn-g btn-sm">Withdraw appeal</button>
-    </div>
+    <div id="appeals-list"><div style="font-size:13px;color:var(--ink-faint);padding:12px 0">Loading appeals&#8230;</div></div>
     <div style="margin-top:22px;max-width:580px">
       <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px">Submit a New Appeal</div>
       <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:18px;box-shadow:var(--sh)">
-        <div class="fg"><label class="flbl">Match to appeal</label>
-          <select class="fsel"><option>Select&hellip;</option><option>mx:e5f6&middot;7a8b &mdash; Apex Labs, Staff ML Engineer (not_matched)</option><option>mx:1a2b&middot;3c4d &mdash; Citadel Group, Analytics Lead (borderline)</option></select>
+        <div class="fg"><label class="flbl">Match ID to appeal</label>
+          <select class="fsel" id="appeal-match-select" onchange="document.getElementById('appeal-match-id').value=this.value">
+            <option value="">Select a match&#8230;</option>
+          </select>
+          <div class="fhint">Only not_matched and borderline outcomes within 30 days are shown. If the list is empty, you have no appealable matches.</div>
         </div>
         <div class="fg"><label class="flbl">Ground</label>
           <select class="fsel"><option>Select&hellip;</option><option>Incorrect skill assessment</option><option>Preference mismatch</option><option>Suspected bias</option></select>
@@ -718,7 +732,10 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="gdpr-c">
           <div class="gdpr-t">&#128229; Access &amp; Export</div>
           <div class="gdpr-b">Download everything FHP holds about you in open FHP JSON format &mdash; your profile, match history, explanations, and appeal records. Your right to receive a copy of your personal data and to take it elsewhere. Fulfilled instantly, any time.</div>
-          <button class="btn btn-o btn-sm" onclick="alert('API: GET /v1/candidates/me/export')">Download my data</button>
+          <button class="btn btn-o btn-sm" onclick="(async () => {
+        const data = await api('GET', '/candidates/me/export');
+        if (data) alert('Your data export is ready. In production this would trigger a download.');
+      })()">Download my data</button>
         </div>
         <div class="gdpr-c">
           <div class="gdpr-t">&#9999;&#65039; Rectification</div>
@@ -728,7 +745,11 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="gdpr-c" style="background:var(--rust-bg);border-color:rgba(160,56,32,.2)">
           <div class="gdpr-t" style="color:var(--rust)">&#128465;&#65039; Delete Account</div>
           <div class="gdpr-b" style="color:var(--ink-mid)">Your email, profile, and login credentials are permanently deleted. Historical match records are retained in fully anonymised form &mdash; your identifier is replaced with a new random UUID with no link to you &mdash; to preserve the governance audit trail. This is permitted where retention serves a legitimate purpose and you cannot be re-identified from the retained data. This cannot be undone.</div>
-          <button class="btn btn-r btn-sm" onclick="if(confirm('Delete account? Your PII is removed. Anonymised audit records are retained for the governance trail.'))alert('API: DELETE /v1/candidates/me')">Delete my account</button>
+          <button class="btn btn-r btn-sm" onclick="(async () => {
+        if (!confirm('Delete account? Your PII is removed. Anonymised audit records are retained for the governance trail.')) return;
+        const result = await api('DELETE', '/candidates/me');
+        if (result) { sessionStorage.clear(); window.location.href = 'landing-page.html'; }
+      })()">Delete my account</button>
         </div>
       </div>
       <div class="pc">
@@ -1000,14 +1021,31 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
   <div class="modal">
     <div class="mhdr"><h2 class="mtitle">Appeal this outcome</h2><button class="mx" onclick="closeModal()">&#10005;</button></div>
     <div class="mbody">
+      <input type="hidden" id="appeal-match-id">
       <div id="amod-ctx" style="font-size:12px;color:var(--ink-mid);padding:9px 11px;background:var(--cream);border-radius:4px;border:1px solid var(--rule);margin-bottom:14px"></div>
       <div class="fg"><label class="flbl">Ground</label>
-        <select class="fsel"><option>Incorrect skill assessment</option><option>Preference mismatch</option><option>Suspected bias</option></select></div>
+        <select class="fsel" id="appeal-ground"><option value="incorrect_skill_assessment">Incorrect skill assessment</option><option value="preference_mismatch">Preference mismatch</option><option value="suspected_bias">Suspected bias</option></select></div>
       <div class="fg"><label class="flbl">Detail</label>
-        <textarea class="fta" placeholder="Be specific. Reference skill ontology IDs where relevant. The TWG will review the full pipeline trace."></textarea></div>
+        <textarea class="fta" id="appeal-detail" placeholder="Be specific. Reference skill ontology IDs where relevant. The TWG will review the full pipeline trace."></textarea></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-g" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-t" onclick="alert('Submitted\nAPI: POST /v1/candidates/me/appeals');closeModal()">Submit appeal</button>
+        <button class="btn btn-t" onclick="(async () => {
+        const matchId  = document.getElementById('appeal-match-select')?.value?.trim()
+                            || document.getElementById('appeal-match-id')?.value?.trim();
+        const ground   = document.getElementById('appeal-ground')?.value;
+        const detail   = document.getElementById('appeal-detail')?.value?.trim();
+        if (!matchId) { alert('Please select a match to appeal.'); return; }
+        if (!ground)  { alert('Please select a ground for the appeal.'); return; }
+        if (!detail)  { alert('Please provide detail for your appeal.'); return; }
+        const result = await api('POST', '/candidates/me/appeals', { match_id: matchId, ground, detail });
+        if (result) {
+          alert('Appeal submitted.\nReference: ' + (result.appeal_id || 'Pending'));
+          loadAppealableMatches();
+          closeModal();
+        } else {
+          alert('Appeal could not be submitted. Check that the match ID is valid.');
+        }
+      })()">Submit appeal</button>
       </div>
       <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--ink-faint)">Free &middot; unconditional &middot; 20 business day turnaround</div>
     </div>
@@ -1024,8 +1062,9 @@ function go(p) {
     });
   });
   window.scrollTo(0, 0);
-  if (p === 'dashboard') renderCards('db-cards', 3);
-  if (p === 'matches')   renderCards('mh-cards', 20);
+  if (p === 'dashboard') loadMatches();
+  if (p === 'matches')   loadMatches();
+  if (p === 'appeals')   { loadAppeals(); loadAppealableMatches(); }
 }
 
 // ── MOBILE MENU ─────────────────────────────────────────────────────────────────
@@ -1061,12 +1100,12 @@ function renderNotifs() {
     </div>`).join('');
 }
 
-function toggleNotif(e) {
+async function toggleNotif(e) {
   e.stopPropagation();
   document.getElementById('ndrop').classList.toggle('open');
 }
-function clearNotifs() { NOTIFS.forEach(n => n.unread = false); renderNotifs(); }
-function respond(id, action) {
+async function clearNotifs() { NOTIFS.forEach(n => n.unread = false); renderNotifs(); }
+async function respond(id, action) {
   const n = NOTIFS.find(x => x.id === id);
   if (n) {
     n.unread = false;
@@ -1074,7 +1113,11 @@ function respond(id, action) {
     n.actions = false;
     renderNotifs();
   }
-  alert((action === 'accept' ? 'Accepted' : 'Declined') + '\nAPI: PUT /v1/candidates/me/interactions/' + id);
+  // Real API call
+  const result = await api('PUT', '/candidates/me/interactions/' + id, { action });
+  if (result) {
+    alert((action === 'accept' ? 'Accepted' : 'Declined') + ' — saved.');
+  }
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('#ndrop') && !e.target.closest('.bell'))
@@ -1113,6 +1156,95 @@ const CH = d => d==='matched'?'ch-m':d==='borderline'?'ch-b':'ch-n';
 const TC = t => t==='g'?'tb-g':t==='w'?'tb-w':'tb-p';
 const TT = m => m.tl==='g'?'\u2713 '+m.trust+'% compliance':m.tl==='w'?'\u26a0 '+m.trust+'% compliance':'\u2717 '+m.trust+'% compliance';
 
+async function loadMatches() {
+  var c = document.getElementById('mh-cards');
+  if (!c) return;
+  c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">Loading matches…</div>';
+  var data = await api('GET', '/candidates/me/matches?limit=50');
+  if (!data || !data.matches || !data.matches.length) {
+    c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">No matches yet. Complete your profile and enable matching to get started.</div>';
+    return;
+  }
+  c.innerHTML = '';
+  data.matches.forEach(function(m, i) {
+    var dec   = m.decision || 'not_matched';
+    var score = (m.composite_score || m.overall_score || 0);
+    var date  = m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
+    var adDate = m.appeal_deadline ? new Date(m.appeal_deadline).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '30 days';
+
+    var card = document.createElement('div');
+    card.className = 'mc';
+    card.style.animationDelay = (i * 0.06) + 's';
+
+    var badgeCls = dec === 'matched' ? 'mc-badge-m' : (dec === 'borderline' ? 'mc-badge-b' : 'mc-badge-n');
+    var badgeIco = dec === 'matched' ? '✓' : (dec === 'borderline' ? '▲' : '✕');
+    var scoreCls = dec === 'matched' ? 'snum-m' : (dec === 'borderline' ? 'snum-b' : 'snum-n');
+    var summary  = m.plain_language_summary || (m.explanation && m.explanation.plain_language_summary) || 'No explanation available.';
+
+    var hdr = document.createElement('div');
+    hdr.className = 'mc-hdr';
+    hdr.setAttribute('onclick', 'toggleExp(this)');
+    hdr.innerHTML = '<div class="mc-badge ' + badgeCls + '">' + badgeIco + '</div>'
+      + '<div class="mc-meta">'
+      + '<div class="mc-role">' + (m.job_title || 'Role') + '</div>'
+      + '<div class="mc-co">' + (m.company_name || '') + '</div>'
+      + '<div class="chips"><span class="chip">' + dec.replace('_',' ') + '</span>'
+      + '<span class="chip ch-x">' + date + '</span></div>'
+      + '</div>'
+      + '<div class="mc-score"><div class="snum ' + scoreCls + '">' + score.toFixed(2) + '</div><div class="slbl">score</div></div>';
+
+    var xbar = document.createElement('div');
+    xbar.className = 'xbar';
+    xbar.setAttribute('onclick', 'toggleXbar(this)');
+    xbar.innerHTML = '<span>Read full explanation</span><span class="xa">▾</span>';
+
+    var xp = document.createElement('div');
+    xp.className = 'xp';
+
+    var ar = document.createElement('div');
+    ar.className = 'ar';
+
+    var an = document.createElement('span');
+    an.className = 'an';
+    an.textContent = (dec === 'matched' ? 'Matched' : 'Not matched') + ' ' + date + ' · appealable until ' + adDate;
+
+    var btns = document.createElement('div');
+    btns.style.display = 'flex';
+    btns.style.gap = '6px';
+
+    var traceBtn = document.createElement('button');
+    traceBtn.className = 'btn btn-o btn-sm';
+    traceBtn.textContent = 'Trace ↗';
+    var matchId = m.match_id;
+    traceBtn.addEventListener('click', function() {
+      api('GET', '/candidates/me/matches/' + matchId + '/trace').then(function(t) {
+        if (t) { alert('Trace: ' + ((t.stages && t.stages.length) || 0) + ' stages'); console.log(t); }
+      });
+    });
+    btns.appendChild(traceBtn);
+
+    if (dec !== 'matched' && m.appeal_eligible !== false) {
+      var appealBtn = document.createElement('button');
+      appealBtn.className = 'btn btn-r btn-sm';
+      appealBtn.textContent = 'Appeal →';
+      var jobTitle = m.job_title || 'Role';
+      appealBtn.addEventListener('click', function() { openAppeal(jobTitle, matchId); });
+      btns.appendChild(appealBtn);
+    }
+
+    ar.appendChild(an);
+    ar.appendChild(btns);
+    xp.innerHTML = '<div class="xsum">' + summary + '</div>';
+    xp.appendChild(ar);
+
+    card.appendChild(hdr);
+    card.appendChild(xbar);
+    card.appendChild(xp);
+    c.appendChild(card);
+  });
+}
+
+
 function renderCards(cid, lim) {
   const c = document.getElementById(cid);
   if (!c) return;
@@ -1142,7 +1274,7 @@ function renderCards(cid, lim) {
         <div class="ar">
           <span class="an">${m.d==='matched'?'Matched':'Not matched'} ${m.date} \u00b7 appealable until ${m.ad}</span>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-o btn-sm" onclick="alert('API: GET /v1/candidates/me/matches/${m.id}/trace')">Trace \u2197</button>
+            <button class="btn btn-o btn-sm" onclick="(async (mid) => { const t = await api('GET', '/candidates/me/matches/' + mid + '/trace'); if(t) alert('Trace loaded — ' + (t.stages?.length || 0) + ' pipeline stages. Check console for full trace.'); console.log('Match trace:', t); })(m.id)">Trace \u2197</button>
             ${m.d !== 'matched' ? `<button class="btn btn-r btn-sm" onclick="openAppeal('${m.role}','${m.id}')">Appeal \u2192</button>` : ''}
           </div>
         </div>
@@ -1276,28 +1408,109 @@ function addSkill() {
   if (v) pickSkill('fhp:skill:custom-' + Date.now(), v, 'Other');
 }
 
-// ── ROLE FORM ─────────────────────────────────────────────────────────────────────
+// ── WORK HISTORY ─────────────────────────────────────────────────────────────────
+let workHistory = [];
+let certifications = [];
+
 function toggleRoleForm() {
   const f = document.getElementById('role-form');
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
 }
 
+function renderRoles() {
+  const list  = document.getElementById('role-list');
+  const empty = document.getElementById('role-empty');
+  if (!list) return;
+  if (!workHistory.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="role-empty">No roles added yet.</div>';
+    return;
+  }
+  list.innerHTML = workHistory.map((r, i) => `
+    <div class="role-item">
+      <div style="flex:1">
+        <div class="role-desc">&#8220;${r.description}&#8221;</div>
+        <div class="role-meta">${r.from || '?'} &#8594; ${r.to || 'Present'} &middot; ${r.seniority || ''} &middot; ${r.skills_context || ''}</div>
+      </div>
+      <button class="sdel" onclick="removeRole(${i})" style="flex-shrink:0">&#10005;</button>
+    </div>`).join('');
+}
+
+function removeRole(i) {
+  workHistory.splice(i, 1);
+  renderRoles();
+}
+
 function saveRole() {
   const desc = document.getElementById('rd').value.trim();
   const from = document.getElementById('rf').value;
-  const to   = document.getElementById('rt').value || 'Present';
+  const to   = document.getElementById('rt').value;
   const sen  = document.getElementById('rs').value;
   const sk   = document.getElementById('rk').value;
-  if (!desc) { alert('Please enter a role description'); return; }
-  const list = document.getElementById('role-list');
-  const div  = document.createElement('div');
-  div.className = 'role-item';
-  div.innerHTML = `<div class="role-desc">\u201c${desc}\u201d</div><div class="role-meta">${from||'?'} \u2192 ${to} \u00b7 ${sen} \u00b7 ${sk}</div>`;
-  list.insertBefore(div, list.firstChild);
-  ['rd','rf','rt','rk'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  if (!desc) { alert('Please enter a role description.'); return; }
+  workHistory.unshift({ description: desc, from, to, seniority: sen, skills_context: sk });
+  renderRoles();
+  ['rd','rf','rt','rk'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('rs').value = '';
   toggleRoleForm();
 }
+
+// ── LICENCES & CERTIFICATIONS ─────────────────────────────────────────────────────
+function toggleCertForm() {
+  const f = document.getElementById('cert-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderCerts() {
+  const list = document.getElementById('cert-list');
+  if (!list) return;
+  if (!certifications.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0">No licences or certifications added yet.</div>' +
+      document.getElementById('cert-form')?.outerHTML || '';
+    return;
+  }
+  const now = new Date();
+  list.innerHTML = certifications.map((c, i) => {
+    const expDate  = c.expiry ? new Date(c.expiry + '-01') : null;
+    const expired  = expDate && expDate < now;
+    const expiring = expDate && !expired && (expDate - now) < 90 * 86400 * 1000;
+    const badge    = expired  ? '<span style="font-family:var(--mono);font-size:9px;background:var(--rust-bg,#fde);color:var(--rust);padding:2px 6px;border-radius:2px">expired</span>'
+                   : expiring ? '<span style="font-family:var(--mono);font-size:9px;background:var(--gold-bg);color:var(--gold);padding:2px 6px;border-radius:2px">expiring</span>'
+                   :            '<span style="font-family:var(--mono);font-size:9px;background:var(--sage-bg);color:var(--sage);padding:2px 6px;border-radius:2px">active</span>';
+    return `<div class="cert-item">
+      <div style="flex:1">
+        <div class="cname">${c.name}</div>
+        <div class="cdet">${c.issuer}${c.ref ? ' &middot; ' + c.ref : ''}${c.expiry ? ' &middot; Expires ' + c.expiry : ''}</div>
+      </div>
+      ${badge}
+      <button class="sdel" onclick="removeCert(${i})" style="margin-left:8px">&#10005;</button>
+    </div>`;
+  }).join('');
+  // Re-append the form div (it's inside the list container)
+  const form = document.getElementById('cert-form');
+  if (form) list.appendChild(form);
+}
+
+function removeCert(i) {
+  certifications.splice(i, 1);
+  renderCerts();
+}
+
+function saveCert() {
+  const name   = document.getElementById('cert-name')?.value.trim();
+  const issuer = document.getElementById('cert-issuer')?.value.trim();
+  const ref    = document.getElementById('cert-ref')?.value.trim();
+  const expiry = document.getElementById('cert-expiry')?.value;
+  const type   = document.getElementById('cert-type')?.value;
+  if (!name || !issuer) { alert('Name and issuing body are required.'); return; }
+  certifications.push({ name, issuer, ref, expiry, type });
+  ['cert-name','cert-issuer','cert-ref'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cert-expiry').value = '';
+  renderCerts();
+  toggleCertForm();
+}
+
+// Legacy stub — replaced by toggleCertForm
+function addCert() { toggleCertForm(); }
 
 // ── LOCATIONS ─────────────────────────────────────────────────────────────────────
 function addLoc() {
@@ -1329,7 +1542,10 @@ function addCert() {
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────────
 function openAppeal(job, matchId) {
-  document.getElementById('amod-ctx').textContent = 'Match: ' + matchId + ' \u2014 ' + job;
+  document.getElementById('amod-ctx').textContent = 'Match: ' + matchId + ' — ' + job;
+  document.getElementById('appeal-match-id').value = matchId || '';
+  document.getElementById('appeal-ground').selectedIndex = 0;
+  document.getElementById('appeal-detail').value = '';
   document.getElementById('amodal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1337,12 +1553,134 @@ function closeModal() {
   document.getElementById('amodal').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+async function loadAppeals() {
+  const list = document.getElementById('appeals-list');
+  if (!list) return;
+
+  const data = await api('GET', '/candidates/me/appeals?limit=20');
+  if (!data) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-faint);padding:12px 0">Could not load appeals.</div>';
+    return;
+  }
+  if (!data.appeals || data.appeals.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-faint);padding:12px 0">You have no appeals on record.</div>';
+    return;
+  }
+
+  const STATUS_BADGE = {
+    submitted:        '<span class="asbadge" style="background:var(--cream-d);color:var(--ink-mid)">Submitted</span>',
+    twg_review:       '<span class="asbadge asb-twg">TWG Review</span>',
+    pc_review:        '<span class="asbadge asb-a">PC Review</span>',
+    resolved:         '<span class="asbadge asb-d">Resolved</span>',
+    withdrawn:        '<span class="asbadge" style="background:var(--cream-d);color:var(--ink-faint)">Withdrawn</span>',
+  };
+  const GROUND_LABELS = {
+    incorrect_skill_assessment: 'Incorrect skill assessment',
+    preference_mismatch:        'Preference mismatch',
+    suspected_bias:             'Suspected bias',
+
+  };
+  var withdrawable = ['submitted', 'twg_review'];
+
+  function stepHtml(s, i, steps) {
+    var firstPending = steps.findIndex(function(x) { return !x.done; });
+    var cls  = s.done ? 'td-d' : (i === firstPending ? 'td-a' : 'td-p');
+    var icon = s.done ? '&#10003;' : (i === firstPending ? '&#9679;' : String(i + 1));
+    var det  = s.detail ? '<div class="tdet">' + s.detail + '</div>' : '';
+    return '<div class="ts"><div class="td ' + cls + '">' + icon + '</div>'
+         + '<div class="tc2"><div class="tlbl">' + s.label + '</div>' + det + '</div></div>';
+  }
+
+  list.innerHTML = data.appeals.map(function(a) {
+    var badge    = STATUS_BADGE[a.status] || a.status;
+    var ground   = GROUND_LABELS[a.ground] || a.ground;
+    var subDate  = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
+    var deadline = a.deadline_twg_review ? new Date(a.deadline_twg_review).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '';
+    var steps = [
+      { label: 'Submitted',           done: true,                                           detail: subDate },
+      { label: 'TWG Technical Review', done: ['pc_review','resolved'].includes(a.status), detail: deadline ? 'Deadline ' + deadline : '' },
+      { label: 'Protocol Council',     done: a.status === 'resolved',                      detail: '' },
+      { label: 'Resolution',           done: a.status === 'resolved',                      detail: a.outcome || '' },
+    ];
+    var timeline = steps.map(function(s, i) { return stepHtml(s, i, steps); }).join('');
+    var withdrawBtn = withdrawable.includes(a.status)
+      ? '<button class="btn btn-g btn-sm" onclick="withdrawAppeal(this)">Withdraw appeal</button>'
+      : '';
+    var twgNote = a.twg_notes
+      ? '<div class="acs" style="color:var(--teal-hi);margin-top:4px">TWG note: ' + a.twg_notes + '</div>'
+      : '';
+    var dueSpan = deadline
+      ? '<span style="font-size:11px;color:var(--ink-light);margin-left:auto">Due ' + deadline + '</span>'
+      : '';
+    return '<div class="ac" data-appeal-id="' + a.appeal_id + '">'
+         + '<div class="ac-sr">'
+         + '<span class="appeal-status">' + badge + '</span>'
+         + '<span style="font-size:11px;color:var(--ink-light);font-family:var(--mono)">' + a.appeal_id.substring(0,8) + '&hellip;</span>'
+         + dueSpan
+         + '</div>'
+         + '<div class="act">' + (a.job_title || 'Role') + '</div>'
+         + '<div class="acs">Ground: ' + ground + ' &middot; Submitted ' + subDate + '</div>'
+         + twgNote
+         + '<div class="tl">' + timeline + '</div>'
+         + withdrawBtn
+         + '</div>';
+  }).join('');
+}
+
+
+async function loadAppealableMatches() {
+  const select = document.getElementById('appeal-match-select');
+  if (!select) return;
+  const data = await api('GET', '/candidates/me/matches?limit=50');
+  if (!data || !data.matches) return;
+
+  // Only show not_matched or borderline within 30 days
+  const now = Date.now();
+  const appealable = data.matches.filter(m => {
+    const eligible = m.decision === 'not_matched' || m.decision === 'borderline';
+    const within30 = m.appeal_deadline ? new Date(m.appeal_deadline) > new Date() : true;
+    return eligible && within30 && m.appeal_eligible !== false;
+  });
+
+  select.innerHTML = '<option value="">Select a match&#8230;</option>' +
+    appealable.map(m =>
+      `<option value="${m.match_id}">${m.match_id.substring(0, 8)}&#8230; &mdash; ${m.decision} &mdash; ${new Date(m.created_at).toLocaleDateString('en-GB')}</option>`
+    ).join('');
+
+  if (!appealable.length) {
+    select.innerHTML = '<option value="">No appealable matches in the last 30 days</option>';
+  }
+}
+
+
+async function withdrawAppeal(btn) {
+  // Find the appeal ID from the closest appeal card
+  const card = btn.closest('[data-appeal-id]');
+  const appealId = card?.dataset?.appealId;
+  if (!appealId) {
+    alert('Could not identify this appeal. Please refresh and try again.');
+    return;
+  }
+  if (!confirm('Withdraw this appeal? This cannot be undone once it reaches Protocol Council review.')) return;
+  btn.disabled = true;
+  const result = await api('PUT', '/candidates/me/appeals/' + appealId, { action: 'withdraw' });
+  if (result) {
+    card.style.opacity = '0.5';
+    const statusEl = card.querySelector('.appeal-status');
+    if (statusEl) statusEl.textContent = 'withdrawn';
+    btn.textContent = 'Withdrawn';
+  } else {
+    btn.disabled = false;
+    alert('Could not withdraw appeal — it may already be at Protocol Council stage.');
+  }
+}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeMenu(); }
 });
 
 // ── DEMOGRAPHICS ─────────────────────────────────────────────────────────────────
-function activateDemographicsConsent() {
+async function activateDemographicsConsent() {
   const check = document.getElementById('demo-consent-check');
   if (!check || !check.checked) {
     alert('Please tick the consent checkbox to continue.');
@@ -1354,10 +1692,17 @@ function activateDemographicsConsent() {
   document.getElementById('demo-status-badge').textContent = 'consent given';
   document.getElementById('demo-status-badge').style.background = 'var(--sage-bg)';
   document.getElementById('demo-status-badge').style.color = 'var(--sage)';
-  alert('Consent recorded.\nAPI: POST /v1/candidates/me/consents\n{ consent_type: "fairness_metrics", legal_basis: "GDPR Art. 9(2)(a) explicit consent" }');
+  const result = await api('POST', '/candidates/me/consents', {
+    consent_type: 'fairness_metrics',
+    legal_basis: 'GDPR Art. 9(2)(a) — explicit consent',
+  });
+  if (!result && result !== null) {
+    alert('Could not record consent — please try again.');
+    return;
+  }
 }
 
-function saveDemographics() {
+async function saveDemographics() {
   const fields = {};
   const sex       = document.getElementById('demo-sex').value;
   const ethnicity = document.getElementById('demo-ethnicity').value;
@@ -1377,10 +1722,19 @@ function saveDemographics() {
   document.getElementById('demo-status-badge').textContent = fieldsSet.length + ' field' + (fieldsSet.length > 1 ? 's' : '') + ' provided';
   document.getElementById('demo-status-badge').style.background = 'var(--teal-dim)';
   document.getElementById('demo-status-badge').style.color = 'var(--teal)';
-  alert('Saved ' + fieldsSet.length + ' demographic field(s).\nAPI: PUT /v1/candidates/me/demographics\n' + JSON.stringify(fields, null, 2));
+  const saved = await api('PUT', '/candidates/me/demographics', fields);
+  if (saved !== null) {
+    var count = Object.keys(fields).length;
+    sessionStorage.setItem('fhp_demo_fields_count', String(count));
+    document.getElementById('demo-status-badge').textContent = count + ' field(s) provided';
+    document.getElementById('demo-save-confirm').style.display = 'inline';
+    setTimeout(function() { document.getElementById('demo-save-confirm').style.display = 'none'; }, 2500);
+  } else {
+    alert('Could not save demographic data. Check that you have given fairness consent first, and that the server is running.');
+  }
 }
 
-function deleteDemographics() {
+async function deleteDemographics() {
   if (!confirm('Remove all demographic data? This removes your cohort memberships but does not withdraw consent.')) return;
   document.getElementById('demo-status-badge').textContent = 'not provided';
   document.getElementById('demo-status-badge').style.background = 'var(--cream-d)';
@@ -1389,13 +1743,252 @@ function deleteDemographics() {
     document.getElementById(id).value = '';
   });
   document.getElementById('demo-birthyear').value = '';
-  alert('Demographic data removed.\nAPI: DELETE /v1/candidates/me/demographics');
+  const del = await api('DELETE', '/candidates/me/demographics');
+  if (del) {
+    document.getElementById('demo-status-badge').textContent = 'not provided';
+    document.getElementById('demo-status-badge').style.background = 'var(--cream-d)';
+    document.getElementById('demo-status-badge').style.color = 'var(--ink-light)';
+    ['demo-sex','demo-ethnicity','demo-religion','demo-education'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('demo-birthyear').value = '';
+  }
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────────
+const API = 'http://localhost:3000/v1';
+let _token = sessionStorage.getItem('fhp_access_token');
+
+// Redirect to landing page if no token
+if (!_token) {
+  // Allow viewing without token during development — just show a banner
+  console.warn('No access token — API calls will fail. Login via landing-page.html first.');
+}
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + (_token || ''),
+  };
+}
+
+async function api(method, path, body) {
+  try {
+    const res = await fetch(API + path, {
+      method,
+      headers: authHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) {
+      sessionStorage.clear();
+      window.location.href = 'landing-page.html';
+      return null;
+    }
+    return res.ok ? await res.json() : null;
+  } catch (e) {
+    console.error('API error:', method, path, e);
+    return null;
+  }
+}
+
+// ── Dashboard — load real data ─────────────────────────────────────────────────
+async function loadDashboard() {
+  // Notifications unread count
+  const notifs = await api('GET', '/candidates/me/notifications?unread_only=true&limit=1');
+  if (notifs) {
+    const badge = document.getElementById('notif-badge');
+    if (badge && notifs.unread_count > 0) {
+      badge.textContent = notifs.unread_count;
+      badge.style.display = 'inline-flex';
+    }
+  }
+
+  // Match history summary
+  const matches = await api('GET', '/candidates/me/matches?limit=3');
+  if (matches && matches.matches) {
+    const activeCount  = matches.matches.filter(m => m.decision === 'matched').length;
+    const el = document.getElementById('kpi-active-matches');
+    if (el) el.textContent = matches.total ?? activeCount;
+  }
+
+  // Ghosting events
+  const ghosting = await api('GET', '/candidates/me/ghosting?status=open');
+  if (ghosting) {
+    const el = document.getElementById('kpi-ghosts');
+    if (el) el.textContent = ghosting.open_count ?? 0;
+  }
+}
+
+
+async function loadConsentAndDemographics() {
+  // Check DB for active fairness consent
+  const consents = await api('GET', '/candidates/me/consents');
+  if (!consents) return;
+
+  const fairness = consents.consents && consents.consents.find(function(c) {
+    return c.consent_type === 'fairness_metrics' && !c.withdrawn_at;
+  });
+  if (!fairness) return;
+
+  // Consent is active — show the form, hide the gate
+  document.getElementById('demo-consent-gate').style.display = 'none';
+  document.getElementById('demo-consent-check').checked = true;
+  document.getElementById('demo-form').style.display = 'block';
+
+  // Fetch options — this tells us consent_active and jurisdiction-appropriate field list
+  // Raw demographic values are write-only (special category data) so we cannot fetch them back.
+  // We show how many fields were provided, stored in sessionStorage when saved.
+  const opts = await api('GET', '/candidates/me/demographics/options');
+  const badge = document.getElementById('demo-status-badge');
+  if (!badge) return;
+
+  if (opts && opts.consent_active) {
+    // Check sessionStorage for count set at save time
+    var storedCount = sessionStorage.getItem('fhp_demo_fields_count');
+    if (storedCount && parseInt(storedCount) > 0) {
+      badge.textContent = storedCount + ' field(s) provided';
+    } else {
+      // Consent is active but we don't know count (e.g. saved in a previous session)
+      // The DB has the data — we just can't read it back. Show "data provided".
+      badge.textContent = 'data provided';
+    }
+    badge.style.background = 'var(--sage-bg)';
+    badge.style.color = 'var(--sage)';
+  }
+}
+
+
+// ── PROFILE PERSISTENCE ───────────────────────────────────────────────────────────
+const PROF_KEYS = ['aware','practitioner','proficient','expert','authority'];
+
+async function saveProfile() {
+  const btn = document.getElementById('profile-save-btn');
+  const ok  = document.getElementById('profile-save-status');
+  const err = document.getElementById('profile-save-error');
+  if (btn) btn.disabled = true;
+  if (ok)  ok.style.display  = 'none';
+  if (err) err.style.display = 'none';
+
+  // Build skills payload
+  const skillsPayload = skills.map(s => ({
+    ontology_id:  s.id,
+    label:        s.label,
+    domain:       s.domain,
+    proficiency:  PROF_KEYS[s.level] || 'practitioner',
+    years_experience: null,
+  }));
+
+  // Read preferences from UI
+  const chipVals = (groupId) => {
+    const chips = document.querySelectorAll('#' + groupId + ' .pch.on');
+    return Array.from(chips).map(c => c.dataset.val || c.textContent.trim().toLowerCase());
+  };
+  const prefsPayload = {
+    certifications,
+    job_types:      chipVals('chips-job-type'),
+    work_modes:     chipVals('chips-work-mode'),
+    salary_minimum: parseFloat(document.getElementById('pref-salary-min')?.value || '0'),
+    salary_currency: document.getElementById('pref-currency')?.value || 'GBP',
+    salary_period:  document.getElementById('pref-salary-period')?.value || 'annual',
+    notice_period: {
+      value: parseInt(document.getElementById('np-n')?.value || '0'),
+      unit:  document.getElementById('np-u')?.value || 'weeks',
+    },
+  };
+
+  const result = await api('PUT', '/candidates/me', {
+    skills:       skillsPayload,
+    work_history: workHistory,
+    preferences:  prefsPayload,
+  });
+
+  if (btn) btn.disabled = false;
+  if (result) {
+    if (ok)  { ok.style.display = 'inline'; setTimeout(() => { ok.style.display = 'none'; }, 2500); }
+  } else {
+    if (err) { err.textContent = 'Save failed — please try again.'; err.style.display = 'inline'; }
+  }
+}
+
+async function loadProfile() {
+  const profile = await api('GET', '/candidates/me');
+  if (!profile) return;
+
+  // Restore skills
+  if (profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0) {
+    skills = profile.skills.map(s => ({
+      id:     s.ontology_id || s.id || 'fhp:skill:unknown',
+      label:  s.label       || s.ontology_id || 'Unknown',
+      domain: s.domain      || 'Other',
+      level:  PROF_KEYS.indexOf(s.proficiency) >= 0 ? PROF_KEYS.indexOf(s.proficiency) : 1,
+    }));
+    renderSkills();
+  }
+
+  // Restore work history
+  if (profile.work_history && Array.isArray(profile.work_history) && profile.work_history.length > 0) {
+    workHistory = profile.work_history;
+    renderRoles();
+  }
+
+  // Restore preferences
+  if (profile.preferences) {
+    const p = profile.preferences;
+
+    // Certifications
+    if (Array.isArray(p.certifications)) {
+      certifications = p.certifications;
+      renderCerts();
+    }
+
+    // Salary
+    if (p.salary_minimum) {
+      const salEl = document.getElementById('pref-salary-min');
+      if (salEl) salEl.value = p.salary_minimum;
+    }
+    if (p.salary_currency) {
+      const curEl = document.getElementById('pref-currency');
+      if (curEl) curEl.value = p.salary_currency;
+    }
+    if (p.salary_period) {
+      const perEl = document.getElementById('pref-salary-period');
+      if (perEl) perEl.value = p.salary_period;
+    }
+
+    // Notice period
+    if (p.notice_period) {
+      const npN = document.getElementById('np-n');
+      const npU = document.getElementById('np-u');
+      if (npN) npN.value = p.notice_period.value;
+      if (npU) npU.value = p.notice_period.unit;
+    }
+
+    // Chips — job types
+    if (Array.isArray(p.job_types)) {
+      document.querySelectorAll('#chips-job-type .pch').forEach(chip => {
+        chip.classList.toggle('on', p.job_types.includes(chip.dataset.val));
+      });
+    }
+
+    // Chips — work modes
+    if (Array.isArray(p.work_modes)) {
+      document.querySelectorAll('#chips-work-mode .pch').forEach(chip => {
+        chip.classList.toggle('on', p.work_modes.includes(chip.dataset.val));
+      });
+    }
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────────
 renderSkills();
+renderRoles();
+renderCerts();
 renderNotifs();
-renderCards('db-cards', 3);
+loadMatches();
+loadDashboard();
+loadConsentAndDemographics();
+loadProfile();
+
 </script>
 </body>
 </html>
