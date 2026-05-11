@@ -45,6 +45,19 @@ export const db = postgres(config.databaseUrl, {
 });
 
 /**
+ * Fairness service pool — fhp_fairness_service role.
+ * Use ONLY for reading/writing candidate_demographics.
+ * In local dev this falls back to DATABASE_URL (same superuser connection).
+ */
+export const fairnessDb = postgres(
+  process.env['FAIRNESS_DATABASE_URL'] ?? config.databaseUrl, {
+  max:         3,
+  idle_timeout: 20,
+  connect_timeout: 10,
+  transform: { undefined: null },
+});
+
+/**
  * Identity pool — fhp_identity_user role.
  * Use ONLY for operations that need PII: registration, login, profile contact.
  * This is the ONLY pool that can read identity.candidate_identity.
@@ -128,18 +141,20 @@ export async function checkDatabaseHealth(): Promise<{
   api:      'ok' | 'error';
   identity: 'ok' | 'error';
 }> {
-  const [apiResult, identityResult] = await Promise.allSettled([
+  const [apiResult, identityResult, fairnessResult] = await Promise.allSettled([
     db`SELECT 1 AS ok`,
     identityDb`SELECT 1 AS ok`,
+    fairnessDb`SELECT 1 AS ok`,
   ]);
   return {
     api:      apiResult.status      === 'fulfilled' ? 'ok' : 'error',
     identity: identityResult.status === 'fulfilled' ? 'ok' : 'error',
+    fairness: fairnessResult.status === 'fulfilled' ? 'ok' : 'error',
   };
 }
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
 
 export async function closeDatabaseConnections(): Promise<void> {
-  await Promise.all([db.end(), identityDb.end()]);
+  await Promise.all([db.end(), identityDb.end(), fairnessDb.end()]);
 }
