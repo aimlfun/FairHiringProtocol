@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHP Company Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0e1a;
+    --bg-card:   #0f1628;
+    --bg-hover:  #141c35;
+    --border:    #1e2d52;
+    --border-hi: #2d4480;
+    --navy:      #0d1f42;
+    --text:      #dde6ff;
+    --text-dim:  #8a9dc4;
+    --text-hi:   #e8eeff;
+    --amber:     #f0a020;
+    --amber-dim: #7a5010;
+    --green:     #20c070;
+    --green-dim: #0a4028;
+    --red:       #e03050;
+    --red-dim:   #4a0f1a;
+    --blue:      #4080f0;
+    --blue-dim:  #102050;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: 48px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    grid-column: 1 / -1;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 24px; height: 24px;
+    background: var(--blue);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-hi);
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-left: 4px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .company-name {
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-section {
+    padding: 12px 16px 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 12px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+    border-left-color: var(--border-hi);
+  }
+
+  .nav-item.active {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border-left-color: var(--blue);
+  }
+
+  .nav-icon {
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .nav-badge.amber {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+  }
+
+  /* ── Main content ── */
+  .main {
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .page-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-hi);
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 3px;
+    font-family: var(--mono);
+  }
+
+  .last-computed {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── KPI strip ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    animation: fadeUp 0.4s 0.08s ease both;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card:hover { border-color: var(--border-hi); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.green::before  { background: var(--green); }
+  .kpi-card.amber::before  { background: var(--amber); }
+  .kpi-card.red::before    { background: var(--red); }
+  .kpi-card.blue::before   { background: var(--blue); }
+
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-hi);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.green  .kpi-value { color: var(--green); }
+  .kpi-card.amber  .kpi-value { color: var(--amber); }
+  .kpi-card.red    .kpi-value { color: var(--red); }
+
+  .kpi-change {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .kpi-change.up   { color: var(--green); }
+  .kpi-change.down { color: var(--red); }
+
+  /* ── Two-col grid ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.4s 0.16s ease both;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.4s 0.24s ease both;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .panel-action {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--blue);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .panel-body { padding: 16px; }
+
+  /* ── Fairness rings ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .metric-ring-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: 80px; height: 80px;
+  }
+
+  .ring-svg { transform: rotate(-90deg); }
+
+  .ring-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 6;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ring-fill.ok     { stroke: var(--green); }
+  .ring-fill.warn   { stroke: var(--amber); }
+  .ring-fill.breach { stroke: var(--red);
+    animation: ringPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes ringPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-hi);
+    line-height: 1;
+  }
+
+  .ring-val.breach { color: var(--red); }
+  .ring-val.warn   { color: var(--amber); }
+  .ring-val.ok     { color: var(--green); }
+
+  .ring-label-main {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .ring-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ring-status.ok     { color: var(--green); }
+  .ring-status.warn   { color: var(--amber); }
+  .ring-status.breach { color: var(--red); }
+
+  .ring-bounds {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  /* ── SLA table ── */
+  .sla-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .sla-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .sla-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+
+  .sla-table tr:last-child td { border-bottom: none; }
+  .sla-table tbody tr:hover td { background: var(--bg-hover); }
+
+  .sla-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sla-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .sla-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+
+  .sla-pct {
+    font-size: 10px;
+    width: 32px;
+    text-align: right;
+    color: var(--text-dim);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .tag.pass  { background: var(--green-dim);  color: var(--green); }
+  .tag.warn  { background: var(--amber-dim);  color: var(--amber); }
+  .tag.fail  { background: var(--red-dim);    color: var(--red); }
+  .tag.info  { background: var(--blue-dim);   color: var(--blue); }
+
+  /* ── Ghosting log ── */
+  .ghost-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .ghost-item {
+    display: grid;
+    grid-template-columns: 110px 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .ghost-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .ghost-item.severe { border-left: 2px solid var(--red); }
+  .ghost-item.significant { border-left: 2px solid var(--amber); }
+  .ghost-item.minor { border-left: 2px solid var(--border); }
+
+  .ghost-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .ghost-stage {
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .ghost-overdue {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── Compliance score ── */
+  .compliance-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 4px 0;
+  }
+
+  .compliance-score-big {
+    font-family: var(--mono);
+    font-size: 52px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--amber);
+  }
+
+  .compliance-breakdown {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .comp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .comp-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .comp-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .comp-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .comp-val {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 30px;
+    text-align: right;
+  }
+
+  /* ── Active jobs table ── */
+  .jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .jobs-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .jobs-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    transition: background 0.15s;
+  }
+
+  .jobs-table tr:last-child td { border-bottom: none; }
+  .jobs-table tbody tr:hover td { background: var(--bg-hover); cursor: pointer; }
+
+  .job-title { color: var(--text-hi); font-weight: 500; }
+  .job-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .score-cell {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .score-cell.good    { color: var(--green); }
+  .score-cell.caution { color: var(--amber); }
+  .score-cell.poor    { color: var(--red); }
+
+  /* ── Audit log ── */
+  .audit-list { display: flex; flex-direction: column; }
+
+  .audit-row {
+    display: grid;
+    grid-template-columns: 90px 20px 1fr auto;
+    align-items: start;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  .audit-row:last-child { border-bottom: none; }
+  .audit-row:hover { background: var(--bg-hover); }
+
+  .audit-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    padding-top: 1px;
+  }
+
+  .audit-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .audit-dot.green { background: var(--green); }
+  .audit-dot.amber { background: var(--amber); }
+  .audit-dot.red   { background: var(--red); }
+  .audit-dot.blue  { background: var(--blue); }
+
+  .audit-msg {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .audit-msg span { color: var(--text-hi); font-weight: 500; }
+
+  .audit-tag { align-self: start; }
+
+  /* ── JOB DIALOG ── */
+  .dialog-overlay {
+    position: fixed; inset: 0; background: rgba(5,8,20,0.82);
+    backdrop-filter: blur(4px); z-index: 400;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .dialog-overlay.open { display: flex; }
+  .job-dialog {
+    background: var(--bg-card); border: 1px solid var(--border-hi);
+    border-radius: 6px; width: 100%; max-width: 760px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: dialogIn 0.22s ease;
+  }
+  @keyframes dialogIn {
+    from { opacity:0; transform: scale(0.97) translateY(12px); }
+    to   { opacity:1; transform: scale(1)    translateY(0);    }
+  }
+  .dialog-header {
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+  }
+  .dialog-title { font-size: 15px; font-weight: 600; color: var(--text-hi); letter-spacing: 0.01em; }
+  .dialog-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+  .dialog-close {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: var(--bg-hover); border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 14px; display: flex;
+    align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .dialog-close:hover { background: var(--border); color: var(--text); }
+  .dialog-body { padding: 20px 22px; }
+  .dialog-footer {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; bottom: 0; background: var(--bg-card);
+  }
+  .dialog-section {
+    margin-bottom: 22px; padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dialog-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .dialog-section-title {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 14px;
+  }
+  .field-group { margin-bottom: 13px; }
+  .field-label {
+    display: block; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 5px;
+  }
+  .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; padding: 8px 11px;
+    background: var(--bg-hover); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: var(--sans);
+    font-size: 12px; outline: none; transition: border-color 0.15s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: var(--blue);
+  }
+  .field-select option { background: var(--bg-card); }
+  .field-textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .field-row { display: grid; gap: 12px; }
+  .field-row-2 { grid-template-columns: 1fr 1fr; }
+  .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .notice-box {
+    padding: 9px 12px; border-radius: 4px; font-size: 11px; line-height: 1.5;
+    margin-bottom: 13px;
+  }
+  .notice-prohibited {
+    background: var(--red-dim); border: 1px solid var(--red);
+    color: var(--text); border-left-width: 3px;
+  }
+  .notice-required {
+    background: var(--amber-dim); border: 1px solid var(--amber-dim);
+    color: var(--amber); border-left-width: 3px;
+  }
+  /* Skills builder */
+  .skill-requirement-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .skill-req-item {
+    display: grid; grid-template-columns: 1fr 120px 100px auto;
+    gap: 8px; align-items: center;
+    padding: 8px 10px; background: var(--bg-hover);
+    border: 1px solid var(--border); border-radius: 4px;
+  }
+  .skill-req-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .skill-req-domain { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+  .skill-tag-must {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: var(--blue-dim); color: var(--blue); text-align: center;
+  }
+  .skill-tag-nice {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: rgba(30,45,82,0.8); color: var(--text-dim); text-align: center;
+  }
+  .skill-remove-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 13px; padding: 2px 6px; transition: color 0.15s;
+  }
+  .skill-remove-btn:hover { color: var(--red); }
+  /* Attestation checkboxes */
+  .attest-list { display: flex; flex-direction: column; gap: 10px; }
+  .attest-item { display: flex; align-items: flex-start; gap: 10px; }
+  .attest-item input[type=checkbox] { margin-top: 2px; accent-color: var(--blue); flex-shrink: 0; }
+  .attest-label { font-size: 12px; color: var(--text-dim); line-height: 1.5; cursor: pointer; }
+  .attest-label strong { color: var(--text); font-weight: 500; }
+  .attest-req { font-family: var(--mono); font-size: 9px; color: var(--red); margin-left: 4px; }
+  /* Conditional sections */
+  .conditional { display: none; }
+  .conditional.visible { display: block; }
+  /* Dialog save button */
+  .btn-dialog-save {
+    background: var(--blue); color: white; border: none; padding: 9px 20px;
+    border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-dialog-save:hover { background: #5090ff; }
+  .btn-dialog-save:disabled { background: var(--border); color: var(--text-dim); cursor: default; }
+  .btn-dialog-cancel {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    padding: 9px 18px; border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-dialog-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  .validation-msg {
+    font-family: var(--mono); font-size: 10px; color: var(--red);
+  }
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-mark"></div>
+      <div>
+        <span class="logo-text">FHP</span>
+        <span class="logo-sub">/ COMPANY COMPLIANCE TERMINAL</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span><span class="status-dot"></span>Live</span>
+      <span>Window: rolling 30d</span>
+      <span class="company-name">Acme Technologies Ltd</span>
+      <span style="color:var(--text-dim)">ID: a3f9·c2b1</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" id="nav-overview" onclick="showPage('overview')" style="cursor:pointer">
+      <span class="nav-icon">◈</span> Compliance Overview
+    </div>
+    <div class="nav-item" id="nav-fairness" onclick="showPage('fairness')" style="cursor:pointer">
+      <span class="nav-icon">◎</span> Fairness Metrics
+      <span class="nav-badge amber">1</span>
+    </div>
+    <div class="nav-section">Hiring</div>
+    <div class="nav-item" id="nav-jobs" onclick="showPage('jobs')" style="cursor:pointer">
+      <span class="nav-icon">▦</span> Active Job Briefs
+    </div>
+    <div class="nav-item" id="nav-pipeline" onclick="showPage('pipeline')" style="cursor:pointer">
+      <span class="nav-icon">⟳</span> Match Pipeline
+    </div>
+    <div class="nav-section">Obligations</div>
+    <div class="nav-item" id="nav-sla" onclick="showPage('sla')" style="cursor:pointer">
+      <span class="nav-icon">◷</span> SLA Monitor
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" id="nav-ghosting" onclick="showPage('ghosting')" style="cursor:pointer">
+      <span class="nav-icon">⚠</span> Ghosting Events
+      <span class="nav-badge amber">2</span>
+    </div>
+    <div class="nav-item" id="nav-rejections" onclick="showPage('rejections')" style="cursor:pointer">
+      <span class="nav-icon">✉</span> Rejections
+    </div>
+    <div class="nav-section">Governance</div>
+    <div class="nav-item" id="nav-auditlog" onclick="showPage('auditlog')" style="cursor:pointer">
+      <span class="nav-icon">⊞</span> Audit Log
+    </div>
+    <div class="nav-item" id="nav-appeals" onclick="showPage('appeals')" style="cursor:pointer">
+      <span class="nav-icon">↗</span> Appeals
+    </div>
+    <div style="margin-top:auto; padding: 16px;">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em">
+        FHP v1.0.0<br>
+        Pipeline v1.0.0<br>
+        Last sync: 4m ago
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main" id="main-content">
+    <div id="page-overview" class="page-section">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Compliance Overview</div>
+        <div class="page-subtitle">// acme-technologies-ltd · rolling 30-day window · 847 candidates evaluated</div>
+      </div>
+      <div class="last-computed">
+        Last computed<br>
+        <span style="color:var(--text)">2025-11-08 · 03:00 UTC</span><br>
+        <span style="color:var(--blue);cursor:pointer">↻ Refresh</span>
+      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card amber">
+        <div class="kpi-label">Compliance Score</div>
+        <div class="kpi-value">0.74</div>
+        <div class="kpi-change down">↓ 0.03 from last window</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">SLA Compliance</div>
+        <div class="kpi-value">91%</div>
+        <div class="kpi-change up">↑ 2% from last window</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Open Ghosting Events</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-change">3 resolved this window</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Active Job Briefs</div>
+        <div class="kpi-value">12</div>
+        <div class="kpi-change">4 expiring in 7 days</div>
+      </div>
+    </div>
+
+    <!-- Fairness metrics + Compliance score -->
+    <div class="two-col">
+
+      <!-- Fairness metrics rings -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Fairness Metrics · Platform-Wide</span>
+          <span class="panel-action">View per-job →</span>
+        </div>
+        <div class="panel-body">
+          <div class="metrics-grid">
+
+            <!-- DIR ring -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <!-- DIR = 0.87, bounds 0.8–1.25. Score: (0.87-0.8)/(1.25-0.8) = 0.07/0.45 = 15.5% into the ok zone. Show as 87/125 = 70% fill -->
+                  <circle class="ring-fill ok" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="60" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val ok">0.87</span>
+                </div>
+              </div>
+              <div class="ring-label-main">DIR</div>
+              <div class="ring-status ok">✓ Within bounds</div>
+              <div class="ring-bounds">target: 0.80–1.25</div>
+            </div>
+
+            <!-- EOD ring — breach -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill breach" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="130" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val breach">0.07</span>
+                </div>
+              </div>
+              <div class="ring-label-main">EOD</div>
+              <div class="ring-status breach">✗ Breach</div>
+              <div class="ring-bounds">target: |x| &lt; 0.05</div>
+            </div>
+
+            <!-- SDS ring -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill ok" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="70" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val ok">0.02</span>
+                </div>
+              </div>
+              <div class="ring-label-main">SDS</div>
+              <div class="ring-status ok">✓ Within bounds</div>
+              <div class="ring-bounds">target: |x| &lt; 0.03</div>
+            </div>
+
+          </div>
+
+          <!-- EOD breach notice -->
+          <div style="margin-top:16px; padding:10px 12px; background:var(--red-dim); border:1px solid var(--red); border-left-width:3px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">
+              ⚠ EOD Breach — Window 2 of 3
+            </div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5">
+              Equal Opportunity Difference has exceeded 0.05 for 2 consecutive windows.
+              A breach in the next window will trigger a Fairness Oversight Board review.
+              Remediation plan required within 20 business days.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compliance score breakdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Compliance Score Breakdown</span>
+          <span class="panel-action">History →</span>
+        </div>
+        <div class="panel-body">
+          <div class="compliance-display">
+            <div>
+              <div class="compliance-score-big">0.74</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--amber);letter-spacing:0.1em;margin-top:4px">REVIEW THRESHOLD: 0.70</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px">pause threshold: 0.50</div>
+            </div>
+            <div class="compliance-breakdown">
+              <div class="comp-row">
+                <span class="comp-label">SLA Compliance (35%)</span>
+                <div class="comp-bar"><div class="comp-bar-fill" style="width:91%;background:var(--green)"></div></div>
+                <span class="comp-val" style="color:var(--green)">91%</span>
+              </div>
+              <div class="comp-row">
+                <span class="comp-label">Ghosting Events (25%)</span>
+                <div class="comp-bar"><div class="comp-bar-fill" style="width:76%;background:var(--amber)"></div></div>
+                <span class="comp-val" style="color:var(--amber)">76%</span>
+              </div>
+              <div class="comp-row">
+                <span class="comp-label">Fairness Metrics (25%)</span>
+                <div class="comp-bar"><div class="comp-bar-fill" style="width:58%;background:var(--red)"></div></div>
+                <span class="comp-val" style="color:var(--red)">58%</span>
+              </div>
+              <div class="comp-row">
+                <span class="comp-label">Structured Rejections (15%)</span>
+                <div class="comp-bar"><div class="comp-bar-fill" style="width:88%;background:var(--green)"></div></div>
+                <span class="comp-val" style="color:var(--green)">88%</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">SLA by Stage</div>
+            <table class="sla-table">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Compliance</th>
+                  <th>SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Initial acknowledgement</td>
+                  <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:96%;background:var(--green)"></div></div><span class="sla-pct" style="color:var(--green)">96%</span></div></td>
+                  <td><span class="tag pass">5d</span></td>
+                </tr>
+                <tr>
+                  <td>Application review</td>
+                  <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:89%;background:var(--green)"></div></div><span class="sla-pct" style="color:var(--green)">89%</span></div></td>
+                  <td><span class="tag pass">10d</span></td>
+                </tr>
+                <tr>
+                  <td>Technical assessment</td>
+                  <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:74%;background:var(--amber)"></div></div><span class="sla-pct" style="color:var(--amber)">74%</span></div></td>
+                  <td><span class="tag warn">7d</span></td>
+                </tr>
+                <tr>
+                  <td>Interview stage</td>
+                  <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:91%;background:var(--green)"></div></div><span class="sla-pct" style="color:var(--green)">91%</span></div></td>
+                  <td><span class="tag pass">5d</span></td>
+                </tr>
+                <tr>
+                  <td>Offer stage</td>
+                  <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:100%;background:var(--green)"></div></div><span class="sla-pct" style="color:var(--green)">100%</span></div></td>
+                  <td><span class="tag pass">10d</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active jobs + Ghosting -->
+    <div class="three-col">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Active Job Briefs</span>
+          <span class="panel-action" style="cursor:pointer" onclick="openJobDialog()">Post new brief →</span>
+        </div>
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Candidates</th>
+              <th>Matched</th>
+              <th>DIR</th>
+              <th>SLA</th>
+              <th>Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="job-title">Senior Backend Engineer</div><div class="job-id">job:a3f9·2b1c</div></td>
+              <td style="font-family:var(--mono)">142</td>
+              <td style="font-family:var(--mono)">31</td>
+              <td><span class="score-cell good">0.91</span></td>
+              <td><span class="tag pass">100%</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dec 01</td>
+            </tr>
+            <tr>
+              <td><div class="job-title">Product Manager</div><div class="job-id">job:c8e1·4d2a</div></td>
+              <td style="font-family:var(--mono)">89</td>
+              <td style="font-family:var(--mono)">18</td>
+              <td><span class="score-cell caution">0.81</span></td>
+              <td><span class="tag warn">84%</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Nov 22</td>
+            </tr>
+            <tr>
+              <td><div class="job-title">Data Engineer</div><div class="job-id">job:f2a0·8e3c</div></td>
+              <td style="font-family:var(--mono)">203</td>
+              <td style="font-family:var(--mono)">44</td>
+              <td><span class="score-cell good">0.94</span></td>
+              <td><span class="tag pass">96%</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dec 15</td>
+            </tr>
+            <tr>
+              <td><div class="job-title">UX Designer</div><div class="job-id">job:b4c7·1f9e</div></td>
+              <td style="font-family:var(--mono)">67</td>
+              <td style="font-family:var(--mono)">12</td>
+              <td><span class="score-cell poor">0.72</span></td>
+              <td><span class="tag fail">71%</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 10 ⚠</td>
+            </tr>
+            <tr>
+              <td><div class="job-title">Security Engineer</div><div class="job-id">job:d6b2·0a4f</div></td>
+              <td style="font-family:var(--mono)">118</td>
+              <td style="font-family:var(--mono)">22</td>
+              <td><span class="score-cell good">0.88</span></td>
+              <td><span class="tag pass">93%</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dec 08</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ghosting events -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Open Ghosting Events</span>
+          <span class="panel-action">All events →</span>
+        </div>
+        <div class="panel-body" style="padding:8px 0;">
+          <div class="ghost-list">
+            <div class="ghost-item severe">
+              <span class="ghost-id">GH·9f2a·3c01</span>
+              <span class="ghost-stage">Technical assessment</span>
+              <span class="ghost-overdue">+48h overdue</span>
+              <span class="tag fail">severe</span>
+            </div>
+            <div class="ghost-item significant">
+              <span class="ghost-id">GH·4e7b·8d22</span>
+              <span class="ghost-stage">Screening call</span>
+              <span class="ghost-overdue">+26h overdue</span>
+              <span class="tag warn">significant</span>
+            </div>
+          </div>
+          <div style="padding:12px;border-top:1px solid var(--border);margin-top:4px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">Strike record (90 day window)</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--amber)">1</div>
+              <div style="font-size:11px;color:var(--text-dim)">of 3 before<br>brief pause</div>
+              <div style="margin-left:auto">
+                <div style="display:flex;gap:4px">
+                  <div style="width:16px;height:16px;background:var(--amber);border-radius:2px"></div>
+                  <div style="width:16px;height:16px;background:var(--border);border-radius:2px"></div>
+                  <div style="width:16px;height:16px;background:var(--border);border-radius:2px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit log -->
+    <div class="panel" style="animation: fadeUp 0.4s 0.32s ease both">
+      <div class="panel-header">
+        <span class="panel-title">Audit Log</span>
+        <span class="panel-action">Export →</span>
+      </div>
+      <div class="audit-list">
+        <div class="audit-row">
+          <span class="audit-time">08:14 · today</span>
+          <div class="audit-dot red"></div>
+          <span class="audit-msg">EOD metric breach detected on <span>job:c8e1·4d2a</span> (Product Manager). Value: 0.07, threshold: 0.05. Window 2 of 3.</span>
+          <span class="tag fail audit-tag">breach</span>
+        </div>
+        <div class="audit-row">
+          <span class="audit-time">03:00 · today</span>
+          <div class="audit-dot blue"></div>
+          <span class="audit-msg">Nightly fairness computation completed. 847 matches evaluated across 12 active briefs.</span>
+          <span class="tag info audit-tag">system</span>
+        </div>
+        <div class="audit-row">
+          <span class="audit-time">17:32 · Nov 07</span>
+          <div class="audit-dot amber"></div>
+          <span class="audit-msg">Ghosting event <span>GH·9f2a·3c01</span> upgraded to SEVERE. Company notified. Strike #1 recorded.</span>
+          <span class="tag warn audit-tag">strike</span>
+        </div>
+        <div class="audit-row">
+          <span class="audit-time">11:05 · Nov 07</span>
+          <div class="audit-dot green"></div>
+          <span class="audit-msg">Ghosting event <span>GH·2c8d·5a11</span> resolved. Company responded within 6h of breach notification.</span>
+          <span class="tag pass audit-tag">resolved</span>
+        </div>
+        <div class="audit-row">
+          <span class="audit-time">14:22 · Nov 06</span>
+          <div class="audit-dot blue"></div>
+          <span class="audit-msg">Job brief <span>job:b4c7·1f9e</span> (UX Designer) flagged: expiring in 7 days. Renewal or cancellation required.</span>
+          <span class="tag info audit-tag">notice</span>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- end page-overview -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+  ADDITIONAL COMPANY DASHBOARD PAGES
+  Injected below the main overview content, toggled by JS nav switcher.
+  Each section mirrors the same design language as the overview.
+════════════════════════════════════════════════════════════════════════ -->
+
+<div id="page-fairness" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">Fairness Metrics</div>
+      <div class="page-subtitle">// per-job and platform-wide · rolling 30d · updated nightly</div>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:right">
+      Last computed<br><span style="color:var(--text)">03:00 UTC · today</span>
+    </div>
+  </div>
+
+  <!-- Per-job metrics table -->
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header">
+      <span class="panel-title">Per-Job Fairness · Active Briefs</span>
+      <span class="panel-action">Export CSV →</span>
+    </div>
+    <table class="jobs-table">
+      <thead><tr>
+        <th>Role</th><th>Candidates</th>
+        <th>DIR</th><th>EOD</th><th>SDS</th>
+        <th>Consecutive breach</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="job-title">Senior Backend Engineer</div><div class="job-id">job:a3f9·2b1c</div></td>
+          <td style="font-family:var(--mono)">142</td>
+          <td><span class="score-cell good">0.91</span></td>
+          <td><span class="score-cell good">0.03</span></td>
+          <td><span class="score-cell good">0.01</span></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">0</td>
+          <td><span class="tag pass">All OK</span></td>
+        </tr>
+        <tr>
+          <td><div class="job-title">Product Manager</div><div class="job-id">job:c8e1·4d2a</div></td>
+          <td style="font-family:var(--mono)">89</td>
+          <td><span class="score-cell good">0.87</span></td>
+          <td><span class="score-cell poor">0.07</span></td>
+          <td><span class="score-cell good">0.02</span></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--amber)">2 windows</td>
+          <td><span class="tag fail">EOD breach</span></td>
+        </tr>
+        <tr>
+          <td><div class="job-title">Data Engineer</div><div class="job-id">job:f2a0·8e3c</div></td>
+          <td style="font-family:var(--mono)">203</td>
+          <td><span class="score-cell good">0.94</span></td>
+          <td><span class="score-cell good">0.02</span></td>
+          <td><span class="score-cell good">0.01</span></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">0</td>
+          <td><span class="tag pass">All OK</span></td>
+        </tr>
+        <tr>
+          <td><div class="job-title">UX Designer</div><div class="job-id">job:b4c7·1f9e</div></td>
+          <td style="font-family:var(--mono)">67</td>
+          <td><span class="score-cell poor">0.72</span></td>
+          <td><span class="score-cell poor">0.06</span></td>
+          <td><span class="score-cell caution">0.04</span></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--red)">3 windows</td>
+          <td><span class="tag fail">Review required</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EOD breach notice -->
+  <div style="margin-top:16px;padding:14px 16px;background:var(--red-dim);border:1px solid var(--red);border-left-width:3px;animation:fadeUp 0.3s 0.1s ease both">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">⚠ Remediation Required — UX Designer (job:b4c7·1f9e)</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px">All three metrics are outside bounds for 3 consecutive computation windows. A Fairness Oversight Board review has been triggered. You must submit a remediation plan within 20 business days. Review your skills_required configuration — the DIR breach suggests the minimum proficiency thresholds may be acting as inadvertent filters.</div>
+    <button style="font-family:var(--mono);font-size:10px;background:var(--red);color:white;border:none;padding:6px 14px;cursor:pointer;letter-spacing:0.08em">Submit remediation plan →</button>
+  </div>
+</div>
+
+<!-- ── ACTIVE JOBS ── -->
+<div id="page-jobs" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">Active Job Briefs</div>
+      <div class="page-subtitle">// 12 active · 4 expiring within 7 days</div>
+    </div>
+    <button class="panel-action" style="background:var(--blue);color:white;border:none;padding:8px 16px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:0.08em" onclick="openJobDialog()">+ Post new brief</button>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">All Active Briefs</span><span class="panel-action">Filter →</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Role</th><th>Status</th><th>SLA Days</th><th>Candidates</th><th>Matched</th><th>Salary Range</th><th>Expires</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="job-title">Senior Backend Engineer</div><div class="job-id">Permanent · Remote · £85k–£110k</div></td>
+          <td><span class="tag pass">active</span></td>
+          <td style="font-family:var(--mono)">5d</td>
+          <td style="font-family:var(--mono)">142</td>
+          <td style="font-family:var(--mono)">31</td>
+          <td style="font-family:var(--mono);font-size:11px">£85–110k</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dec 01</td>
+          <td><span class="panel-action" style="cursor:pointer" onclick="openJobDialog('Senior Backend Engineer')">Edit →</span></td>
+        </tr>
+        <tr>
+          <td><div class="job-title">Product Manager</div><div class="job-id">Permanent · Hybrid · £75k–£95k</div></td>
+          <td><span class="tag pass">active</span></td>
+          <td style="font-family:var(--mono)">10d</td>
+          <td style="font-family:var(--mono)">89</td>
+          <td style="font-family:var(--mono)">18</td>
+          <td style="font-family:var(--mono);font-size:11px">£75–95k</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 22 ⚠</td>
+          <td><span class="panel-action" style="cursor:pointer" onclick="openJobDialog('Product Manager')">Edit →</span></td>
+        </tr>
+        <tr>
+          <td><div class="job-title">UX Designer</div><div class="job-id">Permanent · Hybrid · £60k–£80k</div></td>
+          <td><span class="tag fail">paused</span></td>
+          <td style="font-family:var(--mono)">7d</td>
+          <td style="font-family:var(--mono)">67</td>
+          <td style="font-family:var(--mono)">12</td>
+          <td style="font-family:var(--mono);font-size:11px">£60–80k</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 10 ⚠</td>
+          <td><span class="panel-action" style="cursor:pointer">Review →</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SLA MONITOR ── -->
+<div id="page-sla" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">SLA Monitor</div>
+      <div class="page-subtitle">// 47 active interactions · 3 approaching deadline · 2 breached</div>
+    </div>
+  </div>
+  <div class="kpi-strip" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="kpi-card green"><div class="kpi-label">Overall SLA Compliance</div><div class="kpi-value">91%</div><div class="kpi-change up">↑ 2% from last window</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Approaching (24h)</div><div class="kpi-value">3</div><div class="kpi-change">Action needed today</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Breached (open)</div><div class="kpi-value">2</div><div class="kpi-change">Strikes pending</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Resolved this window</div><div class="kpi-value">12</div><div class="kpi-change">Avg 4h after breach</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.1s ease both;margin-top:16px">
+    <div class="panel-header"><span class="panel-title">Active Interactions — SLA Status</span></div>
+    <table class="sla-table" style="width:100%">
+      <thead><tr><th>Match ID</th><th>Stage</th><th>Stage entered</th><th>SLA deadline</th><th>Time remaining</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">mx:9f2a·3c01</td>
+          <td>Technical assessment</td>
+          <td style="font-family:var(--mono);font-size:10px">Nov 01</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--red)">Nov 10 ⚠</td>
+          <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:102%;background:var(--red)"></div></div><span class="sla-pct" style="color:var(--red)">+48h</span></div></td>
+          <td><span class="tag fail">breached</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">mx:4e7b·8d22</td>
+          <td>Screening call outcome</td>
+          <td style="font-family:var(--mono);font-size:10px">Nov 05</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 12</td>
+          <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:75%;background:var(--amber)"></div></div><span class="sla-pct" style="color:var(--amber)">18h</span></div></td>
+          <td><span class="tag warn">due today</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">mx:2c8d·5a11</td>
+          <td>Application review</td>
+          <td style="font-family:var(--mono);font-size:10px">Nov 03</td>
+          <td style="font-family:var(--mono);font-size:10px">Nov 17</td>
+          <td><div class="sla-bar-wrap"><div class="sla-bar"><div class="sla-bar-fill" style="width:40%;background:var(--green)"></div></div><span class="sla-pct" style="color:var(--green)">5d</span></div></td>
+          <td><span class="tag pass">on track</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── GHOSTING EVENTS ── -->
+<div id="page-ghosting" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Ghosting Events</div><div class="page-subtitle">// 2 open · 3 resolved this window · strike count: 1 of 3</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">All Ghosting Events</span><span class="panel-action">Export →</span></div>
+    <div class="ghost-list" style="padding:8px 0">
+      <div class="ghost-item severe" style="cursor:pointer">
+        <span class="ghost-id">GH·9f2a·3c01</span>
+        <span class="ghost-stage">Technical assessment — 48h overdue</span>
+        <span class="ghost-overdue">Strike #1 recorded</span>
+        <span class="tag fail">severe</span>
+      </div>
+      <div class="ghost-item significant" style="cursor:pointer">
+        <span class="ghost-id">GH·4e7b·8d22</span>
+        <span class="ghost-stage">Screening call — 26h overdue</span>
+        <span class="ghost-overdue">Warning sent</span>
+        <span class="tag warn">significant</span>
+      </div>
+      <div class="ghost-item minor" style="cursor:pointer;opacity:0.6">
+        <span class="ghost-id">GH·2c8d·5a11</span>
+        <span class="ghost-stage">Application review — resolved</span>
+        <span class="ghost-overdue">Responded within 6h of breach</span>
+        <span class="tag pass">resolved</span>
+      </div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text-dim)">
+      ⚠ 2 more strikes in the next 90 days will trigger automatic job brief pausing.
+    </div>
+  </div>
+</div>
+
+<!-- ── REJECTIONS ── -->
+<div id="page-rejections" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Structured Rejections</div><div class="page-subtitle">// 88% compliance rate · 12 pending responses</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Pending Rejections — Awaiting Response</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Match ID</th><th>Stage</th><th>Deadline</th><th>Required action</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">mx:1a2b·3c4d</td>
+          <td>Interview stage</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 12</td>
+          <td>Send structured rejection with stage-specific feedback</td>
+          <td><button style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border:none;padding:4px 10px;cursor:pointer">Send rejection →</button></td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">mx:5e6f·7a8b</td>
+          <td>Technical assessment</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Nov 16</td>
+          <td>Send outcome with assessment score summary</td>
+          <td><button style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border:none;padding:4px 10px;cursor:pointer">Send rejection →</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Rejection composer -->
+  <div class="panel" style="margin-top:16px;animation:fadeUp 0.3s 0.1s ease both">
+    <div class="panel-header"><span class="panel-title">Quick Rejection Composer</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Reason code</div>
+          <select style="width:100%;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:var(--mono);font-size:11px">
+            <option>SR-01 — Required skill below proficiency</option>
+            <option>SR-02 — Required skill absent</option>
+            <option>SR-03 — Technical assessment below standard</option>
+            <option>AS-01 — Interview performance below standard</option>
+            <option>PR-02 — Role filled</option>
+            <option>PL-01 — Salary misalignment</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Stage-specific notes</div>
+          <input type="text" placeholder="Brief, specific, honest feedback..." style="width:100%;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:var(--sans);font-size:12px">
+        </div>
+      </div>
+      <button style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border:none;padding:8px 16px;cursor:pointer;letter-spacing:0.08em">Send structured rejection</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUDIT LOG ── -->
+<div id="page-auditlog" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Audit Log</div><div class="page-subtitle">// complete compliance record for your account</div></div>
+    <button style="font-family:var(--mono);font-size:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 14px;cursor:pointer;letter-spacing:0.08em">Export full log →</button>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Event Log</span></div>
+    <div class="audit-list">
+      <div class="audit-row"><span class="audit-time">08:14 · today</span><div class="audit-dot red"></div><span class="audit-msg">EOD breach detected — <span>Product Manager (job:c8e1·4d2a)</span> — window 2 of 3</span><span class="tag fail audit-tag">breach</span></div>
+      <div class="audit-row"><span class="audit-time">03:00 · today</span><div class="audit-dot blue"></div><span class="audit-msg">Nightly fairness computation completed — 847 matches evaluated</span><span class="tag info audit-tag">system</span></div>
+      <div class="audit-row"><span class="audit-time">17:32 · Nov 07</span><div class="audit-dot amber"></div><span class="audit-msg">Ghosting event <span>GH·9f2a·3c01</span> upgraded to SEVERE — strike #1 recorded</span><span class="tag warn audit-tag">strike</span></div>
+      <div class="audit-row"><span class="audit-time">11:05 · Nov 07</span><div class="audit-dot green"></div><span class="audit-msg">Ghosting event <span>GH·2c8d·5a11</span> resolved — response within SLA</span><span class="tag pass audit-tag">resolved</span></div>
+      <div class="audit-row"><span class="audit-time">09:22 · Nov 06</span><div class="audit-dot blue"></div><span class="audit-msg">Job brief <span>job:b4c7·1f9e</span> (UX Designer) posted — compliance attestations confirmed</span><span class="tag info audit-tag">posted</span></div>
+      <div class="audit-row"><span class="audit-time">14:00 · Nov 05</span><div class="audit-dot green"></div><span class="audit-msg">Compliance score updated: 0.71 → 0.74 — SLA compliance improvement</span><span class="tag pass audit-tag">score</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APPEALS ── -->
+<div id="page-appeals" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Appeals</div><div class="page-subtitle">// 1 active · 4 resolved this quarter</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Active Appeals Against Your Job Briefs</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Appeal ID</th><th>Job</th><th>Ground</th><th>Status</th><th>TWG deadline</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">APP·2025·0108</td>
+          <td><div class="job-title">Senior Backend Engineer</div></td>
+          <td style="font-size:11px">Incorrect skill assessment</td>
+          <td><span class="tag warn">pc_review</span></td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">Nov 14</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Pending</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim)">
+      You will be notified of the Protocol Council decision within 10 business days of the TWG finding.
+      You are required to cooperate with any governance investigation.
+    </div>
+  </div>
+  <!-- Match pipeline (simple placeholder) -->
+</div>
+
+<!-- ── MATCH PIPELINE ── -->
+<div id="page-pipeline" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Match Pipeline</div><div class="page-subtitle">// recent pipeline runs for your active briefs</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Recent Pipeline Runs</span><span class="panel-action">All runs →</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Match ID</th><th>Job</th><th>Decision</th><th>Score</th><th>Duration</th><th>Bias correction</th><th>Run at</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">mx:a1b2·c3d4</td>
+          <td><div class="job-title">Senior Backend Engineer</div></td>
+          <td><span class="tag pass">matched</span></td>
+          <td><span class="score-cell good">0.89</span></td>
+          <td style="font-family:var(--mono);font-size:10px">842ms</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">none</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">08:31 today</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">mx:e5f6·g7h8</td>
+          <td><div class="job-title">Product Manager</div></td>
+          <td><span class="tag warn">borderline</span></td>
+          <td><span class="score-cell caution">0.57</span></td>
+          <td style="font-family:var(--mono);font-size:10px">1,204ms</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--amber)">+0.04 (EOD)</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">08:29 today</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--mono);font-size:10px">mx:i9j0·k1l2</td>
+          <td><div class="job-title">UX Designer</div></td>
+          <td><span class="tag fail">not_matched</span></td>
+          <td style="font-family:var(--mono);color:var(--red)">0.38</td>
+          <td style="font-family:var(--mono);font-size:10px">389ms</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">aborted S3</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">08:27 today</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+  </main>
+</div><!-- end .shell -->
+
+<script>
+const PAGES = ['overview','fairness','jobs','pipeline','sla','ghosting','rejections','auditlog','appeals'];
+
+function showPage(pageId) {
+  PAGES.forEach(p => {
+    const sec = document.getElementById('page-' + p);
+    const nav = document.getElementById('nav-' + p);
+    if (sec) sec.style.display = p === pageId ? '' : 'none';
+    if (nav) nav.classList.toggle('active', p === pageId);
+  });
+}
+// Initialize — only overview visible
+document.addEventListener('DOMContentLoaded', () => showPage('overview'));
+</script>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+  ADD / EDIT JOB BRIEF DIALOG
+  API: POST /v1/jobs (new) · PUT /v1/jobs/:jobId (edit)
+════════════════════════════════════════════════════════════════════ -->
+<div class="dialog-overlay" id="job-dialog-overlay" onclick="if(event.target===this)closeJobDialog()">
+  <div class="job-dialog" id="job-dialog">
+
+    <div class="dialog-header">
+      <div>
+        <div class="dialog-title" id="dialog-mode-title">Post new job brief</div>
+        <div class="dialog-subtitle">API: POST /v1/jobs &middot; FHP v1.0 compliant</div>
+      </div>
+      <button class="dialog-close" onclick="closeJobDialog()">&#10005;</button>
+    </div>
+
+    <div class="dialog-body">
+
+      <!-- ── SECTION 1: ROLE BASICS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">01 &mdash; Role</div>
+        <div class="field-group">
+          <label class="field-label" for="jd-title">Job title <span style="color:var(--red)">*</span></label>
+          <input class="field-input" type="text" id="jd-title" oninput="validateJobDialog()" placeholder="e.g. Senior Backend Engineer">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="jd-summary">Role summary <span style="color:var(--red)">*</span></label>
+          <textarea class="field-textarea" id="jd-summary" oninput="validateJobDialog()"
+            placeholder="Describe what the role involves, what the team does, and what success looks like. Be specific — vague descriptions produce poor matches."></textarea>
+          <div class="field-hint">Min 100 characters. This is shown to candidates in their explanation.</div>
+        </div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-employment-type">Employment type <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-employment-type" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="permanent">Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="part_time">Part-time</option>
+              <option value="internship">Internship</option>
+              <option value="apprenticeship">Apprenticeship</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-mode">Work mode <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-work-mode" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="on_site">On-site</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Contract details — shown when employment_type = contract -->
+        <div class="conditional" id="contract-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-contract-months">Contract duration (months)</label>
+              <input class="field-input" type="number" id="jd-contract-months" min="1" placeholder="e.g. 6">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-day-rate">Day rate (optional)</label>
+              <input class="field-input" type="number" id="jd-day-rate" placeholder="e.g. 650">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hybrid details — shown when work_mode = hybrid -->
+        <div class="conditional" id="hybrid-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-days-onsite">Days on-site per week <span style="color:var(--red)">*</span></label>
+              <input class="field-input" type="number" id="jd-days-onsite" min="1" max="4" placeholder="e.g. 2">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-onsite-notes">On-site notes</label>
+              <input class="field-input" type="text" id="jd-onsite-notes" placeholder="e.g. London office, Tuesdays + Thursdays">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: LOCATION & SCHEDULE ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">02 &mdash; Location &amp; Schedule</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-country">Country <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-country">
+              <option value="GB" selected>United Kingdom</option>
+              <option value="US">United States</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="NL">Netherlands</option>
+              <option value="IE">Ireland</option>
+              <option value="AU">Australia</option>
+              <option value="CA">Canada</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-city">City / region</label>
+            <input class="field-input" type="text" id="jd-city" placeholder="e.g. London, Manchester">
+            <div class="field-hint">Leave blank for fully remote roles.</div>
+          </div>
+        </div>
+        <div class="field-row field-row-2" style="margin-top:12px">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-schedule">Work schedule</label>
+            <select class="field-select" id="jd-work-schedule">
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="compressed_hours">Compressed hours</option>
+              <option value="flexitime">Flexitime</option>
+              <option value="shift_work">Shift work</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-right-to-work">Right to work required</label>
+            <select class="field-select" id="jd-right-to-work">
+              <option value="GB">UK right to work</option>
+              <option value="EU">EU / EEA right to work</option>
+              <option value="US">US work authorisation</option>
+              <option value="any">Any (sponsorship available)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: SALARY ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">03 &mdash; Salary</div>
+        <div class="notice-box notice-required">
+          &#9888; Salary range is required. Both minimum and maximum must be provided.
+          Posting &ldquo;competitive&rdquo; or an implausibly wide range is a compliance violation.
+        </div>
+        <div class="field-row field-row-4">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-currency">Currency</label>
+            <select class="field-select" id="jd-currency">
+              <option value="GBP">GBP &pound;</option>
+              <option value="USD">USD &#36;</option>
+              <option value="EUR">EUR &euro;</option>
+              <option value="AUD">AUD &#36;</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-min">Minimum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-min" oninput="validateJobDialog()" placeholder="e.g. 70000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-max">Maximum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-max" oninput="validateJobDialog()" placeholder="e.g. 90000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-period">Period</label>
+            <select class="field-select" id="jd-salary-period">
+              <option value="annual">/ year</option>
+              <option value="daily">/ day</option>
+              <option value="hourly">/ hour</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-sla-days">SLA response commitment (business days) <span style="color:var(--red)">*</span></label>
+              <select class="field-select" id="jd-sla-days">
+                <option value="3">3 days (fast track)</option>
+                <option value="5" selected>5 days (standard)</option>
+                <option value="7">7 days</option>
+                <option value="10">10 days</option>
+              </select>
+              <div class="field-hint">You are contractually bound to respond within this window at every hiring stage. Breaches are logged and escalated automatically.</div>
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-expires">Brief expires</label>
+              <input class="field-input" type="date" id="jd-expires">
+              <div class="field-hint">Leave blank to use the default 90-day window.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: SKILLS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">04 &mdash; Skills</div>
+        <div class="notice-box notice-prohibited">
+          &#10008; <strong>Prohibited:</strong> You may not require a specific degree, institution, graduation year,
+          or &ldquo;years of experience&rdquo; as a hard filter. These are indirect discrimination under the
+          Equality Act 2010. Describe skills and proficiency levels instead.
+        </div>
+
+        <div class="skill-requirement-list" id="skill-req-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Add skill row -->
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input class="field-input" type="text" id="skill-add-input"
+            placeholder="Search skills (e.g. Python, Kubernetes)&#8230;"
+            style="flex:1" oninput="filterDialogSkills(this.value)" onfocus="filterDialogSkills(this.value)">
+          <select class="field-select" id="skill-add-type" style="max-width:130px">
+            <option value="must_have">Must-have</option>
+            <option value="nice_to_have">Nice-to-have</option>
+          </select>
+          <select class="field-select" id="skill-add-proficiency" style="max-width:130px">
+            <option value="aware">Aware</option>
+            <option value="practitioner">Practitioner</option>
+            <option value="proficient" selected>Proficient</option>
+            <option value="expert">Expert</option>
+            <option value="authority">Authority</option>
+          </select>
+          <button class="btn-dialog-save" onclick="addSkillToJob()" style="padding:8px 14px">+ Add</button>
+        </div>
+        <div id="skill-add-suggestions" style="display:none;background:var(--bg-hover);border:1px solid var(--border);border-radius:4px;margin-top:4px;max-height:140px;overflow-y:auto"></div>
+        <div class="field-hint" style="margin-top:6px">At least one must-have skill is required. All skills must resolve in the FHP ontology v1.0.</div>
+      </div>
+
+      <!-- ── SECTION 5: NOTICE PERIOD & PROCESS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">05 &mdash; Process &amp; Notice</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-notice-max">Maximum acceptable notice period</label>
+            <div style="display:flex;gap:6px">
+              <input class="field-input" type="number" id="jd-notice-n" min="0" value="3" style="max-width:70px">
+              <select class="field-select" id="jd-notice-unit" style="max-width:100px">
+                <option value="immediately">immediately</option>
+                <option value="weeks" selected>weeks</option>
+                <option value="months">months</option>
+              </select>
+            </div>
+            <div class="field-hint">Candidates with longer notice periods will not be matched.</div>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-stages">Hiring stages</label>
+            <input class="field-input" type="text" id="jd-stages"
+              placeholder="e.g. Screening call, Technical test, Final interview"
+              value="Screening call, Technical assessment, Final interview">
+            <div class="field-hint">Comma-separated. Shared with candidates so they know what to expect.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 6: COMPLIANCE ATTESTATION ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">06 &mdash; Compliance Attestations</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5">
+          By posting this brief you attest that the following filters are <strong style="color:var(--text)">not</strong> applied
+          when evaluating candidates. These are logged, auditable, and legally binding.
+          All five are required to post.
+        </div>
+        <div class="attest-list" id="attest-list">
+          <div class="attest-item">
+            <input type="checkbox" id="attest-degree" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-degree">
+              <strong>No degree requirement</strong> &mdash; Candidates will not be filtered on the basis of having
+              or not having a university degree, qualification type, or institution attended.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-age" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-age">
+              <strong>No age filter</strong> &mdash; Candidates will not be filtered on the basis of age,
+              graduation year, or years since qualification.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-gaps" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-gaps">
+              <strong>No employment gap penalisation</strong> &mdash; Career breaks, gaps in employment history,
+              or non-linear career paths will not be used as negative filters.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-prestige" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-prestige">
+              <strong>No prestige bias</strong> &mdash; Previous employer name, brand recognition, or
+              perceived company prestige will not influence evaluation outcomes.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-salary" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-salary">
+              <strong>Salary range is accurate</strong> &mdash; The minimum and maximum salary figures
+              provided represent the genuine budget for this role and will be honoured.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+        </div>
+        <div id="attest-warning" style="display:none;margin-top:12px" class="notice-box notice-prohibited">
+          All five attestations are required before a brief can be posted. This is a binding compliance commitment.
+        </div>
+      </div>
+
+    </div><!-- end dialog-body -->
+
+    <div class="dialog-footer">
+      <span class="validation-msg" id="dialog-validation-msg"></span>
+      <div style="display:flex;gap:10px">
+        <button class="btn-dialog-cancel" onclick="closeJobDialog()">Cancel</button>
+        <button class="btn-dialog-save" id="dialog-save-btn" onclick="saveJobBrief()" disabled>
+          Post brief
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end job-dialog -->
+</div><!-- end dialog-overlay -->
+
+<script>
+
+// ════════════════════════════════════════════════════════════
+//  JOB BRIEF DIALOG
+// ════════════════════════════════════════════════════════════
+
+const SKILL_OPTIONS = [
+  {id:'fhp:skill:python',         label:'Python',               domain:'Software Eng'},
+  {id:'fhp:skill:typescript',     label:'TypeScript',           domain:'Software Eng'},
+  {id:'fhp:skill:go',             label:'Go',                   domain:'Software Eng'},
+  {id:'fhp:skill:java',           label:'Java',                 domain:'Software Eng'},
+  {id:'fhp:skill:rust',           label:'Rust',                 domain:'Software Eng'},
+  {id:'fhp:skill:react',          label:'React',                domain:'Software Eng'},
+  {id:'fhp:skill:sql',            label:'Analytical SQL',       domain:'Data & Analytics'},
+  {id:'fhp:skill:spark',          label:'Apache Spark',         domain:'Data & Analytics'},
+  {id:'fhp:skill:dbt',            label:'dbt',                  domain:'Data & Analytics'},
+  {id:'fhp:skill:ml',             label:'Machine Learning',     domain:'Data & Analytics'},
+  {id:'fhp:skill:data-eng',       label:'Data Engineering',     domain:'Data & Analytics'},
+  {id:'fhp:skill:docker',         label:'Docker',               domain:'Infrastructure'},
+  {id:'fhp:skill:kubernetes',     label:'Kubernetes',           domain:'Infrastructure'},
+  {id:'fhp:skill:aws',            label:'AWS',                  domain:'Infrastructure'},
+  {id:'fhp:skill:terraform',      label:'Terraform',            domain:'Infrastructure'},
+  {id:'fhp:skill:product-mgmt',   label:'Product Management',   domain:'Product'},
+  {id:'fhp:skill:ux-design',      label:'UX Design',            domain:'Design'},
+  {id:'fhp:skill:figma',          label:'Figma',                domain:'Design'},
+  {id:'fhp:skill:agile',          label:'Agile / Scrum',        domain:'Process'},
+];
+
+let dialogMode = 'create';   // 'create' | 'edit'
+let dialogJobId = null;
+let jobSkills = [];           // { id, label, domain, type, minProficiency }
+
+function openJobDialog(jobTitle) {
+  if (jobTitle) {
+    dialogMode = 'edit';
+    dialogJobId = 'job:example';
+    document.getElementById('dialog-mode-title').textContent = 'Edit job brief';
+    document.querySelector('.dialog-subtitle').textContent =
+      'API: PUT /v1/jobs/' + dialogJobId + ' · FHP v1.0 compliant';
+    // Pre-fill example data for the edit case
+    prefillJobDialog(jobTitle);
+  } else {
+    dialogMode = 'create';
+    dialogJobId = null;
+    document.getElementById('dialog-mode-title').textContent = 'Post new job brief';
+    document.querySelector('.dialog-subtitle').textContent =
+      'API: POST /v1/jobs · FHP v1.0 compliant';
+    resetJobDialog();
+  }
+  document.getElementById('job-dialog-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderJobSkills();
+  validateJobDialog();
+}
+
+function closeJobDialog() {
+  document.getElementById('job-dialog-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function resetJobDialog() {
+  ['jd-title','jd-summary','jd-city','jd-stages','jd-day-rate','jd-contract-months','jd-onsite-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('jd-employment-type').value = '';
+  document.getElementById('jd-work-mode').value = '';
+  document.getElementById('jd-currency').value = 'GBP';
+  document.getElementById('jd-salary-min').value = '';
+  document.getElementById('jd-salary-max').value = '';
+  document.getElementById('jd-salary-period').value = 'annual';
+  document.getElementById('jd-sla-days').value = '5';
+  document.getElementById('jd-notice-n').value = '3';
+  document.getElementById('jd-notice-unit').value = 'weeks';
+  document.getElementById('jd-work-schedule').value = 'full_time';
+  document.getElementById('jd-right-to-work').value = 'GB';
+  document.getElementById('jd-expires').value = '';
+  document.getElementById('jd-stages').value = 'Screening call, Technical assessment, Final interview';
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  jobSkills = [];
+  toggleConditionalSections();
+}
+
+function prefillJobDialog(title) {
+  const DATA = {
+    'Senior Backend Engineer': {
+      title: 'Senior Backend Engineer', summary: 'Leading backend systems for our core payments platform. You will own the API layer, drive architectural decisions, and mentor junior engineers.',
+      employment_type: 'permanent', work_mode: 'remote', currency: 'GBP',
+      salary_min: '85000', salary_max: '110000', period: 'annual', sla: '5',
+      country: 'GB', city: 'Remote', schedule: 'full_time', rtw: 'GB',
+      notice_n: '4', notice_unit: 'weeks',
+      stages: 'Screening call, Technical assessment, System design interview, Final interview',
+      skills: [
+        {id:'fhp:skill:python',    label:'Python',          domain:'Software Eng',    type:'must_have',    minProficiency:'proficient'},
+        {id:'fhp:skill:docker',    label:'Docker',          domain:'Infrastructure',  type:'must_have',    minProficiency:'practitioner'},
+        {id:'fhp:skill:kubernetes',label:'Kubernetes',      domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+        {id:'fhp:skill:aws',       label:'AWS',             domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+      ],
+    },
+    'Product Manager': {
+      title: 'Product Manager', summary: 'Own the roadmap for our candidate-facing product. Work closely with engineering and design to ship features that make hiring fairer.',
+      employment_type: 'permanent', work_mode: 'hybrid', currency: 'GBP',
+      salary_min: '75000', salary_max: '95000', period: 'annual', sla: '5',
+      country: 'GB', city: 'London', schedule: 'full_time', rtw: 'GB',
+      notice_n: '3', notice_unit: 'months',
+      stages: 'Screening call, Product case study, Stakeholder interview',
+      skills: [
+        {id:'fhp:skill:product-mgmt', label:'Product Management', domain:'Product',  type:'must_have',    minProficiency:'proficient'},
+        {id:'fhp:skill:agile',        label:'Agile / Scrum',      domain:'Process',  type:'must_have',    minProficiency:'practitioner'},
+        {id:'fhp:skill:sql',          label:'Analytical SQL',     domain:'Data',     type:'nice_to_have', minProficiency:'aware'},
+      ],
+    },
+  };
+  const d = DATA[title];
+  if (!d) return;
+  document.getElementById('jd-title').value          = d.title;
+  document.getElementById('jd-summary').value        = d.summary;
+  document.getElementById('jd-employment-type').value = d.employment_type;
+  document.getElementById('jd-work-mode').value      = d.work_mode;
+  document.getElementById('jd-currency').value       = d.currency;
+  document.getElementById('jd-salary-min').value     = d.salary_min;
+  document.getElementById('jd-salary-max').value     = d.salary_max;
+  document.getElementById('jd-salary-period').value  = d.period;
+  document.getElementById('jd-sla-days').value       = d.sla;
+  document.getElementById('jd-country').value        = d.country;
+  document.getElementById('jd-city').value           = d.city;
+  document.getElementById('jd-work-schedule').value  = d.schedule;
+  document.getElementById('jd-right-to-work').value  = d.rtw;
+  document.getElementById('jd-notice-n').value       = d.notice_n;
+  document.getElementById('jd-notice-unit').value    = d.notice_unit;
+  document.getElementById('jd-stages').value         = d.stages;
+  jobSkills = d.skills.map(s => Object.assign({}, s));
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = true;
+  });
+  toggleConditionalSections();
+}
+
+// ── Conditional sections (hybrid / contract details) ──────────────────────────
+function toggleConditionalSections() {
+  const mode    = document.getElementById('jd-work-mode').value;
+  const empType = document.getElementById('jd-employment-type').value;
+  document.getElementById('hybrid-details').classList.toggle('visible', mode === 'hybrid');
+  document.getElementById('contract-details').classList.toggle('visible', empType === 'contract');
+  validateJobDialog();
+}
+
+// ── Skills ────────────────────────────────────────────────────────────────────
+function renderJobSkills() {
+  const list = document.getElementById('skill-req-list');
+  if (!jobSkills.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No skills added yet. At least one must-have skill is required.</div>';
+    return;
+  }
+  const PROF_LABELS = {aware:'Aware',practitioner:'Practitioner',proficient:'Proficient',expert:'Expert',authority:'Authority'};
+  list.innerHTML = jobSkills.map((s, i) => `
+    <div class="skill-req-item">
+      <div>
+        <div class="skill-req-name">${s.label}</div>
+        <div class="skill-req-domain">${s.domain}</div>
+      </div>
+      <div class="${s.type === 'must_have' ? 'skill-tag-must' : 'skill-tag-nice'}">
+        ${s.type === 'must_have' ? 'Must-have' : 'Nice-to-have'}
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">
+        Min: ${PROF_LABELS[s.minProficiency] || s.minProficiency}
+      </div>
+      <button class="skill-remove-btn" onclick="removeJobSkill(${i})">&#10005;</button>
+    </div>`).join('');
+  validateJobDialog();
+}
+
+function removeJobSkill(i) {
+  jobSkills.splice(i, 1);
+  renderJobSkills();
+}
+
+function filterDialogSkills(val) {
+  const sugg = document.getElementById('skill-add-suggestions');
+  if (!val || val.length < 1) { sugg.style.display = 'none'; return; }
+  const matches = SKILL_OPTIONS.filter(s =>
+    s.label.toLowerCase().includes(val.toLowerCase()) &&
+    !jobSkills.find(j => j.id === s.id)
+  );
+  if (!matches.length) { sugg.style.display = 'none'; return; }
+  sugg.style.display = 'block';
+  sugg.innerHTML = matches.map(s => `
+    <div style="padding:7px 11px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
+         onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"
+         onmousedown="selectDialogSkill('${s.id}','${s.label}','${s.domain}')">
+      <span style="font-weight:500;color:var(--text)">${s.label}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${s.domain}</span>
+    </div>`).join('');
+}
+
+function selectDialogSkill(id, label, domain) {
+  document.getElementById('skill-add-input').value = label;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  document.getElementById('skill-add-input').dataset.selectedId = id;
+  document.getElementById('skill-add-input').dataset.selectedDomain = domain;
+}
+
+function addSkillToJob() {
+  const input = document.getElementById('skill-add-input');
+  const label = input.value.trim();
+  if (!label) return;
+  const id     = input.dataset.selectedId || 'fhp:skill:custom-' + Date.now();
+  const domain = input.dataset.selectedDomain || 'Other';
+  const type   = document.getElementById('skill-add-type').value;
+  const prof   = document.getElementById('skill-add-proficiency').value;
+  if (jobSkills.find(s => s.id === id)) { input.value = ''; return; }
+  jobSkills.push({ id, label, domain, type, minProficiency: prof });
+  input.value = '';
+  delete input.dataset.selectedId;
+  delete input.dataset.selectedDomain;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  renderJobSkills();
+}
+
+// ── Attestation validation ────────────────────────────────────────────────────
+function validateAttestations() {
+  const allChecked = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id).checked);
+  document.getElementById('attest-warning').style.display = allChecked ? 'none' : 'block';
+  validateJobDialog();
+}
+
+// ── Overall dialog validation ─────────────────────────────────────────────────
+function validateJobDialog() {
+  const title   = (document.getElementById('jd-title')?.value || '').trim();
+  const summary = (document.getElementById('jd-summary')?.value || '').trim();
+  const empType = document.getElementById('jd-employment-type')?.value;
+  const mode    = document.getElementById('jd-work-mode')?.value;
+  const sMin    = parseFloat(document.getElementById('jd-salary-min')?.value || '0');
+  const sMax    = parseFloat(document.getElementById('jd-salary-max')?.value || '0');
+  const allAttest = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id)?.checked);
+  const hasMustHave = jobSkills.some(s => s.type === 'must_have');
+
+  const msgs = [];
+  if (!title)          msgs.push('Title required');
+  if (summary.length < 50) msgs.push('Summary too short');
+  if (!empType)        msgs.push('Employment type required');
+  if (!mode)           msgs.push('Work mode required');
+  if (!sMin || !sMax)  msgs.push('Salary range required');
+  if (sMin >= sMax)    msgs.push('Max salary must exceed min');
+  if (!hasMustHave)    msgs.push('At least one must-have skill required');
+  if (!allAttest)      msgs.push('All 5 attestations required');
+
+  const msgEl  = document.getElementById('dialog-validation-msg');
+  const saveBtn = document.getElementById('dialog-save-btn');
+  if (msgs.length) {
+    msgEl.textContent = msgs[0];
+    saveBtn.disabled = true;
+  } else {
+    msgEl.textContent = '';
+    saveBtn.disabled = false;
+    saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
+  }
+}
+
+// ── Save / submit ─────────────────────────────────────────────────────────────
+function saveJobBrief() {
+  const payload = {
+    title:           document.getElementById('jd-title').value.trim(),
+    role_summary:    document.getElementById('jd-summary').value.trim(),
+    employment_type: document.getElementById('jd-employment-type').value,
+    work_mode:       document.getElementById('jd-work-mode').value,
+    location: {
+      country: document.getElementById('jd-country').value,
+      city:    document.getElementById('jd-city').value.trim() || undefined,
+    },
+    salary: {
+      currency: document.getElementById('jd-currency').value,
+      minimum:  parseFloat(document.getElementById('jd-salary-min').value),
+      maximum:  parseFloat(document.getElementById('jd-salary-max').value),
+      period:   document.getElementById('jd-salary-period').value,
+    },
+    sla_response_days: parseInt(document.getElementById('jd-sla-days').value),
+    notice_period: {
+      value: parseInt(document.getElementById('jd-notice-n').value),
+      unit:  document.getElementById('jd-notice-unit').value,
+    },
+    skills_required: jobSkills.map(s => ({
+      ontology_id:      s.id,
+      label:            s.label,
+      requirement_type: s.type,
+      min_proficiency:  s.minProficiency,
+    })),
+    prohibited_filters: {
+      no_degree_requirement:     document.getElementById('attest-degree').checked,
+      no_age_filter:             document.getElementById('attest-age').checked,
+      no_employment_gap_penalty: document.getElementById('attest-gaps').checked,
+      no_prestige_bias:          document.getElementById('attest-prestige').checked,
+      salary_range_accurate:     document.getElementById('attest-salary').checked,
+    },
+  };
+
+  const method  = dialogMode === 'edit' ? 'PUT' : 'POST';
+  const endpoint = dialogMode === 'edit'
+    ? '/v1/jobs/' + dialogJobId
+    : '/v1/jobs';
+
+  alert(
+    (dialogMode === 'edit' ? 'Brief updated.' : 'Brief posted.') + '\n' +
+    method + ' ' + endpoint + '\n\n' +
+    JSON.stringify(payload, null, 2).substring(0, 400) + '\u2026'
+  );
+  closeJobDialog();
+}
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('job-dialog-overlay').classList.contains('open')) {
+    closeJobDialog();
+  }
+});
+
+</script>
+</body>
+</html>
