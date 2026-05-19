@@ -42,9 +42,10 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
           location_region: { type: 'string' },
           location_city:   { type: 'string' },
           employment_type: { type: 'string', enum: ['permanent','contract','part_time','internship','apprenticeship'] },
-          response_sla_days:{ type: 'integer', minimum: 1, maximum: 10, default: 10 },
-          process_stages:  { type: 'array' },
-          expires_at:      { type: 'string', format: 'date-time' },
+          response_sla_days:       { type: 'integer', minimum: 1, maximum: 10, default: 10 },
+          max_notice_period_days:  { type: 'integer', minimum: 0, nullable: true },
+          process_stages:          { type: 'array' },
+          expires_at:              { type: 'string', format: 'date-time' },
         },
       },
     },
@@ -71,12 +72,20 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
       throw new ValidationError('expires_at must be in the future');
     }
 
+    const allAttested = body.attest_no_degree_requirement === true
+      && body.attest_no_institution_preference === true
+      && body.attest_no_graduation_year_filter === true
+      && body.attest_no_unpaid_work === true;
+
     const rows = await app.db`
       INSERT INTO matching.job_briefs (
         company_id, fhp_version, title, role_summary, skills_required,
         salary_currency, salary_minimum, salary_maximum,
         salary_period, work_mode, location_country, location_region, location_city,
-        employment_type, response_sla_days, process_stages, expires_at
+        employment_type, response_sla_days, max_notice_period_days, process_stages, expires_at,
+        attest_no_degree_requirement, attest_no_institution_preference,
+        attest_no_graduation_year_filter, attest_no_unpaid_work,
+        status, activated_at
       ) VALUES (
         ${companyId}, '1.0.0', ${body.title}, ${body.role_summary},
         ${app.db.json(body.skills_required)},
@@ -84,8 +93,15 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         ${body.salary_period ?? 'annual'}, ${body.work_mode},
         ${body.location_country}, ${body.location_region ?? null}, ${body.location_city ?? null},
         ${body.employment_type}, ${body.response_sla_days ?? 10},
+        ${body.max_notice_period_days ?? null},
         ${body.process_stages ? app.db.json(body.process_stages) : null},
-        ${expiresAt}
+        ${expiresAt},
+        ${body.attest_no_degree_requirement ?? false},
+        ${body.attest_no_institution_preference ?? false},
+        ${body.attest_no_graduation_year_filter ?? false},
+        ${body.attest_no_unpaid_work ?? false},
+        ${allAttested ? 'active' : 'pending_review'},
+        ${allAttested ? new Date() : null}
       )
       RETURNING *
     `;
@@ -129,12 +145,25 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
 
     const rows = await app.db`
       UPDATE matching.job_briefs SET
-        title          = COALESCE(${body.title          ?? null}, title),
-        role_summary   = COALESCE(${body.role_summary   ?? null}, role_summary),
-        salary_minimum = COALESCE(${body.salary_minimum ?? null}, salary_minimum),
-        salary_maximum = COALESCE(${body.salary_maximum ?? null}, salary_maximum),
-        process_stages = COALESCE(${body.process_stages ? app.db.json(body.process_stages) : null}, process_stages),
-        updated_at     = NOW()
+        title             = COALESCE(${body.title             ?? null}, title),
+        role_summary      = COALESCE(${body.role_summary      ?? null}, role_summary),
+        employment_type   = COALESCE(${body.employment_type   ?? null}, employment_type),
+        work_mode         = COALESCE(${body.work_mode         ?? null}, work_mode),
+        salary_currency   = COALESCE(${body.salary_currency   ?? null}, salary_currency),
+        salary_minimum    = COALESCE(${body.salary_minimum    ?? null}, salary_minimum),
+        salary_maximum    = COALESCE(${body.salary_maximum    ?? null}, salary_maximum),
+        salary_period     = COALESCE(${body.salary_period     ?? null}, salary_period),
+        location_country  = COALESCE(${body.location_country  ?? null}, location_country),
+        location_city     = COALESCE(${body.location_city     ?? null}, location_city),
+        response_sla_days       = COALESCE(${body.response_sla_days ?? null}, response_sla_days),
+        max_notice_period_days  = COALESCE(${body.max_notice_period_days ?? null}, max_notice_period_days),
+        skills_required         = COALESCE(${body.skills_required ? app.db.json(body.skills_required) : null}, skills_required),
+        process_stages          = COALESCE(${body.process_stages ? app.db.json(body.process_stages) : null}, process_stages),
+        attest_no_degree_requirement    = COALESCE(${body.attest_no_degree_requirement    ?? null}, attest_no_degree_requirement),
+        attest_no_institution_preference = COALESCE(${body.attest_no_institution_preference ?? null}, attest_no_institution_preference),
+        attest_no_graduation_year_filter = COALESCE(${body.attest_no_graduation_year_filter ?? null}, attest_no_graduation_year_filter),
+        attest_no_unpaid_work           = COALESCE(${body.attest_no_unpaid_work           ?? null}, attest_no_unpaid_work),
+        updated_at        = NOW()
       WHERE job_id = ${jobId} AND company_id = ${companyId}
       RETURNING *
     `;

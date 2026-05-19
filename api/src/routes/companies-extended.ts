@@ -46,9 +46,16 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
 
     const jobs = await app.db`
       SELECT
-        jb.job_id, jb.title, jb.status, jb.work_mode, jb.employment_type,
-        jb.salary_minimum, jb.salary_maximum, jb.salary_currency,
-        jb.sla_response_days, jb.expires_at, jb.created_at, jb.updated_at,
+        jb.job_id, jb.title, jb.role_summary, jb.status, jb.work_mode,
+        jb.hybrid_days_on_site, jb.employment_type,
+        jb.location_country, jb.location_region, jb.location_city,
+        jb.salary_minimum, jb.salary_maximum, jb.salary_currency, jb.salary_period,
+        jb.skills_required, jb.process_stages, jb.max_notice_period_days, jb.tech_stack_summary,
+        jb.team_size, jb.reports_to_role, jb.direct_reports,
+        jb.target_start_date, jb.response_sla_days,
+        jb.attest_no_degree_requirement, jb.attest_no_institution_preference,
+        jb.attest_no_graduation_year_filter, jb.attest_no_unpaid_work,
+        jb.expires_at, jb.created_at, jb.updated_at,
         -- Match counts
         (SELECT COUNT(*)::int FROM matching.match_events m
          WHERE m.job_id = jb.job_id)                                  AS total_candidates,
@@ -62,7 +69,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
            'all_within_bounds', (fm.dir_within_bounds AND fm.eod_within_bounds AND fm.sds_within_bounds)
          )
          FROM analytical.fairness_metrics fm
-         WHERE fm.job_id = jb.job_id
+         WHERE fm.scope_job_id = jb.job_id
          ORDER BY fm.computed_at DESC LIMIT 1
         ) AS latest_fairness,
         -- Days until expiry
@@ -187,7 +194,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
         ai.sla_deadline, ai.last_contact_at, ai.created_at, ai.updated_at,
         ai.rejection_reason_code, ai.rejection_notes,
         jb.job_id, jb.title AS job_title,
-        m.composite_score, m.decision,
+        m.overall_score, m.decision,
         -- Whether a rejection is overdue
         CASE
           WHEN ai.outcome IS NULL AND ai.status = 'active'
@@ -332,7 +339,8 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       SELECT
         ge.ghosting_id, ge.match_id, ge.job_id, ge.stage_name,
         ge.severity, ge.status, ge.detected_at, ge.overdue_hours,
-        ge.resolved_at, ge.resolution_notes, ge.strike_applied,
+        ge.resolved_at, ge.resolution_type,
+        ge.company_strike_count_at_detection,
         ge.candidate_notified_at,
         jb.title AS job_title
       FROM matching.ghosting_events ge
@@ -349,7 +357,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       SELECT
         COUNT(*)                                          AS total,
         COUNT(*) FILTER (WHERE status = 'open')           AS open_count,
-        COUNT(*) FILTER (WHERE strike_applied = TRUE)     AS strikes_applied,
+        COUNT(*) FILTER (WHERE company_strike_count_at_detection > 0) AS strikes_applied,
         MAX(detected_at)                                  AS most_recent
       FROM matching.ghosting_events
       WHERE company_id = ${companyId}
@@ -391,7 +399,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
     };
 
     const event = await app.db`
-      SELECT ghosting_id, status, strike_applied
+      SELECT ghosting_id, status
       FROM matching.ghosting_events
       WHERE ghosting_id = ${ghostingId}
         AND company_id  = ${companyId}
@@ -404,10 +412,10 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
 
     await app.db`
       UPDATE matching.ghosting_events SET
-        status           = ${newStatus},
-        resolved_at      = NOW(),
-        resolution_notes = ${resolution_notes ?? null},
-        updated_at       = NOW()
+        status          = ${newStatus},
+        resolved_at     = NOW(),
+        resolution_type = ${action === 'resolve' ? 'late_response' : null},
+        updated_at      = NOW()
       WHERE ghosting_id = ${ghostingId}
     `;
 
@@ -434,7 +442,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
         fm.eod_value, fm.eod_within_bounds,
         fm.sds_value, fm.sds_within_bounds,
         fm.consecutive_breach_windows,
-        fm.total_candidates_evaluated,
+        fm.total_matches_evaluated,
         fm.computed_at,
         -- Breach severity flag
         CASE
@@ -445,10 +453,11 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
           ELSE 'ok'
         END AS breach_level
       FROM matching.job_briefs jb
-      JOIN analytical.fairness_metrics fm ON fm.job_id = jb.job_id
+      JOIN analytical.fairness_metrics fm ON fm.scope_job_id = jb.job_id
+        AND fm.scope_level = 'job'
         AND fm.computed_at = (
           SELECT MAX(fm2.computed_at) FROM analytical.fairness_metrics fm2
-          WHERE fm2.job_id = jb.job_id
+          WHERE fm2.scope_job_id = jb.job_id AND fm2.scope_level = 'job'
         )
       WHERE jb.company_id = ${companyId}
         AND jb.status = 'active'
@@ -494,9 +503,10 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
 
     // Verify breach exists
     const breach = await app.db`
-      SELECT dir_within_bounds, eod_within_bounds, sds_within_bounds
+      SELECT dir_within_bounds, eod_within_bounds, sds_within_bounds,
+             consecutive_breach_windows
       FROM analytical.fairness_metrics
-      WHERE job_id = ${body.job_id}
+      WHERE scope_job_id = ${body.job_id} AND scope_level = 'job'
       ORDER BY computed_at DESC LIMIT 1
     `;
 
@@ -566,10 +576,10 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
     const rows = await app.db`
       SELECT
         a.appeal_id, a.status, a.ground, a.submitted_at,
-        a.resolved_at, a.resolution, a.twg_notes,
-        a.deadline_twg_review, a.deadline_pc_decision,
+        a.resolved_at, a.outcome, a.twg_finding,
+        a.twg_deadline,
         jb.job_id, jb.title AS job_title,
-        m.composite_score, m.decision
+        m.overall_score, m.decision
       FROM matching.appeals a
       JOIN matching.match_events m  ON m.match_id = a.match_id
       JOIN matching.job_briefs   jb ON jb.job_id  = m.job_id
@@ -601,7 +611,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
           event_type: { type: 'string' },
           from_date:  { type: 'string', format: 'date' },
           to_date:    { type: 'string', format: 'date' },
-          format:     { type: 'string', enum: ['json','export'], default: 'json' },
+          format:     { type: 'string', enum: ['json', 'csv'], default: 'json' },
           limit:      { type: 'integer', default: 100 },
           offset:     { type: 'integer', default: 0 },
         },
@@ -616,17 +626,12 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
 
     const rows = await app.db`
       SELECT
-        log_id, event_type, entity_type, entity_id,
-        actor_type, summary, occurred_at
-      FROM audit.governance_log
-      WHERE actor_id   = ${companyId}
-         OR entity_id IN (
-           SELECT job_id::text FROM matching.job_briefs WHERE company_id = ${companyId}
-           UNION
-           SELECT interaction_id::text FROM matching.active_interactions WHERE company_id = ${companyId}
-           UNION
-           SELECT ghosting_id::text FROM matching.ghosting_events WHERE company_id = ${companyId}
-         )
+        log_id, event_type, company_id, job_id,
+        escalation_id, appeal_id,
+        summary, public_summary, is_public,
+        actor_role, actor_body, occurred_at
+      FROM audit.audit_log
+      WHERE company_id = ${companyId}
         ${q.event_type ? app.db`AND event_type = ${q.event_type}` : app.db``}
         ${q.from_date  ? app.db`AND occurred_at >= ${q.from_date}::date` : app.db``}
         ${q.to_date    ? app.db`AND occurred_at <= ${q.to_date}::date + INTERVAL '1 day'` : app.db``}
@@ -635,8 +640,20 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       OFFSET ${q.offset}
     `;
 
-    if (q.format === 'export') {
-      reply.header('Content-Disposition', `attachment; filename="fhp-audit-${companyId}.json"`);
+    if (q.format === 'csv') {
+      const cols = ['occurred_at', 'event_type', 'actor_body', 'summary'];
+      const escape = (v: unknown) => {
+        if (v == null) return '';
+        const s = String(v).replace(/"/g, '""');
+        return /[,"\n\r]/.test(s) ? `"${s}"` : s;
+      };
+      const csv = '﻿' + [   // BOM: tells Excel/Numbers the file is UTF-8
+        cols.join(','),
+        ...(rows as any[]).map(r => cols.map(c => escape(r[c])).join(',')),
+      ].join('\r\n');
+      reply.header('Content-Type', 'text/csv; charset=utf-8');
+      reply.header('Content-Disposition', `attachment; filename="fhp-audit-${new Date().toISOString().slice(0, 10)}.csv"`);
+      return reply.send(csv);
     }
 
     return reply.send({ audit_log: rows });

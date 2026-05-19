@@ -61,11 +61,12 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
           COUNT(*) FILTER (WHERE NOT eod_within_bounds) AS eod_breach_count,
           COUNT(*) FILTER (WHERE NOT sds_within_bounds) AS sds_breach_count,
           MAX(computed_at) AS last_computed
-        FROM analytical.fairness_metrics
-        WHERE computed_at = (
-          SELECT MAX(fm2.computed_at) FROM analytical.fairness_metrics fm2
-          WHERE fm2.company_id = analytical.fairness_metrics.company_id
-        )
+        FROM analytical.fairness_metrics fm1
+        WHERE fm1.scope_level = 'company'
+          AND fm1.computed_at = (
+            SELECT MAX(fm2.computed_at) FROM analytical.fairness_metrics fm2
+            WHERE fm2.scope_company_id = fm1.scope_company_id
+          )
       `,
       app.db`SELECT value FROM config.governance_constants WHERE key = 'FHP_VERSION' LIMIT 1`,
     ]);
@@ -114,7 +115,7 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
         fm.eod_value, fm.eod_within_bounds,
         fm.sds_value, fm.sds_within_bounds,
         fm.consecutive_breach_windows,
-        fm.total_candidates_evaluated,
+        fm.total_matches_evaluated,
         fm.computed_at,
         CASE
           WHEN NOT fm.dir_within_bounds OR NOT fm.eod_within_bounds OR NOT fm.sds_within_bounds
@@ -122,10 +123,11 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
           ELSE 'ok'
         END AS fairness_status
       FROM matching.companies c
-      JOIN analytical.fairness_metrics fm ON fm.company_id = c.company_id
+      JOIN analytical.fairness_metrics fm ON fm.scope_company_id = c.company_id
+        AND fm.scope_level = 'company'
         AND fm.computed_at = (
           SELECT MAX(fm2.computed_at) FROM analytical.fairness_metrics fm2
-          WHERE fm2.company_id = c.company_id AND fm2.job_id IS NULL
+          WHERE fm2.scope_company_id = c.company_id AND fm2.scope_level = 'company'
         )
       WHERE c.status NOT IN ('draft')
         ${q.jurisdiction ? app.db`AND c.jurisdiction = ${q.jurisdiction}` : app.db``}
@@ -367,5 +369,80 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
     if (!proposal) throw new NotFoundError('Proposal', proposalId);
 
     return reply.send(proposal);
+  });
+
+  /**
+   * GET /v1/governance/bodies
+   * Returns the three standing governance bodies with live counts derived from
+   * escalations, appeals, and pending votes. Public — no auth required.
+   */
+  app.get('/bodies', {
+    schema: {
+      tags: ['governance'],
+      summary: 'Standing governance bodies with open item counts and upcoming queue',
+    },
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+
+    const [bodies, escCounts, appealCounts, openVotes, escQueue] = await Promise.all([
+      app.db`
+        SELECT body_code, full_name, acronym, member_count, membership_type, current_status, description
+        FROM config.governance_bodies
+        ORDER BY CASE body_code WHEN 'pc' THEN 1 WHEN 'fob' THEN 2 WHEN 'twg' THEN 3 END
+      `,
+      app.db`
+        SELECT assignee_body, COUNT(*)::int AS cnt
+        FROM matching.escalations
+        WHERE status NOT IN ('resolved')
+        GROUP BY assignee_body
+      `,
+      app.db`
+        SELECT status, COUNT(*)::int AS cnt
+        FROM matching.appeals
+        WHERE status IN ('twg_review', 'pc_review', 'fob_review')
+        GROUP BY status
+      `,
+      app.db`
+        SELECT COUNT(*)::int AS cnt FROM matching.governance_votes WHERE result = 'pending'
+      `,
+      app.db`
+        SELECT assignee_body, json_agg(item ORDER BY deadline ASC NULLS LAST) AS items
+        FROM (
+          SELECT
+            assignee_body,
+            json_build_object(
+              'ref',      LEFT(escalation_id::text, 8),
+              'type',     escalation_type,
+              'label',    LEFT(COALESCE(public_summary, outcome_notes, escalation_type), 50),
+              'deadline', resolution_deadline
+            ) AS item,
+            resolution_deadline AS deadline,
+            ROW_NUMBER() OVER (PARTITION BY assignee_body ORDER BY resolution_deadline ASC NULLS LAST) AS rn
+          FROM matching.escalations
+          WHERE status NOT IN ('resolved')
+        ) sub
+        WHERE rn <= 2
+        GROUP BY assignee_body
+      `,
+    ]);
+
+    const escMap     = Object.fromEntries((escCounts     as any[]).map(r => [r.assignee_body, r.cnt]));
+    const appealMap  = Object.fromEntries((appealCounts  as any[]).map(r => [r.status, r.cnt]));
+    const queueMap   = Object.fromEntries((escQueue      as any[]).map(r => [r.assignee_body, r.items]));
+
+    const escKey:    Record<string, string> = { pc: 'protocol_council', fob: 'fairness_oversight_board', twg: 'twg' };
+    const appStatus: Record<string, string> = { pc: 'pc_review', fob: 'fob_review', twg: 'twg_review' };
+
+    const result = (bodies as any[]).map(b => {
+      const ek = escKey[b.body_code as string] ?? '';
+      const as = appStatus[b.body_code as string] ?? '';
+      return {
+        ...b,
+        open_item_count: (escMap[ek] ?? 0) + (appealMap[as] ?? 0),
+        open_votes:      b.body_code === 'pc' ? (openVotes[0] as any)?.cnt ?? 0 : 0,
+        queue_items:     queueMap[ek] ?? [],
+      };
+    });
+
+    return reply.send({ bodies: result });
   });
 }

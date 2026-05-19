@@ -8,9 +8,8 @@ import {
 
 export async function governanceRoutes(app: FastifyInstance): Promise<void> {
 
-  /** GET /v1/governance/escalations */
+  /** GET /v1/governance/escalations — public read */
   app.get('/escalations', {
-    preHandler: [requireGovernance],
     schema: {
       tags: ['governance'], summary: 'Get all open escalations',
       querystring: {
@@ -120,9 +119,8 @@ export async function governanceRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ entries: rows, page: q.page ?? 1, limit: q.limit ?? 20 });
   });
 
-  /** GET /v1/governance/metrics — platform-wide fairness metrics */
+  /** GET /v1/governance/metrics — platform-wide fairness metrics, public read */
   app.get('/metrics', {
-    preHandler: [requireGovernance],
     schema: { tags: ['governance'], summary: 'Platform-wide fairness metrics' },
   }, async (_request, reply) => {
     const rows = await app.db`

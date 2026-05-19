@@ -55,10 +55,10 @@ export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void>
     const rows = await app.db`
       SELECT
         a.appeal_id, a.match_id, a.status, a.ground, a.detail,
-        a.submitted_at, a.resolved_at, a.outcome, a.twg_finding AS twg_notes,
-        a.twg_deadline AS deadline_twg_review, a.submission_deadline,
+        a.submitted_at, a.resolved_at, a.outcome, a.twg_finding,
+        a.twg_deadline, a.submission_deadline,
         jb.title AS job_title,
-        m.composite_score, m.decision
+        m.overall_score, m.decision
       FROM matching.appeals a
       JOIN matching.match_events m  ON m.match_id = a.match_id
       JOIN matching.job_briefs   jb ON jb.job_id  = m.job_id
@@ -127,7 +127,7 @@ export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void>
     await app.db`
       UPDATE matching.appeals SET
         status          = 'withdrawn',
-        twg_notes       = ${reason ?? 'Withdrawn by candidate'},
+        twg_finding     = ${reason ?? 'Withdrawn by candidate'},
         resolved_at     = NOW(),
         updated_at      = NOW()
       WHERE appeal_id = ${appealId}
@@ -263,7 +263,8 @@ export async function companyPublicRoutes(app: FastifyInstance): Promise<void> {
             'computed_at',       fm.computed_at
           )
           FROM analytical.fairness_metrics fm
-          WHERE fm.company_id = c.company_id
+          WHERE fm.scope_company_id = c.company_id
+            AND fm.scope_level = 'company'
           ORDER BY fm.computed_at DESC
           LIMIT 1
         ) AS fairness_status,
