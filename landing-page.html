@@ -911,11 +911,11 @@ footer{
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Legal company name</label>
-              <input class="form-input" type="text" placeholder="Acme Technologies Ltd">
+              <input class="form-input" type="text" id="coreg-legal-name" placeholder="Acme Technologies Ltd">
             </div>
             <div class="form-group">
               <label class="form-label">Jurisdiction</label>
-              <select class="form-input">
+              <select class="form-input" id="coreg-jurisdiction">
                 <option value="GB">United Kingdom</option>
                 <option value="US">United States</option>
                 <option value="DE">Germany</option>
@@ -928,39 +928,41 @@ footer{
           </div>
           <div class="form-group">
             <label class="form-label">Compliance contact email</label>
-            <input class="form-input" type="email" placeholder="compliance@yourcompany.com">
+            <input class="form-input" type="email" id="coreg-email" placeholder="compliance@yourcompany.com">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input class="form-input" type="password" placeholder="Minimum 12 characters">
+            <input class="form-input" type="password" id="coreg-password" placeholder="Minimum 12 characters">
           </div>
           <div class="form-group">
             <label class="form-label">Estimated monthly hiring volume</label>
-            <select class="form-input">
-              <option>1–5 roles per month</option>
-              <option>6–20 roles per month</option>
-              <option>21–50 roles per month</option>
-              <option>51+ roles per month</option>
+            <select class="form-input" id="coreg-volume">
+              <option value="3">1–5 roles per month</option>
+              <option value="13">6–20 roles per month</option>
+              <option value="35">21–50 roles per month</option>
+              <option value="75">51+ roles per month</option>
             </select>
           </div>
           <div class="form-check">
             <input type="checkbox" id="compliance-confirm">
             <label for="compliance-confirm">I accept the <a href="#" style="color:var(--teal)">FHP Company Compliance Agreement</a>, including salary range requirements, SLA commitments, and prohibited filter attestations</label>
           </div>
-          <button class="form-submit" onclick="handleCompanyRegister()">Register company</button>
+          <div id="coreg-error" style="display:none;color:#e05;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(220,0,80,0.08);border-radius:4px"></div>
+          <button class="form-submit" id="coreg-btn" onclick="handleCompanyRegister()">Register company</button>
         </div>
 
         <!-- Login -->
         <div id="company-login" style="display:none">
           <div class="form-group">
             <label class="form-label">Compliance contact email</label>
-            <input class="form-input" type="email" placeholder="compliance@yourcompany.com">
+            <input class="form-input" type="email" id="colog-email" placeholder="compliance@yourcompany.com">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input class="form-input" type="password" placeholder="Your password">
+            <input class="form-input" type="password" id="colog-password" placeholder="Your password">
           </div>
-          <button class="form-submit" onclick="handleCompanyLogin()">Sign in</button>
+          <div id="colog-error" style="display:none;color:#e05;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(220,0,80,0.08);border-radius:4px"></div>
+          <button class="form-submit" id="colog-btn" onclick="handleCompanyLogin()">Sign in</button>
           <div class="form-footer"><a href="#">Forgot password?</a></div>
         </div>
       </div>
@@ -1029,6 +1031,10 @@ async function apiPost(path, body) {
   return data;
 }
 
+function isValidEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
 function showError(elId, msg) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -1055,6 +1061,7 @@ async function handleCandidateRegister() {
   const termsOk  = document.getElementById('terms-confirm')?.checked;
 
   if (!email || !password) { showError('creg-error', 'Email and password are required.'); return; }
+  if (!isValidEmail(email)) { showError('creg-error', 'Please enter a valid email address.'); return; }
   if (!ageOk)               { showError('creg-error', 'You must confirm you are 18 or older.'); return; }
   if (!termsOk)             { showError('creg-error', 'You must accept the Terms of Service.'); return; }
   if (password.length < 12) { showError('creg-error', 'Password must be at least 12 characters.'); return; }
@@ -1084,6 +1091,7 @@ async function handleCandidateLogin() {
   const password = document.getElementById('clog-password')?.value;
 
   if (!email || !password) { showError('clog-error', 'Email and password are required.'); return; }
+  if (!isValidEmail(email)) { showError('clog-error', 'Please enter a valid email address.'); return; }
 
   setLoading('clog-btn', true);
   try {
@@ -1098,12 +1106,67 @@ async function handleCandidateLogin() {
   }
 }
 
-// ── Company register / login — stubs (next session) ──────────────────────────
-function handleCompanyRegister() {
-  alert('Company registration coming soon.');
+// ── Company register ──────────────────────────────────────────────────────────
+async function handleCompanyRegister() {
+  hideError('coreg-error');
+  const legalName   = document.getElementById('coreg-legal-name').value.trim();
+  const jurisdiction = document.getElementById('coreg-jurisdiction').value;
+  const email       = document.getElementById('coreg-email').value.trim();
+  const password    = document.getElementById('coreg-password').value;
+  const volume      = parseInt(document.getElementById('coreg-volume').value, 10);
+  const compliance  = document.getElementById('compliance-confirm').checked;
+
+  if (!legalName)           { showError('coreg-error', 'Legal company name is required.'); return; }
+  if (!email)               { showError('coreg-error', 'Compliance contact email is required.'); return; }
+  if (!isValidEmail(email)) { showError('coreg-error', 'Please enter a valid email address.'); return; }
+  if (!password)            { showError('coreg-error', 'Password is required.'); return; }
+  if (password.length < 12) { showError('coreg-error', 'Password must be at least 12 characters.'); return; }
+  if (!compliance)         { showError('coreg-error', 'You must accept the FHP Company Compliance Agreement.'); return; }
+
+  const btn = document.getElementById('coreg-btn');
+  btn.disabled = true;
+  btn.textContent = 'Registering…';
+  try {
+    const data = await apiPost('/auth/register-company', {
+      legal_name:                    legalName,
+      jurisdiction,
+      compliance_contact_email:      email,
+      password,
+      declared_monthly_roles:        volume,
+      compliance_agreement_accepted: true,
+    });
+    storeTokens(data.access_token, data.refresh_token, 'company');
+    closeModal();
+    window.location.href = 'company-dashboard.html';
+  } catch (err) {
+    showError('coreg-error', err.message || 'Registration failed. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Register company';
+  }
 }
-function handleCompanyLogin() {
-  alert('Company login coming soon.');
+
+// ── Company login ─────────────────────────────────────────────────────────────
+async function handleCompanyLogin() {
+  hideError('colog-error');
+  const email    = document.getElementById('colog-email').value.trim();
+  const password = document.getElementById('colog-password').value;
+
+  if (!email || !password) { showError('colog-error', 'Email and password are required.'); return; }
+  if (!isValidEmail(email)) { showError('colog-error', 'Please enter a valid email address.'); return; }
+
+  const btn = document.getElementById('colog-btn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const data = await apiPost('/auth/login-company', { email, password });
+    storeTokens(data.access_token, data.refresh_token, 'company');
+    closeModal();
+    window.location.href = 'company-dashboard.html';
+  } catch (err) {
+    showError('colog-error', err.message || 'Invalid email or password.');
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
 }
 
 // ── Nav scroll highlight ───────────────────────────────────────────────────────

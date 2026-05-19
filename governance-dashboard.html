@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHP Governance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:         #f4f0e8;
+    --bg-card:    #faf8f3;
+    --bg-dark:    #1a1410;
+    --ink:        #1a1410;
+    --ink-mid:    #4a4035;
+    --ink-light:  #8a7d6a;
+    --ink-faint:  #c4b89e;
+    --rule:       #d8cbb5;
+    --rule-dark:  #a89880;
+    --crimson:    #b01020;
+    --crimson-bg: #f5e8ea;
+    --amber:      #8b5c00;
+    --amber-bg:   #fdf3e0;
+    --green:      #1a6040;
+    --green-bg:   #e8f4ee;
+    --blue:       #1a3a6a;
+    --blue-bg:    #e8eef8;
+    --serif:      'Playfair Display', Georgia, serif;
+    --body:       'Source Serif 4', Georgia, serif;
+    --mono:       'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Fine grain texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.6;
+  }
+
+  /* ── Masthead ── */
+  .masthead {
+    background: var(--bg-dark);
+    color: #f4f0e8;
+    padding: 0 32px;
+  }
+
+  .masthead-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(244,240,232,0.4);
+    letter-spacing: 0.12em;
+  }
+
+  .masthead-main {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 18px 0 14px;
+    border-bottom: 3px double rgba(255,255,255,0.15);
+  }
+
+  .masthead-title {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 700;
+    color: #f4f0e8;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .masthead-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: rgba(244,240,232,0.7);
+  }
+
+  .masthead-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(244,240,232,0.4);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .masthead-nav {
+    display: flex;
+    gap: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .masthead-nav a {
+    color: rgba(244,240,232,0.5);
+    text-decoration: none;
+    padding: 4px 12px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    transition: color 0.15s;
+    cursor: pointer;
+  }
+
+  .masthead-nav a:last-child {
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .masthead-nav a:hover { color: #f4f0e8; }
+  .masthead-nav a.active { color: #f4f0e8; }
+
+  /* ── Alert banner ── */
+  .alert-banner {
+    background: var(--crimson);
+    color: white;
+    padding: 8px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+
+  .alert-flag {
+    background: white;
+    color: var(--crimson);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 2px 6px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* ── Main layout: newspaper columns ── */
+  .newsroom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: auto;
+    gap: 0 32px;
+  }
+
+  .col-main { min-width: 0; }
+  .col-side  { border-left: 1px solid var(--rule); padding-left: 28px; }
+
+  /* Section dividers */
+  .section-rule {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    margin-top: 24px;
+  }
+
+  .section-rule:first-child { margin-top: 0; }
+
+  .section-rule-line {
+    flex: 1;
+    height: 2px;
+    background: var(--ink);
+  }
+
+  .section-rule-line.thin { height: 1px; background: var(--rule-dark); }
+
+  .section-label {
+    font-family: var(--serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* ── Protocol health ── */
+  .health-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 24px;
+    animation: fadeIn 0.5s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .health-cell {
+    background: var(--bg-card);
+    padding: 14px 16px;
+    transition: background 0.15s;
+    cursor: default;
+  }
+
+  .health-cell:hover { background: var(--bg); }
+
+  .health-cell-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 6px;
+  }
+
+  .health-cell-value {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .health-cell-value.crimson { color: var(--crimson); }
+  .health-cell-value.amber   { color: var(--amber); }
+  .health-cell-value.green   { color: var(--green); }
+
+  .health-cell-note {
+    font-size: 11px;
+    color: var(--ink-light);
+    font-style: italic;
+  }
+
+  /* ── Escalation queue ── */
+  .escalation-item {
+    border: 1px solid var(--rule);
+    background: var(--bg-card);
+    margin-bottom: 8px;
+    padding: 0;
+    transition: border-color 0.15s;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .escalation-item:hover { border-color: var(--rule-dark); cursor: pointer; }
+
+  .escalation-item.critical { border-left: 3px solid var(--crimson); }
+  .escalation-item.urgent   { border-left: 3px solid var(--amber); }
+  .escalation-item.standard { border-left: 3px solid var(--rule-dark); }
+
+  .esc-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .esc-type {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  .esc-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-faint);
+    margin-left: auto;
+  }
+
+  .esc-priority {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 1px;
+  }
+
+  .esc-priority.critical { background: var(--crimson-bg); color: var(--crimson); }
+  .esc-priority.urgent   { background: var(--amber-bg);   color: var(--amber); }
+  .esc-priority.standard { background: var(--bg);         color: var(--ink-light); border: 1px solid var(--rule); }
+
+  .esc-body { padding: 10px 14px; }
+
+  .esc-summary {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .esc-summary strong { font-weight: 600; }
+
+  .esc-meta {
+    display: flex;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-light);
+  }
+
+  .esc-meta span strong { color: var(--ink-mid); }
+
+  /* ── Governance bodies ── */
+  .body-card {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+  }
+
+  .body-name {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .body-acronym {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-light);
+    float: right;
+    margin-top: 2px;
+    letter-spacing: 0.1em;
+  }
+
+  .body-status {
+    font-size: 11px;
+    color: var(--ink-mid);
+    margin-bottom: 8px;
+  }
+
+  .body-queue {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .body-queue-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--ink-mid);
+  }
+
+  .body-queue-item.due-soon {
+    background: var(--amber-bg);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  /* ── Version history ── */
+  .version-row {
+    display: grid;
+    grid-template-columns: 80px 80px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 12px;
+  }
+
+  .version-row:last-child { border-bottom: none; }
+
+  .version-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .version-date {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-light);
+  }
+
+  .version-desc { color: var(--ink-mid); }
+
+  .version-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 1px;
+  }
+
+  .version-tag.current  { background: var(--green-bg); color: var(--green); }
+  .version-tag.minor    { background: var(--blue-bg);  color: var(--blue); }
+  .version-tag.patch    { background: var(--bg);        color: var(--ink-light); border: 1px solid var(--rule); }
+
+  /* ── Public audit feed ── */
+  .audit-entry {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .audit-entry:last-child { border-bottom: none; }
+  .audit-entry:hover { background: var(--bg); margin: 0 -8px; padding: 12px 8px; }
+
+  .audit-headline {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .audit-byline {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-light);
+    margin-bottom: 6px;
+  }
+
+  .audit-lede {
+    font-size: 12px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+  }
+
+  /* ── Metrics overview ── */
+  .platform-metric {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .platform-metric:last-child { border-bottom: none; }
+
+  .pm-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-mid);
+    width: 80px;
+    flex-shrink: 0;
+    letter-spacing: 0.06em;
+  }
+
+  .pm-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--rule);
+    position: relative;
+  }
+
+  .pm-fill {
+    height: 100%;
+    transition: width 1s ease;
+  }
+
+  .pm-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    width: 44px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .pm-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: 50px;
+    flex-shrink: 0;
+  }
+
+  /* ── Side column widgets ── */
+  .side-widget { margin-bottom: 24px; }
+
+  .side-widget-title {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  .live-feed-item {
+    display: flex;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 11px;
+    animation: feedIn 0.4s ease both;
+  }
+
+  @keyframes feedIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .live-feed-item:last-child { border-bottom: none; }
+
+  .feed-time {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .feed-msg { color: var(--ink-mid); line-height: 1.4; }
+  .feed-msg strong { color: var(--ink); font-weight: 600; }
+
+  .feed-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .feed-dot.red    { background: var(--crimson); }
+  .feed-dot.amber  { background: var(--amber); }
+  .feed-dot.green  { background: var(--green); }
+  .feed-dot.blue   { background: var(--blue); }
+
+  .vote-record {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 12px;
+  }
+
+  .vote-record:last-child { border-bottom: none; }
+
+  .vote-proposal { color: var(--ink-mid); }
+  .vote-result {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .vote-result.passed  { color: var(--green); }
+  .vote-result.pending { color: var(--amber); }
+  .vote-result.failed  { color: var(--crimson); }
+</style>
+</head>
+<body>
+
+  <!-- Masthead -->
+  <div class="masthead">
+    <div class="masthead-top">
+      <span>FAIR HIRING PROTOCOL · GOVERNANCE OPERATIONS CENTRE</span>
+      <span>Protocol Council Session · November 2025 · Vol. I</span>
+      <span>All decisions public · All votes recorded</span>
+    </div>
+    <div class="masthead-main">
+      <div>
+        <div class="masthead-title">Protocol <em>Governance</em> Dashboard</div>
+        <div class="masthead-sub">Protocol Council · Fairness Oversight Board · Technical Working Group</div>
+      </div>
+      <nav class="masthead-nav">
+        <a id="gov-tab-overview" onclick="govShowTab('overview')" style="cursor:pointer">Overview</a>
+        <a id="gov-tab-escalations" onclick="govShowTab('escalations')" style="cursor:pointer">Escalations</a>
+        <a id="gov-tab-fairness" onclick="govShowTab('fairness')" style="cursor:pointer">Fairness</a>
+        <a id="gov-tab-proposals" onclick="govShowTab('proposals')" style="cursor:pointer">Proposals</a>
+        <a id="gov-tab-auditlog" onclick="govShowTab('auditlog')" style="cursor:pointer">Audit Log</a>
+        <a id="gov-tab-votes" onclick="govShowTab('votes')" style="cursor:pointer">Votes</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Alert banner -->
+  <div class="alert-banner">
+    <span class="alert-flag">⚑ Active Notice</span>
+    <span>EOD metric breach at Acme Technologies Ltd — 2 consecutive windows. Remediation deadline: Nov 28, 2025. FOB review triggers at window 3.</span>
+    <span style="margin-left:auto;opacity:0.6;cursor:pointer" onclick="document.getElementById('notice-panel').style.display='block'">View full notice →</span>
+  </div>
+
+<div id="notice-panel" style="display:none;position:relative;background:var(--crimson);color:white;padding:20px 32px;margin-bottom:0">
+  <div style="max-width:800px">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;opacity:0.7;margin-bottom:10px">Active Governance Notice · Issued Nov 08, 2025</div>
+    <div style="font-family:var(--serif);font-size:18px;font-weight:700;margin-bottom:12px">EOD Metric Breach — Acme Technologies Ltd</div>
+    <p style="font-size:13px;line-height:1.6;opacity:0.9;margin-bottom:12px">Equal Opportunity Difference has exceeded the 0.05 threshold for 2 consecutive computation windows at Acme Technologies Ltd (current value: 0.07). Under the governance framework, a breach persisting for 3 consecutive windows triggers a mandatory Fairness Oversight Board review.</p>
+    <p style="font-size:13px;line-height:1.6;opacity:0.9;margin-bottom:16px">Acme Technologies has been formally notified and must submit a remediation plan within 20 business days (deadline: Nov 28, 2025). The Protocol Council is monitoring. If window 3 breaches, ESC-2025-XXXX will be raised and referred to the FOB automatically.</p>
+    <div style="font-family:var(--mono);font-size:11px;opacity:0.7">Escalation ref: pending · Company: acme-technologies-ltd · Metric: EOD · Window: 2/3</div>
+  </div>
+  <button onclick="document.getElementById('notice-panel').style.display='none'" style="position:absolute;right:32px;top:20px;background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:10px">✕ Close</button>
+</div>
+
+
+  <!-- Newsroom -->
+  <div class="newsroom">
+    <div class="col-main">
+      <div id="gov-overview" class="gov-tab-content">
+
+      <!-- Protocol health -->
+      <div class="section-rule">
+        <div class="section-rule-line"></div>
+        <span class="section-label">Protocol Health</span>
+        <div class="section-rule-line"></div>
+      </div>
+
+      <div class="health-grid">
+        <div class="health-cell">
+          <div class="health-cell-label">Active Implementations</div>
+          <div class="health-cell-value green" id="hc-active">—</div>
+          <div class="health-cell-note" id="hc-active-note">Loading…</div>
+        </div>
+        <div class="health-cell">
+          <div class="health-cell-label">Open Escalations</div>
+          <div class="health-cell-value crimson" id="hc-escalations">—</div>
+          <div class="health-cell-note" id="hc-escalations-note">Loading…</div>
+        </div>
+        <div class="health-cell">
+          <div class="health-cell-label">Platform DIR</div>
+          <div class="health-cell-value green" id="hc-dir">—</div>
+          <div class="health-cell-note" id="hc-dir-note">Loading…</div>
+        </div>
+        <div class="health-cell">
+          <div class="health-cell-label">Open Proposals (FHP-P)</div>
+          <div class="health-cell-value" id="hc-proposals">—</div>
+          <div class="health-cell-note">In 30-day review</div>
+        </div>
+      </div>
+
+      <!-- Platform fairness metrics -->
+      <div class="section-rule">
+        <div class="section-rule-line thin"></div>
+        <span class="section-label" style="font-size:10px">Platform-Wide Fairness · Rolling 30 Days</span>
+        <div class="section-rule-line thin"></div>
+      </div>
+
+      <div style="background:var(--bg-card);border:1px solid var(--rule);padding:16px;margin-bottom:24px">
+        <div class="platform-metric">
+          <span class="pm-label">DIR</span>
+          <div class="pm-bar"><div class="pm-fill" id="pm-dir-fill" style="width:0%;background:var(--green)"></div></div>
+          <span class="pm-val" id="pm-dir-val" style="color:var(--green)">—</span>
+          <span class="pm-status" id="pm-dir-status" style="color:var(--green)">—</span>
+        </div>
+        <div class="platform-metric">
+          <span class="pm-label">EOD</span>
+          <div class="pm-bar"><div class="pm-fill" id="pm-eod-fill" style="width:0%;background:var(--green)"></div></div>
+          <span class="pm-val" id="pm-eod-val" style="color:var(--green)">—</span>
+          <span class="pm-status" id="pm-eod-status" style="color:var(--green)">—</span>
+        </div>
+        <div class="platform-metric">
+          <span class="pm-label">SDS</span>
+          <div class="pm-bar"><div class="pm-fill" id="pm-sds-fill" style="width:0%;background:var(--green)"></div></div>
+          <span class="pm-val" id="pm-sds-val" style="color:var(--green)">—</span>
+          <span class="pm-status" id="pm-sds-status" style="color:var(--green)">—</span>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:10px;color:var(--ink-light)" id="pm-summary">
+          Loading platform metrics…
+        </div>
+      </div>
+
+      <!-- Escalation queue -->
+      <div class="section-rule">
+        <div class="section-rule-line"></div>
+        <span class="section-label">Active Escalations</span>
+        <div class="section-rule-line"></div>
+      </div>
+
+      <div id="overview-escalations-list">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">Loading escalations…</div>
+      </div>
+
+      <!-- Public audit record -->
+      <div class="section-rule" style="margin-top:28px">
+        <div class="section-rule-line"></div>
+        <span class="section-label">Public Audit Record</span>
+        <div class="section-rule-line"></div>
+      </div>
+
+      <div id="overview-audit-entries">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">Loading audit record…</div>
+      </div>
+
+    </div>
+      </div><!-- end gov-overview -->
+
+      <!-- ── ESCALATIONS TAB ── -->
+      <div id="gov-escalations" class="gov-tab-content" style="display:none">
+        <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">All Escalations</span><div class="section-rule-line"></div></div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <select id="esc-filter-type" style="font-family:var(--serif);font-size:12px;padding:6px 10px;border:1px solid var(--rule);background:var(--bg-card)" onchange="applyEscFilters()">
+            <option value="">All types</option>
+            <option value="fairness_breach">Fairness breach</option>
+            <option value="candidate_appeal">Candidate appeal</option>
+            <option value="ghosting">Ghosting</option>
+            <option value="compliance_violation">Compliance violation</option>
+          </select>
+          <select id="esc-filter-priority" style="font-family:var(--serif);font-size:12px;padding:6px 10px;border:1px solid var(--rule);background:var(--bg-card)" onchange="applyEscFilters()">
+            <option value="">All priorities</option>
+            <option value="critical">Critical</option>
+            <option value="urgent">Urgent</option>
+            <option value="standard">Standard</option>
+          </select>
+          <select id="esc-filter-body" style="font-family:var(--serif);font-size:12px;padding:6px 10px;border:1px solid var(--rule);background:var(--bg-card)" onchange="applyEscFilters()">
+            <option value="">All bodies</option>
+            <option value="Protocol Council">Protocol Council</option>
+            <option value="FOB">FOB</option>
+            <option value="TWG">TWG</option>
+          </select>
+        </div>
+        <div id="escalations-list">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">Loading escalations…</div>
+        </div>
+      </div>
+
+      <!-- ── FAIRNESS TAB ── -->
+      <div id="gov-fairness" class="gov-tab-content" style="display:none">
+        <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">Platform Fairness — All Companies</span><div class="section-rule-line"></div></div>
+        <div style="background:var(--bg-card);border:1px solid var(--rule);padding:0">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid var(--ink)">
+              <th style="text-align:left;padding:10px 16px;font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Company</th>
+              <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">DIR</th>
+              <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">EOD</th>
+              <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">SDS</th>
+              <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">Breach windows</th>
+              <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">Status</th>
+            </tr></thead>
+            <tbody id="gov-fairness-tbody">
+              <tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--ink-light)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PROPOSALS TAB ── -->
+      <div id="gov-proposals" class="gov-tab-content" style="display:none">
+        <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">Open Proposals (FHP-P) — In 30-Day Review</span><div class="section-rule-line"></div></div>
+        <div id="proposals-list">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">Loading proposals…</div>
+        </div>
+      </div>
+
+      <!-- ── AUDIT LOG TAB ── -->
+      <div id="gov-auditlog" class="gov-tab-content" style="display:none">
+        <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">Public Audit Log — All Governance Decisions</span><div class="section-rule-line"></div></div>
+        <p style="font-size:12px;color:var(--ink-light);margin-bottom:16px;font-style:italic">All decisions public. PII never included.</p>
+        <div id="gov-auditlog-entries">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">Loading audit log…</div>
+        </div>
+      </div>
+
+      <!-- ── VOTES TAB ── -->
+      <div id="gov-votes" class="gov-tab-content" style="display:none">
+        <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">Protocol Council Vote Record</span><div class="section-rule-line"></div></div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:2px solid var(--ink)">
+            <th style="text-align:left;padding:10px 0;font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Resolution</th>
+            <th style="text-align:left;padding:10px 16px;font-family:var(--mono);font-size:9px">Date</th>
+            <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">Vote</th>
+            <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">Majority req.</th>
+            <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">Result</th>
+            <th style="text-align:left;padding:10px 12px;font-family:var(--mono);font-size:9px">FOB veto</th>
+          </tr></thead>
+          <tbody id="votes-tbody">
+            <tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--ink-light)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+
+    <!-- Side column -->
+    <aside class="col-side">
+
+      <!-- Live escalation feed -->
+      <div class="side-widget">
+        <div class="side-widget-title">Live Governance Feed</div>
+        <div id="live-feed-list">
+          <div class="live-feed-item"><div class="feed-dot blue"></div><span class="feed-time">—</span><span class="feed-msg">Loading…</span></div>
+        </div>
+      </div>
+
+      <!-- Governance bodies status -->
+      <div class="side-widget">
+        <div class="side-widget-title">Governance Bodies</div>
+        <div id="gov-bodies-list"><div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">Loading…</div></div>
+      </div>
+
+      <!-- Recent votes -->
+      <div class="side-widget">
+        <div class="side-widget-title">Recent Votes</div>
+        <div id="recent-votes-list">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Protocol versions -->
+      <div class="side-widget">
+        <div class="side-widget-title">Protocol Versions</div>
+        <div class="version-row">
+          <span class="version-num">v1.0.0</span>
+          <span class="version-date">2025-01-01</span>
+          <span class="version-desc">Initial release</span>
+          <span class="version-tag current">Current</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--ink-faint);padding:6px 0;letter-spacing:0.08em">No prior versions · inaugural release</div>
+      </div>
+
+    </aside>
+  </div>
+
+
+<script>
+// ── Auth ──────────────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:3000/v1';
+let _token = sessionStorage.getItem('fhp_access_token');
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_token || '') };
+}
+
+// Public reads — 401 is silently ignored (dashboard is publicly viewable)
+async function api(method, path, body) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: authHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return res.ok ? await res.json() : null;
+  } catch (e) {
+    console.error('API error:', method, path, e);
+    return null;
+  }
+}
+
+// Authenticated writes — 401 redirects to login
+async function apiAuth(method, path, body) {
+  if (!_token) { window.location.href = 'landing-page.html'; return null; }
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: authHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) { sessionStorage.clear(); window.location.href = 'landing-page.html'; return null; }
+    if (!res.ok) throw await res.json();
+    return res.json();
+  } catch (e) {
+    console.error('API auth error:', method, path, e);
+    throw e;
+  }
+}
+
+// ── Tab navigation ────────────────────────────────────────────────────────────
+const GOV_TABS = ['overview','escalations','fairness','proposals','auditlog','votes'];
+const _tabLoaded = {};
+
+function govShowTab(tabId) {
+  GOV_TABS.forEach(t => {
+    const el  = document.getElementById('gov-' + t);
+    const nav = document.getElementById('gov-tab-' + t);
+    if (el)  el.style.display  = t === tabId ? '' : 'none';
+    if (nav) nav.classList.toggle('active', t === tabId);
+  });
+  const sidebar = document.querySelector('.col-side');
+  const newsroom = document.querySelector('.newsroom');
+  if (tabId === 'overview') {
+    sidebar.style.display = '';
+    newsroom.style.gridTemplateColumns = '';
+  } else {
+    sidebar.style.display = 'none';
+    newsroom.style.gridTemplateColumns = '1fr';
+  }
+  if (!_tabLoaded[tabId]) {
+    _tabLoaded[tabId] = true;
+    switch (tabId) {
+      case 'escalations': loadEscalations(); break;
+      case 'fairness':    loadGovFairness(); break;
+      case 'proposals':   loadProposals(); break;
+      case 'auditlog':    loadGovAuditLog(); break;
+      case 'votes':       loadVotes(); break;
+    }
+  }
+}
+
+function viewNotice(noticeId) {
+  const panel = document.getElementById('notice-panel');
+  if (panel) { panel.style.display = panel.style.display === 'none' ? '' : 'none'; }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtScore(v, dp) {
+  if (v == null) return '—';
+  return parseFloat(v).toFixed(dp != null ? dp : 3);
+}
+
+function renderEscalationItem(e) {
+  const prioClass = { critical:'critical', urgent:'urgent', standard:'standard' }[e.priority] || 'standard';
+  return '<div class="escalation-item ' + prioClass + '" style="margin-top:8px">' +
+    '<div class="esc-header">' +
+    '<span class="esc-type">' + (e.escalation_type || '—') + '</span>' +
+    '<span class="esc-priority ' + prioClass + '">' + (e.priority || '—') + '</span>' +
+    '<span class="esc-id">' + (e.escalation_id ? e.escalation_id.slice(0,16) : '—') + '</span>' +
+    '</div>' +
+    '<div class="esc-body">' +
+    '<div class="esc-summary">' + (e.public_summary || e.outcome_notes || '') + '</div>' +
+    '<div class="esc-meta">' +
+    '<span>Assignee: <strong>' + (e.assignee_body || '—') + '</strong></span>' +
+    '<span>Deadline: <strong>' + fmtDate(e.resolution_deadline) + '</strong></span>' +
+    '<span>Status: <strong>' + (e.status || '—') + '</strong></span>' +
+    '</div>' +
+    '</div>' +
+    '</div>';
+}
+
+// ── Overview load ─────────────────────────────────────────────────────────────
+async function loadOverview() {
+  const [summary, escalations, audit, bodiesData] = await Promise.all([
+    api('GET', '/governance/summary'),
+    api('GET', '/governance/escalations?limit=5&status=open'),
+    api('GET', '/governance/audit?limit=5&public_only=true'),
+    api('GET', '/governance/bodies'),
+  ]);
+
+  if (summary) {
+    // Health grid
+    const co = summary.companies || {};
+    document.getElementById('hc-active').textContent = co.active != null ? co.active : '—';
+    document.getElementById('hc-active-note').textContent = co.total_registered + ' registered · ' + (co.suspended || 0) + ' suspended';
+
+    const esc = summary.escalations || {};
+    document.getElementById('hc-escalations').textContent = esc.total_open != null ? esc.total_open : '—';
+    document.getElementById('hc-escalations-note').textContent =
+      (esc.critical || 0) + ' critical · ' + (esc.urgent || 0) + ' urgent';
+
+    const pf = summary.platform_fairness || {};
+    document.getElementById('hc-dir').textContent = pf.platform_dir != null ? fmtScore(pf.platform_dir) : '—';
+    document.getElementById('hc-dir-note').textContent =
+      (pf.dir_breach_count || 0) + ' company breach(es)';
+
+    document.getElementById('hc-proposals').textContent = (summary.proposals || {}).open != null ? summary.proposals.open : '—';
+
+    // Platform fairness metrics
+    const setPM = (id, val, ok, pct) => {
+      const color = ok ? 'var(--green)' : 'var(--crimson, #c0392b)';
+      const fill = document.getElementById('pm-' + id + '-fill');
+      const valEl = document.getElementById('pm-' + id + '-val');
+      const statusEl = document.getElementById('pm-' + id + '-status');
+      if (fill) fill.style.width = Math.min(100, pct) + '%';
+      if (fill) fill.style.background = ok ? 'var(--green)' : 'var(--amber)';
+      if (valEl) { valEl.textContent = fmtScore(val); valEl.style.color = color; }
+      if (statusEl) { statusEl.textContent = ok ? '✓ OK' : '✗ Breach'; statusEl.style.color = color; }
+    };
+    if (pf) {
+      setPM('dir', pf.platform_dir, pf.dir_breach_count === 0, (pf.platform_dir || 0) * 100);
+      setPM('eod', pf.platform_eod, Math.abs(pf.platform_eod || 0) <= 0.05, (1 - Math.abs(pf.platform_eod || 0) / 0.05) * 100);
+      setPM('sds', pf.platform_sds, Math.abs(pf.platform_sds || 0) <= 0.03, (1 - Math.abs(pf.platform_sds || 0) / 0.03) * 100);
+      document.getElementById('pm-summary').textContent =
+        'Platform metrics computed ' + fmtDate(pf.last_computed) + '. ' +
+        (pf.dir_breach_count || 0) + ' DIR · ' + (pf.eod_breach_count || 0) + ' EOD · ' + (pf.sds_breach_count || 0) + ' SDS company-level breach(es).';
+    }
+
+    // FHP version in header if available
+    if (summary.fhp_version) {
+      const verEl = document.querySelector('.masthead-sub');
+      if (verEl) verEl.textContent = 'Protocol v' + summary.fhp_version + ' · Governance Terminal';
+    }
+  }
+
+  // Overview escalations
+  if (escalations) {
+    const items = escalations.escalations || [];
+    const el = document.getElementById('overview-escalations-list');
+    el.innerHTML = items.length ? items.map(renderEscalationItem).join('') :
+      '<div style="font-family:var(--mono);font-size:11px;color:var(--green);padding:12px 0">✓ No open escalations.</div>';
+  }
+
+  // Overview audit record
+  if (audit) {
+    const entries = audit.entries || audit.audit_entries || [];
+    const el = document.getElementById('overview-audit-entries');
+    el.innerHTML = entries.length
+      ? entries.map(e =>
+          '<div class="audit-entry">' +
+          '<div class="audit-headline">' + (e.headline || e.summary || '—') + '</div>' +
+          '<div class="audit-byline">' + (e.event_type || '').toUpperCase() + ' · ' + fmtDate(e.occurred_at || e.created_at) + (e.resolution_ref ? ' · ' + e.resolution_ref : '') + '</div>' +
+          (e.detail ? '<div class="audit-lede">' + e.detail + '</div>' : '') +
+          '</div>'
+        ).join('')
+      : '<div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">No public audit entries yet.</div>';
+  }
+
+  // Live feed sidebar
+  const feedList = document.getElementById('live-feed-list');
+  const feedEntries = audit ? (audit.entries || audit.audit_entries || []) : [];
+  if (feedEntries.length) {
+    feedList.innerHTML = feedEntries.slice(0, 6).map(e =>
+      '<div class="live-feed-item">' +
+      '<div class="feed-dot blue"></div>' +
+      '<span class="feed-time">' + fmtDate(e.occurred_at || e.created_at) + '</span>' +
+      '<span class="feed-msg">' + (e.summary || e.headline || '—') + '</span>' +
+      '</div>'
+    ).join('');
+  } else {
+    feedList.innerHTML = '<div class="live-feed-item"><div class="feed-dot"></div><span class="feed-time">—</span><span class="feed-msg" style="color:var(--ink-light)">No public governance events yet.</span></div>';
+  }
+
+  // Governance bodies sidebar
+  const bodiesList = document.getElementById('gov-bodies-list');
+  if (bodiesData && (bodiesData.bodies || []).length) {
+    bodiesList.innerHTML = bodiesData.bodies.map(b => {
+      const memberLine = b.membership_type === 'open'
+        ? 'Open membership'
+        : (b.member_count || '—') + ' member' + (b.member_count !== 1 ? 's' : '');
+      const itemLine = b.open_item_count > 0
+        ? b.open_item_count + ' open item' + (b.open_item_count !== 1 ? 's' : '')
+        : 'No open items';
+      const voteNote = b.open_votes > 0 ? ' · ' + b.open_votes + ' pending vote' + (b.open_votes !== 1 ? 's' : '') : '';
+      const queueHtml = (b.queue_items || []).map(q => {
+        const due = q.deadline ? ' · due ' + fmtDate(q.deadline) : '';
+        const soon = q.deadline && (new Date(q.deadline) - Date.now()) < 7 * 86400000;
+        return '<span class="body-queue-item' + (soon ? ' due-soon' : '') + '">' +
+          q.ref.slice(0, 8) + due + '</span>';
+      }).join('');
+      return '<div class="body-card">' +
+        '<span class="body-acronym">' + b.acronym + '</span>' +
+        '<div class="body-name">' + b.full_name + '</div>' +
+        '<div class="body-status">' + memberLine + ' · ' + itemLine + voteNote + '</div>' +
+        (queueHtml ? '<div class="body-queue">' + queueHtml + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } else {
+    bodiesList.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">No body data.</div>';
+  }
+
+  // Recent votes sidebar
+  const votesData = await api('GET', '/governance/votes?limit=4');
+  if (votesData) {
+    const votes = votesData.votes || [];
+    const el = document.getElementById('recent-votes-list');
+    el.innerHTML = votes.length
+      ? votes.map(v => {
+          const passed = v.result === 'passed';
+          const pending = v.result === 'pending' || !v.result;
+          return '<div class="vote-record">' +
+            '<span class="vote-proposal">' + (v.resolution_ref || v.proposal_id || '—') + ' · ' + (v.title || '').slice(0,40) + '</span>' +
+            '<span class="vote-result ' + (pending ? 'pending' : passed ? 'passed' : 'failed') + '">' +
+            (pending ? 'Pending' : (v.votes_for || '—') + '/' + (v.total_voters || '—') + (passed ? ' ✓' : ' ✗')) +
+            '</span>' +
+            '</div>';
+        }).join('')
+      : '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">No votes recorded.</div>';
+  }
+}
+
+// ── Escalations tab ───────────────────────────────────────────────────────────
+let _allEscalations = [];
+
+async function loadEscalations() {
+  const data = await api('GET', '/governance/escalations');
+  if (!data) return;
+  _allEscalations = data.escalations || [];
+  renderEscalationsList(_allEscalations);
+}
+
+function renderEscalationsList(items) {
+  const el = document.getElementById('escalations-list');
+  el.innerHTML = items.length ? items.map(renderEscalationItem).join('') :
+    '<div style="font-family:var(--mono);font-size:11px;color:var(--green);padding:12px 0">✓ No escalations match these filters.</div>';
+}
+
+function applyEscFilters() {
+  const type     = document.getElementById('esc-filter-type').value;
+  const priority = document.getElementById('esc-filter-priority').value;
+  const body     = document.getElementById('esc-filter-body').value;
+  const filtered = _allEscalations.filter(e =>
+    (!type     || e.escalation_type === type) &&
+    (!priority || e.priority === priority) &&
+    (!body     || e.assigned_body === body)
+  );
+  renderEscalationsList(filtered);
+}
+
+// ── Fairness tab ──────────────────────────────────────────────────────────────
+async function loadGovFairness() {
+  const data = await api('GET', '/governance/fairness/companies');
+  if (!data) return;
+
+  const companies = data.companies || data.fairness || [];
+  const tbody = document.getElementById('gov-fairness-tbody');
+  if (!companies.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--ink-light)">No fairness data available.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = companies.map(c => {
+    const dirOk = c.dir_within_bounds !== false;
+    const eodOk = c.eod_within_bounds !== false;
+    const sdsOk = c.sds_within_bounds !== false;
+    const allOk = dirOk && eodOk && sdsOk;
+    const status = c.status === 'suspended' ? 'SUSPENDED' : allOk ? 'All OK' : 'Breach';
+    const statusColor = c.status === 'suspended' ? 'var(--crimson,#c0392b)' : allOk ? 'var(--green)' : 'var(--amber)';
+    return '<tr style="border-bottom:1px solid var(--rule)">' +
+      '<td style="padding:10px 16px;font-weight:600;font-family:var(--serif)">' + (c.legal_name || c.company_id) + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono);color:' + (dirOk ? 'inherit' : 'var(--crimson,#c0392b)') + '">' + fmtScore(c.dir_value) + (dirOk ? '' : ' ✗') + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono);color:' + (eodOk ? 'inherit' : 'var(--crimson,#c0392b)') + '">' + fmtScore(c.eod_value) + (eodOk ? '' : ' ✗') + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono);color:' + (sdsOk ? 'inherit' : 'var(--crimson,#c0392b)') + '">' + fmtScore(c.sds_value) + (sdsOk ? '' : ' ✗') + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono)">' + (c.consecutive_breach_windows || 0) + '</td>' +
+      '<td style="padding:10px 12px"><span style="font-family:var(--mono);font-size:9px;padding:2px 6px;color:' + statusColor + '">' + status + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── Proposals tab ─────────────────────────────────────────────────────────────
+async function loadProposals() {
+  const data = await api('GET', '/governance/proposals?status=open');
+  if (!data) return;
+
+  const proposals = data.proposals || [];
+  const el = document.getElementById('proposals-list');
+  if (!proposals.length) {
+    el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">No open proposals.</div>';
+    return;
+  }
+
+  el.innerHTML = proposals.map(p =>
+    '<div class="escalation-item standard" style="margin-bottom:12px">' +
+    '<div class="esc-header">' +
+    '<span class="esc-type">' + (p.proposal_id || '—') + '</span>' +
+    '<span class="esc-priority standard">Open</span>' +
+    '<span class="esc-id">Closes ' + fmtDate(p.review_closes_at) + '</span>' +
+    '</div>' +
+    '<div class="esc-body">' +
+    '<div class="esc-summary"><strong>' + (p.title || '—') + '</strong>' + (p.summary ? ' — ' + p.summary : '') + '</div>' +
+    '<div class="esc-meta">' +
+    (p.submitted_by ? '<span>Submitted by: <strong>' + p.submitted_by + '</strong></span>' : '') +
+    (p.comment_count != null ? '<span>Comments: <strong>' + p.comment_count + '</strong></span>' : '') +
+    '</div>' +
+    '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// ── Audit log tab ─────────────────────────────────────────────────────────────
+async function loadGovAuditLog() {
+  const data = await api('GET', '/governance/audit?limit=50');
+  if (!data) return;
+
+  const entries = data.entries || data.audit_entries || [];
+  const el = document.getElementById('gov-auditlog-entries');
+  el.innerHTML = entries.length
+    ? entries.map(e =>
+        '<div class="audit-entry">' +
+        '<div class="audit-headline">' + (e.headline || e.summary || '—') + '</div>' +
+        '<div class="audit-byline">' + (e.event_type || '').toUpperCase() + ' · ' + fmtDate(e.occurred_at || e.created_at) + (e.resolution_ref ? ' · ' + e.resolution_ref : '') + '</div>' +
+        (e.detail ? '<div class="audit-lede">' + e.detail + '</div>' : '') +
+        '</div>'
+      ).join('')
+    : '<div style="font-family:var(--mono);font-size:11px;color:var(--ink-light);padding:12px 0">No public audit entries yet.</div>';
+}
+
+// ── Votes tab ─────────────────────────────────────────────────────────────────
+async function loadVotes() {
+  const data = await api('GET', '/governance/votes');
+  if (!data) return;
+
+  const votes = data.votes || [];
+  const tbody = document.getElementById('votes-tbody');
+  if (!votes.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--ink-light)">No votes recorded yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = votes.map(v => {
+    const passed = v.result === 'passed';
+    const pending = v.result === 'pending' || !v.result;
+    const resultColor = pending ? 'var(--amber)' : passed ? 'var(--green)' : 'var(--crimson,#c0392b)';
+    const resultText = pending ? 'PENDING' : passed ? 'PASSED' : 'FAILED';
+    return '<tr style="border-bottom:1px solid var(--rule)">' +
+      '<td style="padding:10px 0">' + (v.resolution_ref || v.proposal_id || '—') + (v.title ? ' · ' + v.title : '') + '</td>' +
+      '<td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--ink-light)">' + fmtDate(v.voted_at) + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono)">' + (v.votes_for != null ? v.votes_for + '/' + v.total_voters : '—') + '</td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono);font-size:10px">' + (v.majority_required || '—') + '</td>' +
+      '<td style="padding:10px 12px"><span style="color:' + resultColor + ';font-family:var(--mono);font-size:10px;font-weight:600">' + resultText + '</span></td>' +
+      '<td style="padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-light)">' + (v.fob_veto ? 'Yes' : 'No') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  govShowTab('overview');
+  _tabLoaded.overview = true;
+  loadOverview();
+});
+</script>
+
+</body>
+</html>

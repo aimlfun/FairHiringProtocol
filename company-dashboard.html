@@ -1,0 +1,2627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHP Company Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0e1a;
+    --bg-card:   #0f1628;
+    --bg-hover:  #141c35;
+    --border:    #1e2d52;
+    --border-hi: #2d4480;
+    --navy:      #0d1f42;
+    --text:      #dde6ff;
+    --text-dim:  #8a9dc4;
+    --text-hi:   #e8eeff;
+    --amber:     #f0a020;
+    --amber-dim: #7a5010;
+    --green:     #20c070;
+    --green-dim: #0a4028;
+    --red:       #e03050;
+    --red-dim:   #4a0f1a;
+    --blue:      #4080f0;
+    --blue-dim:  #102050;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: 48px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    grid-column: 1 / -1;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 24px; height: 24px;
+    background: var(--blue);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-hi);
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-left: 4px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .company-name {
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-section {
+    padding: 12px 16px 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 12px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+    border-left-color: var(--border-hi);
+  }
+
+  .nav-item.active {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border-left-color: var(--blue);
+  }
+
+  .nav-icon {
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .nav-badge.amber {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+  }
+
+  /* ── Main content ── */
+  .main {
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .page-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-hi);
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 3px;
+    font-family: var(--mono);
+  }
+
+  .last-computed {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── KPI strip ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    animation: fadeUp 0.4s 0.08s ease both;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card:hover { border-color: var(--border-hi); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.green::before  { background: var(--green); }
+  .kpi-card.amber::before  { background: var(--amber); }
+  .kpi-card.red::before    { background: var(--red); }
+  .kpi-card.blue::before   { background: var(--blue); }
+
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-hi);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.green  .kpi-value { color: var(--green); }
+  .kpi-card.amber  .kpi-value { color: var(--amber); }
+  .kpi-card.red    .kpi-value { color: var(--red); }
+
+  .kpi-change {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .kpi-change.up   { color: var(--green); }
+  .kpi-change.down { color: var(--red); }
+
+  /* ── Two-col grid ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.4s 0.16s ease both;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.4s 0.24s ease both;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .panel-action {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--blue);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .panel-body { padding: 16px; }
+
+  /* ── Fairness rings ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .metric-ring-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: 80px; height: 80px;
+  }
+
+  .ring-svg { transform: rotate(-90deg); }
+
+  .ring-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 6;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ring-fill.ok     { stroke: var(--green); }
+  .ring-fill.warn   { stroke: var(--amber); }
+  .ring-fill.breach { stroke: var(--red);
+    animation: ringPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes ringPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-hi);
+    line-height: 1;
+  }
+
+  .ring-val.breach { color: var(--red); }
+  .ring-val.warn   { color: var(--amber); }
+  .ring-val.ok     { color: var(--green); }
+
+  .ring-label-main {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .ring-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ring-status.ok     { color: var(--green); }
+  .ring-status.warn   { color: var(--amber); }
+  .ring-status.breach { color: var(--red); }
+
+  .ring-bounds {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  /* ── SLA table ── */
+  .sla-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .sla-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .sla-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+
+  .sla-table tr:last-child td { border-bottom: none; }
+  .sla-table tbody tr:hover td { background: var(--bg-hover); }
+
+  .sla-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sla-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .sla-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+
+  .sla-pct {
+    font-size: 10px;
+    width: 32px;
+    text-align: right;
+    color: var(--text-dim);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .tag.pass  { background: var(--green-dim);  color: var(--green); }
+  .tag.warn  { background: var(--amber-dim);  color: var(--amber); }
+  .tag.fail  { background: var(--red-dim);    color: var(--red); }
+  .tag.info  { background: var(--blue-dim);   color: var(--blue); }
+
+  /* ── Ghosting log ── */
+  .ghost-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .ghost-item {
+    display: grid;
+    grid-template-columns: 110px 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .ghost-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .ghost-item.severe { border-left: 2px solid var(--red); }
+  .ghost-item.significant { border-left: 2px solid var(--amber); }
+  .ghost-item.minor { border-left: 2px solid var(--border); }
+
+  .ghost-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .ghost-stage {
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .ghost-overdue {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── Compliance score ── */
+  .compliance-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 4px 0;
+  }
+
+  .compliance-score-big {
+    font-family: var(--mono);
+    font-size: 52px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--amber);
+  }
+
+  .compliance-breakdown {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .comp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .comp-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .comp-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .comp-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .comp-val {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 30px;
+    text-align: right;
+  }
+
+  /* ── Active jobs table ── */
+  .jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .jobs-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .jobs-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    transition: background 0.15s;
+  }
+
+  .jobs-table tr:last-child td { border-bottom: none; }
+  .jobs-table tbody tr:hover td { background: var(--bg-hover); cursor: pointer; }
+
+  .job-title { color: var(--text-hi); font-weight: 500; }
+  .job-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .score-cell {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .score-cell.good    { color: var(--green); }
+  .score-cell.caution { color: var(--amber); }
+  .score-cell.poor    { color: var(--red); }
+
+  /* ── Audit log ── */
+  .audit-list { display: flex; flex-direction: column; }
+
+  .audit-row {
+    display: grid;
+    grid-template-columns: 90px 20px 1fr auto;
+    align-items: start;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  .audit-row:last-child { border-bottom: none; }
+  .audit-row:hover { background: var(--bg-hover); }
+
+  .audit-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    padding-top: 1px;
+  }
+
+  .audit-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .audit-dot.green { background: var(--green); }
+  .audit-dot.amber { background: var(--amber); }
+  .audit-dot.red   { background: var(--red); }
+  .audit-dot.blue  { background: var(--blue); }
+
+  .audit-msg {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .audit-msg span { color: var(--text-hi); font-weight: 500; }
+
+  .audit-tag { align-self: start; }
+
+  /* ── JOB DIALOG ── */
+  .dialog-overlay {
+    position: fixed; inset: 0; background: rgba(5,8,20,0.82);
+    backdrop-filter: blur(4px); z-index: 400;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .dialog-overlay.open { display: flex; }
+  .job-dialog {
+    background: var(--bg-card); border: 1px solid var(--border-hi);
+    border-radius: 6px; width: 100%; max-width: 760px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: dialogIn 0.22s ease;
+  }
+  @keyframes dialogIn {
+    from { opacity:0; transform: scale(0.97) translateY(12px); }
+    to   { opacity:1; transform: scale(1)    translateY(0);    }
+  }
+  .dialog-header {
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+  }
+  .dialog-title { font-size: 15px; font-weight: 600; color: var(--text-hi); letter-spacing: 0.01em; }
+  .dialog-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+  .dialog-close {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: var(--bg-hover); border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 14px; display: flex;
+    align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .dialog-close:hover { background: var(--border); color: var(--text); }
+  .dialog-body { padding: 20px 22px; }
+  .dialog-footer {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; bottom: 0; background: var(--bg-card);
+  }
+  .dialog-section {
+    margin-bottom: 22px; padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dialog-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .dialog-section-title {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 14px;
+  }
+  .field-group { margin-bottom: 13px; }
+  .field-label {
+    display: block; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 5px;
+  }
+  .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; padding: 8px 11px;
+    background: var(--bg-hover); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: var(--sans);
+    font-size: 12px; outline: none; transition: border-color 0.15s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: var(--blue);
+  }
+  .field-select option { background: var(--bg-card); }
+  .field-textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .field-row { display: grid; gap: 12px; }
+  .field-row-2 { grid-template-columns: 1fr 1fr; }
+  .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .notice-box {
+    padding: 9px 12px; border-radius: 4px; font-size: 11px; line-height: 1.5;
+    margin-bottom: 13px;
+  }
+  .notice-prohibited {
+    background: var(--red-dim); border: 1px solid var(--red);
+    color: var(--text); border-left-width: 3px;
+  }
+  .notice-required {
+    background: var(--amber-dim); border: 1px solid var(--amber-dim);
+    color: var(--amber); border-left-width: 3px;
+  }
+  /* Skills builder */
+  .skill-requirement-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .skill-req-item {
+    display: grid; grid-template-columns: 1fr 120px 100px auto;
+    gap: 8px; align-items: center;
+    padding: 8px 10px; background: var(--bg-hover);
+    border: 1px solid var(--border); border-radius: 4px;
+  }
+  .skill-req-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .skill-req-domain { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+  .skill-tag-must {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: var(--blue-dim); color: var(--blue); text-align: center;
+  }
+  .skill-tag-nice {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 2px;
+    background: rgba(30,45,82,0.8); color: var(--text-dim); text-align: center;
+  }
+  .skill-remove-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 13px; padding: 2px 6px; transition: color 0.15s;
+  }
+  .skill-remove-btn:hover { color: var(--red); }
+  /* Attestation checkboxes */
+  .attest-list { display: flex; flex-direction: column; gap: 10px; }
+  .attest-item { display: flex; align-items: flex-start; gap: 10px; }
+  .attest-item input[type=checkbox] { margin-top: 2px; accent-color: var(--blue); flex-shrink: 0; }
+  .attest-label { font-size: 12px; color: var(--text-dim); line-height: 1.5; cursor: pointer; }
+  .attest-label strong { color: var(--text); font-weight: 500; }
+  .attest-req { font-family: var(--mono); font-size: 9px; color: var(--red); margin-left: 4px; }
+  /* Conditional sections */
+  .conditional { display: none; }
+  .conditional.visible { display: block; }
+  /* Dialog save button */
+  .btn-dialog-save {
+    background: var(--blue); color: white; border: none; padding: 9px 20px;
+    border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-dialog-save:hover { background: #5090ff; }
+  .btn-dialog-save:disabled { background: var(--border); color: var(--text-dim); cursor: default; }
+  .btn-dialog-cancel {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    padding: 9px 18px; border-radius: 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-dialog-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  .validation-msg {
+    font-family: var(--mono); font-size: 10px; color: var(--red);
+  }
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-mark"></div>
+      <div>
+        <span class="logo-text">FHP</span>
+        <span class="logo-sub">/ COMPANY COMPLIANCE TERMINAL</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span><span class="status-dot"></span>Live</span>
+      <span>Window: rolling 30d</span>
+      <span class="company-name" id="co-name">Acme Technologies Ltd</span>
+      <span style="color:var(--text-dim)" id="co-id">ID: a3f9·c2b1</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" id="nav-overview" onclick="showPage('overview')" style="cursor:pointer">
+      <span class="nav-icon">◈</span> Compliance Overview
+    </div>
+    <div class="nav-item" id="nav-fairness" onclick="showPage('fairness')" style="cursor:pointer">
+      <span class="nav-icon">◎</span> Fairness Metrics
+      <span class="nav-badge amber" id="nav-badge-fairness" style="display:none">0</span>
+    </div>
+    <div class="nav-section">Hiring</div>
+    <div class="nav-item" id="nav-jobs" onclick="showPage('jobs')" style="cursor:pointer">
+      <span class="nav-icon">▦</span> Active Job Briefs
+    </div>
+    <div class="nav-item" id="nav-pipeline" onclick="showPage('pipeline')" style="cursor:pointer">
+      <span class="nav-icon">⟳</span> Match Pipeline
+    </div>
+    <div class="nav-section">Obligations</div>
+    <div class="nav-item" id="nav-sla" onclick="showPage('sla')" style="cursor:pointer">
+      <span class="nav-icon">◷</span> SLA Monitor
+      <span class="nav-badge" id="nav-badge-sla" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="nav-ghosting" onclick="showPage('ghosting')" style="cursor:pointer">
+      <span class="nav-icon">⚠</span> Ghosting Events
+      <span class="nav-badge amber" id="nav-badge-ghosting" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="nav-rejections" onclick="showPage('rejections')" style="cursor:pointer">
+      <span class="nav-icon">✉</span> Rejections
+    </div>
+    <div class="nav-section">Governance</div>
+    <div class="nav-item" id="nav-auditlog" onclick="showPage('auditlog')" style="cursor:pointer">
+      <span class="nav-icon">⊞</span> Audit Log
+    </div>
+    <div class="nav-item" id="nav-appeals" onclick="showPage('appeals')" style="cursor:pointer">
+      <span class="nav-icon">↗</span> Appeals
+    </div>
+    <div style="margin-top:auto; padding: 16px;">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em">
+        FHP v1.0.0<br>
+        Pipeline v1.0.0<br>
+        Last sync: 4m ago
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main" id="main-content">
+    <div id="page-overview" class="page-section">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Compliance Overview</div>
+        <div class="page-subtitle">// acme-technologies-ltd · rolling 30-day window · 847 candidates evaluated</div>
+      </div>
+      <div class="last-computed">
+        Last computed<br>
+        <span style="color:var(--text)">2025-11-08 · 03:00 UTC</span><br>
+        <span style="color:var(--blue);cursor:pointer">↻ Refresh</span>
+      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card amber" id="kpi-card-compliance">
+        <div class="kpi-label">Compliance Score</div>
+        <div class="kpi-value" id="kpi-compliance-score">—</div>
+        <div class="kpi-change" id="kpi-compliance-change">Loading…</div>
+      </div>
+      <div class="kpi-card green" id="kpi-card-sla">
+        <div class="kpi-label">SLA Compliance</div>
+        <div class="kpi-value" id="kpi-sla-pct">—</div>
+        <div class="kpi-change" id="kpi-sla-change">Loading…</div>
+      </div>
+      <div class="kpi-card red" id="kpi-card-ghosting">
+        <div class="kpi-label">Open Ghosting Events</div>
+        <div class="kpi-value" id="kpi-ghosting-open">—</div>
+        <div class="kpi-change" id="kpi-ghosting-change">Loading…</div>
+      </div>
+      <div class="kpi-card blue" id="kpi-card-jobs">
+        <div class="kpi-label">Active Job Briefs</div>
+        <div class="kpi-value" id="kpi-jobs-active">—</div>
+        <div class="kpi-change" id="kpi-jobs-change">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Fairness metrics + Compliance score -->
+    <div class="two-col">
+
+      <!-- Fairness metrics rings -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Fairness Metrics · Platform-Wide</span>
+          <span class="panel-action">View per-job →</span>
+        </div>
+        <div class="panel-body">
+          <div class="metrics-grid">
+
+            <!-- DIR ring -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <!-- DIR = 0.87, bounds 0.8–1.25. Score: (0.87-0.8)/(1.25-0.8) = 0.07/0.45 = 15.5% into the ok zone. Show as 87/125 = 70% fill -->
+                  <circle class="ring-fill ok" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="60" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val ok" id="ring-dir-val">—</span>
+                </div>
+              </div>
+              <div class="ring-label-main">DIR</div>
+              <div class="ring-status ok" id="ring-dir-status">—</div>
+              <div class="ring-bounds">target: 0.80–1.25</div>
+            </div>
+
+            <!-- EOD ring — breach -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill breach" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="130" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val ok" id="ring-eod-val">—</span>
+                </div>
+              </div>
+              <div class="ring-label-main">EOD</div>
+              <div class="ring-status ok" id="ring-eod-status">—</div>
+              <div class="ring-bounds">target: |x| &lt; 0.05</div>
+            </div>
+
+            <!-- SDS ring -->
+            <div class="metric-ring-container">
+              <div class="ring-wrap">
+                <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="ring-track" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill ok" cx="40" cy="40" r="32"
+                    stroke-dasharray="201.06"
+                    stroke-dashoffset="70" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-val ok" id="ring-sds-val">—</span>
+                </div>
+              </div>
+              <div class="ring-label-main">SDS</div>
+              <div class="ring-status ok" id="ring-sds-status">—</div>
+              <div class="ring-bounds">target: |x| &lt; 0.03</div>
+            </div>
+
+          </div>
+
+          <!-- EOD breach notice (hidden until data loaded) -->
+          <div id="overview-breach-notice" style="display:none;margin-top:16px; padding:10px 12px; background:var(--red-dim); border:1px solid var(--red); border-left-width:3px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px" id="overview-breach-title">
+              ⚠ Fairness Breach
+            </div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5" id="overview-breach-msg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compliance score breakdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Compliance Score Breakdown</span>
+          <span class="panel-action">History →</span>
+        </div>
+        <div class="panel-body">
+          <div class="compliance-display">
+            <div>
+              <div class="compliance-score-big" id="compliance-score-big">—</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--amber);letter-spacing:0.1em;margin-top:4px">REVIEW THRESHOLD: 0.70</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px">pause threshold: 0.50</div>
+            </div>
+            <div class="compliance-breakdown" id="compliance-breakdown">
+              <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);padding:8px 0">Breakdown not yet available — computed nightly once hiring activity begins.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">SLA by Stage</div>
+            <table class="sla-table">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Compliance</th>
+                  <th>SLA</th>
+                </tr>
+              </thead>
+              <tbody id="sla-by-stage-tbody">
+                <tr><td colspan="3" style="padding:10px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">No stage data yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active jobs + Ghosting -->
+    <div class="three-col">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Active Job Briefs</span>
+          <span class="panel-action" style="cursor:pointer" onclick="openJobDialog()">Post new brief →</span>
+        </div>
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Candidates</th>
+              <th>Matched</th>
+              <th>DIR</th>
+              <th>SLA</th>
+              <th>Expires</th>
+            </tr>
+          </thead>
+          <tbody id="overview-jobs-tbody">
+          <tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ghosting events -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Open Ghosting Events</span>
+          <span class="panel-action">All events →</span>
+        </div>
+        <div class="panel-body" style="padding:8px 0;">
+          <div class="ghost-list" id="overview-ghosting-list">
+            <div style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</div>
+          </div>
+          <div style="padding:12px;border-top:1px solid var(--border);margin-top:4px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">Strike record (90 day window)</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--amber)" id="overview-strike-count">—</div>
+              <div style="font-size:11px;color:var(--text-dim)">of 3 before<br>brief pause</div>
+              <div style="margin-left:auto" id="overview-strike-pips">
+                <div style="display:flex;gap:4px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit log -->
+    <div class="panel" style="animation: fadeUp 0.4s 0.32s ease both">
+      <div class="panel-header">
+        <span class="panel-title">Audit Log</span>
+        <span class="panel-action" style="cursor:pointer" onclick="exportAuditLog()">Export →</span>
+      </div>
+      <div class="audit-list" id="overview-audit-list">
+        <div class="audit-row"><span class="audit-time">—</span><div class="audit-dot blue"></div><span class="audit-msg">Loading…</span><span class="tag info audit-tag">—</span></div>
+      </div>
+    </div>
+
+    </div><!-- end page-overview -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+  ADDITIONAL COMPANY DASHBOARD PAGES
+  Injected below the main overview content, toggled by JS nav switcher.
+  Each section mirrors the same design language as the overview.
+════════════════════════════════════════════════════════════════════════ -->
+
+<div id="page-fairness" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">Fairness Metrics</div>
+      <div class="page-subtitle">// per-job and platform-wide · rolling 30d · updated nightly</div>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:right">
+      Last computed<br><span style="color:var(--text)">03:00 UTC · today</span>
+    </div>
+  </div>
+
+  <!-- Per-job metrics table -->
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header">
+      <span class="panel-title">Per-Job Fairness · Active Briefs</span>
+      <span class="panel-action" style="cursor:pointer" onclick="exportFairnessCSV()" id="fairness-export-btn">Export CSV →</span>
+    </div>
+    <table class="jobs-table">
+      <thead><tr>
+        <th>Role</th><th>Candidates</th>
+        <th>DIR</th><th>EOD</th><th>SDS</th>
+        <th>Consecutive breach</th><th>Status</th>
+      </tr></thead>
+      <tbody id="fairness-jobs-tbody">
+        <tr><td colspan="7" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Breach notice (hidden until data loaded) -->
+  <div id="fairness-breach-notice" style="display:none;margin-top:16px;padding:14px 16px;background:var(--red-dim);border:1px solid var(--red);border-left-width:3px;animation:fadeUp 0.3s 0.1s ease both">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px" id="fairness-breach-title">⚠ Remediation Required</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px" id="fairness-breach-msg"></div>
+    <button style="font-family:var(--mono);font-size:10px;background:var(--red);color:white;border:none;padding:6px 14px;cursor:pointer;letter-spacing:0.08em" onclick="submitRemediation()">Submit remediation plan →</button>
+  </div>
+</div>
+
+<!-- ── ACTIVE JOBS ── -->
+<div id="page-jobs" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">Active Job Briefs</div>
+      <div class="page-subtitle" id="jobs-subtitle">// loading…</div>
+    </div>
+    <button class="panel-action" style="background:var(--blue);color:white;border:none;padding:8px 16px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:0.08em" onclick="openJobDialog()">+ Post new brief</button>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">All Active Briefs</span><span class="panel-action">Filter →</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Role</th><th>Status</th><th>SLA Days</th><th>Candidates</th><th>Matched</th><th>Salary Range</th><th>Expires</th><th></th></tr></thead>
+      <tbody id="jobs-table-tbody">
+        <tr><td colspan="8" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SLA MONITOR ── -->
+<div id="page-sla" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div>
+      <div class="page-title">SLA Monitor</div>
+      <div class="page-subtitle">// 47 active interactions · 3 approaching deadline · 2 breached</div>
+    </div>
+  </div>
+  <div class="kpi-strip" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="kpi-card green"><div class="kpi-label">Overall SLA Compliance</div><div class="kpi-value" id="sla-kpi-pct">—</div><div class="kpi-change" id="sla-kpi-pct-sub">Loading…</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Approaching (24h)</div><div class="kpi-value" id="sla-kpi-due-soon">—</div><div class="kpi-change">Action needed today</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Breached (open)</div><div class="kpi-value" id="sla-kpi-breached">—</div><div class="kpi-change">Strikes pending</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Active Interactions</div><div class="kpi-value" id="sla-kpi-active">—</div><div class="kpi-change" id="sla-kpi-active-sub">Loading…</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.1s ease both;margin-top:16px">
+    <div class="panel-header"><span class="panel-title">Active Interactions — SLA Status</span></div>
+    <table class="sla-table" style="width:100%">
+      <thead><tr><th>Job</th><th>Stage</th><th>SLA deadline</th><th>Time remaining</th><th>Status</th></tr></thead>
+      <tbody id="sla-tbody">
+        <tr><td colspan="5" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── GHOSTING EVENTS ── -->
+<div id="page-ghosting" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Ghosting Events</div><div class="page-subtitle">// 2 open · 3 resolved this window · strike count: 1 of 3</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">All Ghosting Events</span><span class="panel-action" style="cursor:pointer" onclick="exportGhostingCSV()" id="ghosting-export-btn">Export →</span></div>
+    <div class="ghost-list" style="padding:8px 0" id="ghosting-list">
+      <div style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text-dim)" id="ghosting-strike-notice">
+      Loading strike record…
+    </div>
+  </div>
+</div>
+
+<!-- ── REJECTIONS ── -->
+<div id="page-rejections" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Structured Rejections</div><div class="page-subtitle">// 88% compliance rate · 12 pending responses</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Pending Rejections — Awaiting Response</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Match ID</th><th>Job</th><th>Stage</th><th>Deadline</th><th></th></tr></thead>
+      <tbody id="rejections-tbody">
+        <tr><td colspan="5" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Rejection composer -->
+  <div class="panel" style="margin-top:16px;animation:fadeUp 0.3s 0.1s ease both">
+    <div class="panel-header"><span class="panel-title">Quick Rejection Composer</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Reason code</div>
+          <select id="rejection-code-select" style="width:100%;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:var(--mono);font-size:11px">
+            <option value="">Loading codes…</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Stage-specific notes</div>
+          <input id="rejection-notes-input" type="text" placeholder="Brief, specific, honest feedback..." style="width:100%;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:var(--sans);font-size:12px">
+        </div>
+      </div>
+      <div style="margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--text-dim)">
+        Select an interaction from the table above to send a rejection.
+        <span id="rejection-selected-label" style="color:var(--blue)"></span>
+      </div>
+      <button id="rejection-send-btn" disabled style="font-family:var(--mono);font-size:10px;background:var(--border);color:var(--text-dim);border:none;padding:8px 16px;cursor:default;letter-spacing:0.08em" onclick="sendRejection()">Send structured rejection</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUDIT LOG ── -->
+<div id="page-auditlog" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Audit Log</div><div class="page-subtitle">// complete compliance record for your account</div></div>
+    <button style="font-family:var(--mono);font-size:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 14px;cursor:pointer;letter-spacing:0.08em" onclick="exportAuditLog()">Export full log →</button>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Event Log</span></div>
+    <div class="audit-list" id="auditlog-list">
+      <div class="audit-row"><span class="audit-time">—</span><div class="audit-dot blue"></div><span class="audit-msg">Loading…</span><span class="tag info audit-tag">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APPEALS ── -->
+<div id="page-appeals" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Appeals</div><div class="page-subtitle">// 1 active · 4 resolved this quarter</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Active Appeals Against Your Job Briefs</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Appeal ID</th><th>Job</th><th>Ground</th><th>Status</th><th>TWG deadline</th><th>Outcome</th></tr></thead>
+      <tbody id="appeals-tbody">
+        <tr><td colspan="6" style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Loading…</td></tr>
+      </tbody>
+    </table>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim)">
+      You will be notified of the Protocol Council decision within 10 business days of the TWG finding.
+      You are required to cooperate with any governance investigation.
+    </div>
+  </div>
+  <!-- Match pipeline (simple placeholder) -->
+</div>
+
+<!-- ── MATCH PIPELINE ── -->
+<div id="page-pipeline" class="page-section" style="display:none">
+  <div class="page-header" style="animation:fadeUp 0.3s ease both">
+    <div><div class="page-title">Match Pipeline</div><div class="page-subtitle">// recent pipeline runs for your active briefs</div></div>
+  </div>
+  <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
+    <div class="panel-header"><span class="panel-title">Recent Pipeline Runs</span><span class="panel-action">All runs →</span></div>
+    <table class="jobs-table">
+      <thead><tr><th>Match ID</th><th>Job</th><th>Decision</th><th>Score</th><th>Duration</th><th>Bias correction</th><th>Run at</th></tr></thead>
+      <tbody>
+        <tr><td colspan="7" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">Pipeline run history coming soon — no endpoint yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+  </main>
+</div><!-- end .shell -->
+
+<script>
+// ── Auth ──────────────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:3000/v1';
+let _token = sessionStorage.getItem('fhp_access_token');
+
+if (!_token) {
+  console.warn('No access token — API calls will fail. Login via landing-page.html first.');
+}
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_token || '') };
+}
+
+async function api(method, path, body) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: authHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) { sessionStorage.clear(); window.location.href = 'landing-page.html'; return null; }
+    return res.ok ? await res.json() : null;
+  } catch (e) {
+    console.error('API error:', method, path, e);
+    return null;
+  }
+}
+
+// ── Tab navigation ────────────────────────────────────────────────────────────
+const PAGES = ['overview','fairness','jobs','pipeline','sla','ghosting','rejections','auditlog','appeals'];
+const _tabLoaded = {};
+
+function showPage(pageId) {
+  PAGES.forEach(p => {
+    const sec = document.getElementById('page-' + p);
+    const nav = document.getElementById('nav-' + p);
+    if (sec) sec.style.display = p === pageId ? '' : 'none';
+    if (nav) nav.classList.toggle('active', p === pageId);
+  });
+  if (!_tabLoaded[pageId]) {
+    _tabLoaded[pageId] = true;
+    switch (pageId) {
+      case 'fairness':    loadFairness(); break;
+      case 'jobs':        loadJobs(); break;
+      case 'sla':         loadSLA(); break;
+      case 'ghosting':    loadGhosting(); break;
+      case 'rejections':  loadRejections(); break;
+      case 'auditlog':    loadAuditLog(); break;
+      case 'appeals':     loadAppeals(); break;
+    }
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+function fmtScore(v) {
+  if (v == null) return '—';
+  return parseFloat(v).toFixed(2);
+}
+function scoreClass(v, good, caution) {
+  if (v == null) return '';
+  return v >= good ? 'good' : v >= caution ? 'caution' : 'poor';
+}
+function statusTag(status) {
+  const map = { active:'pass', paused:'fail', closed:'fail', expired:'fail' };
+  return map[status] || 'info';
+}
+function slaTag(s) {
+  const map = { breached:'fail', due_today:'warn', due_soon:'warn', on_track:'pass' };
+  return map[s] || 'info';
+}
+function appealTag(s) {
+  const map = { submitted:'info', twg_review:'warn', pc_review:'warn', upheld:'pass', dismissed:'fail', withdrawn:'fail' };
+  return map[s] || 'info';
+}
+function ghostTag(s) {
+  const map = { severe:'fail', significant:'warn', minor:'info' };
+  return map[s] || 'info';
+}
+function triggerDownload(content, filename, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function jsonToCsv(rows, cols) {
+  const header = cols.map(c => c.label).join(',');
+  const lines = rows.map(r => cols.map(c => {
+    const v = String(r[c.key] == null ? '' : r[c.key]).replace(/"/g, '""');
+    return '"' + v + '"';
+  }).join(','));
+  return [header, ...lines].join('\n');
+}
+
+// ── Overview load ─────────────────────────────────────────────────────────────
+async function loadOverview() {
+  const data = await api('GET', '/companies/me/dashboard');
+  if (!data) return;
+
+  const co = data.company || {};
+  if (co.legal_name) {
+    document.getElementById('co-name').textContent = co.legal_name;
+    document.getElementById('co-id').textContent = 'ID: ' + co.company_id.slice(0, 8);
+  }
+
+  // KPI strip
+  document.getElementById('kpi-compliance-score').textContent = fmtScore(co.compliance_score);
+  document.getElementById('kpi-compliance-change').textContent = co.compliance_score != null ? (co.compliance_score >= 0.7 ? 'Above review threshold' : 'Below review threshold') : 'No score yet';
+  document.getElementById('kpi-jobs-active').textContent = (data.active_jobs || []).length;
+  document.getElementById('kpi-jobs-change').textContent = (data.active_jobs || []).length + ' brief(s) active';
+  document.getElementById('kpi-ghosting-open').textContent = (data.open_ghosting || []).length;
+  document.getElementById('kpi-ghosting-change').textContent = (data.open_ghosting || []).length + ' open event(s)';
+
+  // Nav badges
+  const openGhosts = (data.open_ghosting || []).length;
+  if (openGhosts > 0) {
+    const b = document.getElementById('nav-badge-ghosting');
+    b.textContent = openGhosts; b.style.display = '';
+  }
+
+  // Fairness rings
+  const f = data.fairness;
+  if (!f) {
+    document.getElementById('kpi-sla-pct').textContent = '—';
+    document.getElementById('kpi-sla-change').textContent = 'No fairness data yet';
+    document.getElementById('compliance-score-big').textContent = fmtScore(co.compliance_score);
+  }
+  if (f) {
+    document.getElementById('kpi-sla-pct').textContent = f.ghosting_sla_compliance_rate != null
+      ? Math.round(f.ghosting_sla_compliance_rate * 100) + '%' : '—';
+    document.getElementById('kpi-sla-change').textContent = f.ghosting_sla_compliance_rate != null
+      ? (f.ghosting_sla_compliance_rate >= 0.9 ? 'Good standing' : 'Needs attention') : 'No data';
+
+    const setRing = (id, val, ok) => {
+      const el = document.getElementById('ring-' + id + '-val');
+      const st = document.getElementById('ring-' + id + '-status');
+      if (el) { el.textContent = fmtScore(val); el.className = 'ring-val ' + (ok ? 'ok' : 'breach'); }
+      if (st) { st.textContent = ok ? '✓ Within bounds' : '✗ Breach'; st.className = 'ring-status ' + (ok ? 'ok' : 'breach'); }
+    };
+    setRing('dir', f.dir_value, f.dir_within_bounds);
+    setRing('eod', f.eod_value, f.eod_within_bounds);
+    setRing('sds', f.sds_value, f.sds_within_bounds);
+
+    if (f.any_metric_breached) {
+      const el = document.getElementById('overview-breach-notice');
+      el.style.display = '';
+      document.getElementById('overview-breach-msg').textContent =
+        'One or more fairness metrics are outside bounds. ' +
+        f.consecutive_breach_windows + ' consecutive breach window(s). ' +
+        'Review your active job briefs and submit a remediation plan if required.';
+
+      const fb = document.getElementById('nav-badge-fairness');
+      fb.textContent = 1; fb.style.display = '';
+    }
+
+    document.getElementById('compliance-score-big').textContent =
+      fmtScore(co.compliance_score);
+  }
+
+  // Active jobs table (overview)
+  const jobs = data.active_jobs || [];
+  const jobsTbody = document.getElementById('overview-jobs-tbody');
+  if (!jobs.length) {
+    jobsTbody.innerHTML = '<tr><td colspan="6" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">No active jobs.</td></tr>';
+  } else {
+    jobsTbody.innerHTML = jobs.map(j => {
+      const exp = fmtDate(j.expires_at);
+      const expiring = j.expires_at && (new Date(j.expires_at) - Date.now()) < 7 * 86400000;
+      return '<tr>' +
+        '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
+        '<td style="font-family:var(--mono)">' + (j.total_candidates || 0) + '</td>' +
+        '<td style="font-family:var(--mono)">' + (j.matched_count || 0) + '</td>' +
+        '<td><span class="score-cell ' + scoreClass(j.dir_value, 0.8, 0.7) + '">' + fmtScore(j.dir_value) + '</span></td>' +
+        '<td><span class="tag ' + statusTag(j.status) + '">' + (j.response_sla_days || '—') + 'd</span></td>' +
+        '<td style="font-family:var(--mono);font-size:10px;color:' + (expiring ? 'var(--amber)' : 'var(--text-dim)') + '">' + exp + (expiring ? ' ⚠' : '') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // Ghosting overview list
+  const ghosts = data.open_ghosting || [];
+  const ghostList = document.getElementById('overview-ghosting-list');
+  if (!ghosts.length) {
+    ghostList.innerHTML = '<div style="padding:12px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ No open ghosting events.</div>';
+  } else {
+    ghostList.innerHTML = ghosts.map(g =>
+      '<div class="ghost-item ' + g.severity + '">' +
+      '<span class="ghost-id">' + g.ghosting_id.slice(0,8) + '</span>' +
+      '<span class="ghost-stage">' + g.stage_name + '</span>' +
+      '<span class="ghost-overdue">+' + Math.round(g.overdue_hours) + 'h overdue</span>' +
+      '<span class="tag ' + ghostTag(g.severity) + '">' + g.severity + '</span>' +
+      '</div>'
+    ).join('');
+  }
+  document.getElementById('overview-strike-count').textContent = co.strike_count_90d != null ? co.strike_count_90d : '—';
+
+  // Compliance breakdown bars
+  const bd = data.compliance_breakdown;
+  const breakdownEl = document.getElementById('compliance-breakdown');
+  if (bd && (bd.sla_pct != null || bd.ghosting_pct != null || bd.fairness_pct != null || bd.rejection_pct != null)) {
+    const barColor = pct => pct == null ? 'var(--text-dim)' : pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--amber)' : 'var(--red)';
+    const barWidth = pct => pct == null ? 0 : pct;
+    const barVal   = pct => pct == null ? '—' : pct + '%';
+    const rows = [
+      { label: 'SLA compliance (35%)',       pct: bd.sla_pct },
+      { label: 'Ghosting-free rate (25%)',   pct: bd.ghosting_pct },
+      { label: 'Fairness metrics (25%)',     pct: bd.fairness_pct },
+      { label: 'Structured rejections (15%)', pct: bd.rejection_pct },
+    ];
+    breakdownEl.innerHTML = rows.map(r =>
+      '<div class="comp-row">' +
+      '<div class="comp-label">' + r.label + '</div>' +
+      '<div class="comp-bar"><div class="comp-bar-fill" style="width:' + barWidth(r.pct) + '%;background:' + barColor(r.pct) + '"></div></div>' +
+      '<div class="comp-val" style="color:' + barColor(r.pct) + '">' + barVal(r.pct) + '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  // Recent audit
+  const audit = data.recent_audit || [];
+  const auditList = document.getElementById('overview-audit-list');
+  if (!audit.length) {
+    auditList.innerHTML = '<div class="audit-row"><span class="audit-time">—</span><div class="audit-dot blue"></div><span class="audit-msg">No recent audit events.</span><span></span></div>';
+  } else {
+    auditList.innerHTML = audit.map(e =>
+      '<div class="audit-row">' +
+      '<span class="audit-time">' + fmtDate(e.occurred_at) + '</span>' +
+      '<div class="audit-dot blue"></div>' +
+      '<span class="audit-msg">' + e.summary + '</span>' +
+      '<span class="tag info audit-tag">' + (e.event_type || '') + '</span>' +
+      '</div>'
+    ).join('');
+  }
+}
+
+// ── Fairness tab ──────────────────────────────────────────────────────────────
+let _fairnessData = null;
+
+async function loadFairness() {
+  const data = await api('GET', '/companies/me/fairness/jobs');
+  if (!data) return;
+  _fairnessData = data.jobs || [];
+
+  const tbody = document.getElementById('fairness-jobs-tbody');
+  if (!_fairnessData.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">No fairness data yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _fairnessData.map(j => {
+    const breach = j.breach_level !== 'ok';
+    return '<tr>' +
+      '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
+      '<td style="font-family:var(--mono)">' + (j.total_candidates_evaluated || 0) + '</td>' +
+      '<td><span class="score-cell ' + scoreClass(j.dir_value, 0.85, 0.8) + '">' + fmtScore(j.dir_value) + '</span></td>' +
+      '<td><span class="score-cell ' + (Math.abs(j.eod_value) <= 0.05 ? 'good' : 'poor') + '">' + fmtScore(j.eod_value) + '</span></td>' +
+      '<td><span class="score-cell ' + (Math.abs(j.sds_value) <= 0.03 ? 'good' : 'poor') + '">' + fmtScore(j.sds_value) + '</span></td>' +
+      '<td style="font-family:var(--mono);font-size:11px;color:' + (j.consecutive_breach_windows > 1 ? 'var(--red)' : 'var(--text-dim)') + '">' + (j.consecutive_breach_windows || 0) + ' window(s)</td>' +
+      '<td><span class="tag ' + (breach ? 'fail' : 'pass') + '">' + (breach ? j.breach_level.replace('_', ' ') : 'All OK') + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  // Show breach notice for worst offender
+  const worst = _fairnessData.filter(j => j.consecutive_breach_windows >= 3)[0];
+  if (worst) {
+    const notice = document.getElementById('fairness-breach-notice');
+    notice.style.display = '';
+    document.getElementById('fairness-breach-title').textContent = '⚠ Remediation Required — ' + worst.title;
+    document.getElementById('fairness-breach-msg').textContent =
+      'All metrics are outside bounds for ' + worst.consecutive_breach_windows +
+      ' consecutive windows. A Fairness Oversight Board review has been triggered. Submit a remediation plan within 20 business days.';
+    notice.dataset.jobId = worst.job_id;
+  }
+}
+
+function exportFairnessCSV() {
+  if (!_fairnessData || !_fairnessData.length) { alert('No data to export.'); return; }
+  const csv = jsonToCsv(_fairnessData, [
+    { key:'title', label:'Role' },
+    { key:'total_candidates_evaluated', label:'Candidates' },
+    { key:'dir_value', label:'DIR' },
+    { key:'eod_value', label:'EOD' },
+    { key:'sds_value', label:'SDS' },
+    { key:'consecutive_breach_windows', label:'Consecutive Breach Windows' },
+    { key:'breach_level', label:'Status' },
+    { key:'computed_at', label:'Computed At' },
+  ]);
+  triggerDownload(csv, 'fhp-fairness-' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv');
+}
+
+async function submitRemediation() {
+  const jobId = document.getElementById('fairness-breach-notice').dataset.jobId;
+  if (!jobId) return;
+  const plan = prompt('Briefly describe your remediation plan:');
+  if (!plan) return;
+  const res = await api('POST', '/companies/me/fairness/remediation', { job_id: jobId, remediation_notes: plan });
+  if (res) alert('Remediation plan submitted.');
+  else alert('Failed to submit. Please try again.');
+}
+
+// ── Jobs tab ──────────────────────────────────────────────────────────────────
+let _jobsData = [];
+
+async function loadJobs() {
+  const data = await api('GET', '/companies/me/jobs');
+  if (!data) return;
+  _jobsData = data.jobs || [];
+
+  const expiringCount = _jobsData.filter(j => j.days_until_expiry != null && j.days_until_expiry <= 7).length;
+  document.getElementById('jobs-subtitle').textContent =
+    '// ' + _jobsData.length + ' active · ' + expiringCount + ' expiring within 7 days';
+
+  const tbody = document.getElementById('jobs-table-tbody');
+  if (!_jobsData.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">No job briefs yet. Post your first brief above.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _jobsData.map(j => {
+    const exp = fmtDate(j.expires_at);
+    const expiring = j.days_until_expiry != null && j.days_until_expiry <= 7;
+    const sal = j.salary_currency + j.salary_minimum / 1000 + 'k–' + j.salary_maximum / 1000 + 'k';
+    return '<tr>' +
+      '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.employment_type + ' · ' + j.work_mode + '</div></td>' +
+      '<td><span class="tag ' + statusTag(j.status) + '">' + j.status + '</span></td>' +
+      '<td style="font-family:var(--mono)">' + j.response_sla_days + 'd</td>' +
+      '<td style="font-family:var(--mono)">' + (j.total_candidates || 0) + '</td>' +
+      '<td style="font-family:var(--mono)">' + (j.matched_count || 0) + '</td>' +
+      '<td style="font-family:var(--mono);font-size:11px">' + sal + '</td>' +
+      '<td style="font-family:var(--mono);font-size:10px;color:' + (expiring ? 'var(--amber)' : 'var(--text-dim)') + '">' + exp + (expiring ? ' ⚠' : '') + '</td>' +
+      '<td><span class="panel-action" style="cursor:pointer" onclick="openJobDialogById(' + "'" + j.job_id + "'" + ')">Edit →</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function openJobDialogById(jobId) {
+  const job = _jobsData.find(j => j.job_id === jobId);
+  if (job) openJobDialog(job.title, job);
+  else openJobDialog();
+}
+
+// ── SLA tab ───────────────────────────────────────────────────────────────────
+async function loadSLA() {
+  const data = await api('GET', '/companies/me/sla');
+  if (!data) return;
+
+  const k = data.kpis || {};
+  document.getElementById('sla-kpi-pct').textContent = (k.compliance_pct_30d != null ? k.compliance_pct_30d + '%' : '—');
+  document.getElementById('sla-kpi-pct-sub').textContent = 'last 30 days';
+  document.getElementById('sla-kpi-due-soon').textContent = k.due_soon != null ? k.due_soon : '—';
+  document.getElementById('sla-kpi-breached').textContent = k.breached != null ? k.breached : '—';
+  document.getElementById('sla-kpi-active').textContent = k.total_active != null ? k.total_active : '—';
+  document.getElementById('sla-kpi-active-sub').textContent = 'currently in progress';
+  const slaSubtitle = document.querySelector('#page-sla .page-subtitle');
+  if (slaSubtitle) slaSubtitle.textContent = '// ' + (k.total_active || 0) + ' active · ' + (k.due_soon || 0) + ' approaching deadline · ' + (k.breached || 0) + ' breached';
+
+  if (k.breached > 0 || k.due_soon > 0) {
+    const b = document.getElementById('nav-badge-sla');
+    b.textContent = (k.breached || 0) + (k.due_soon || 0); b.style.display = '';
+  }
+
+  const tbody = document.getElementById('sla-tbody');
+  const interactions = data.interactions || [];
+  if (!interactions.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:14px;color:var(--green);font-family:var(--mono);font-size:11px">✓ No active interactions.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = interactions.map(i => {
+    const hrs = i.hours_remaining;
+    const isBreached = i.sla_status === 'breached';
+    const timeStr = isBreached ? '+' + Math.abs(Math.round(hrs)) + 'h overdue' :
+      (hrs < 24 ? Math.round(hrs) + 'h' : Math.round(hrs / 24) + 'd');
+    const timeColor = isBreached ? 'var(--red)' : (hrs < 48 ? 'var(--amber)' : 'var(--green)');
+    return '<tr>' +
+      '<td style="font-size:12px">' + (i.job_title || '—') + '</td>' +
+      '<td>' + (i.current_stage || '—') + '</td>' +
+      '<td style="font-family:var(--mono);font-size:10px;color:' + (isBreached ? 'var(--red)' : 'var(--text-dim)') + '">' + fmtDate(i.sla_deadline) + (isBreached ? ' ⚠' : '') + '</td>' +
+      '<td style="font-family:var(--mono);font-size:11px;color:' + timeColor + '">' + timeStr + '</td>' +
+      '<td><span class="tag ' + slaTag(i.sla_status) + '">' + i.sla_status + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── Ghosting tab ──────────────────────────────────────────────────────────────
+let _ghostingData = [];
+
+async function loadGhosting() {
+  const data = await api('GET', '/companies/me/ghosting');
+  if (!data) return;
+  _ghostingData = data.ghosting_events || [];
+
+  const stats = data.stats || {};
+  document.getElementById('ghosting-strike-notice').textContent =
+    stats.strikes_applied > 0
+      ? '⚠ ' + stats.strikes_applied + ' strike(s) applied in this 90-day window. ' + (3 - stats.strikes_applied) + ' more before automatic brief pausing.'
+      : '✓ No strikes applied in this 90-day window.';
+
+  const list = document.getElementById('ghosting-list');
+  if (!_ghostingData.length) {
+    list.innerHTML = '<div style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ No ghosting events.</div>';
+    return;
+  }
+
+  list.innerHTML = _ghostingData.map(g =>
+    '<div class="ghost-item ' + g.severity + '" style="cursor:pointer">' +
+    '<span class="ghost-id">' + g.ghosting_id.slice(0,8) + '</span>' +
+    '<span class="ghost-stage">' + g.stage_name + ' — ' + (g.status === 'open' ? '+' + Math.round(g.overdue_hours) + 'h overdue' : g.status) + '</span>' +
+    '<span class="ghost-overdue">' + (g.company_strike_count_at_detection > 0 ? 'Strike recorded' : 'No strike yet') + '</span>' +
+    '<span class="tag ' + ghostTag(g.severity) + '">' + g.severity + '</span>' +
+    (g.status === 'open'
+      ? ' <button style="margin-left:8px;font-family:var(--mono);font-size:9px;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:2px 8px;cursor:pointer" onclick="resolveGhosting(' + "'" + g.ghosting_id + "'" + ')">Resolve →</button>'
+      : '') +
+    '</div>'
+  ).join('');
+}
+
+async function resolveGhosting(ghostingId) {
+  const notes = prompt('Resolution notes (optional):');
+  const res = await api('PUT', '/companies/me/ghosting/' + ghostingId, { action: 'resolve', resolution_notes: notes || undefined });
+  if (res) { alert('Ghosting event resolved.'); _tabLoaded.ghosting = false; loadGhosting(); }
+  else alert('Failed. Please try again.');
+}
+
+function exportGhostingCSV() {
+  if (!_ghostingData.length) { alert('No data to export.'); return; }
+  const csv = jsonToCsv(_ghostingData, [
+    { key:'ghosting_id', label:'ID' },
+    { key:'stage_name', label:'Stage' },
+    { key:'severity', label:'Severity' },
+    { key:'status', label:'Status' },
+    { key:'overdue_hours', label:'Overdue Hours' },
+    { key:'company_strike_count_at_detection', label:'Strike Count' },
+    { key:'detected_at', label:'Detected At' },
+    { key:'resolved_at', label:'Resolved At' },
+    { key:'job_title', label:'Job' },
+  ]);
+  triggerDownload(csv, 'fhp-ghosting-' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv');
+}
+
+// ── Rejections tab ────────────────────────────────────────────────────────────
+let _selectedInteractionId = null;
+
+async function loadRejections() {
+  const [interactionsRes, codesRes] = await Promise.all([
+    api('GET', '/companies/me/interactions?needs_rejection=true'),
+    api('GET', '/reference/rejection-codes'),
+  ]);
+
+  if (codesRes && codesRes.rejection_codes) {
+    const sel = document.getElementById('rejection-code-select');
+    sel.innerHTML = '<option value="">— Select reason code —</option>' +
+      codesRes.rejection_codes.map(c =>
+        '<option value="' + c.code + '">' + c.code + ' — ' + c.label + '</option>'
+      ).join('');
+  }
+
+  const tbody = document.getElementById('rejections-tbody');
+  const interactions = interactionsRes ? (interactionsRes.interactions || []) : [];
+
+  if (!interactions.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:14px;color:var(--green);font-family:var(--mono);font-size:11px">✓ No pending rejections.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = interactions.map(i =>
+    '<tr>' +
+    '<td style="font-family:var(--mono);font-size:10px">' + i.interaction_id.slice(0,8) + '</td>' +
+    '<td style="font-size:12px">' + (i.job_title || '—') + '</td>' +
+    '<td>' + (i.current_stage || '—') + '</td>' +
+    '<td style="font-family:var(--mono);font-size:10px;color:var(--amber)">' + fmtDate(i.sla_deadline) + '</td>' +
+    '<td><button style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border:none;padding:4px 10px;cursor:pointer" onclick="selectInteraction(' + "'" + i.interaction_id + "'" + ',' + "'" + (i.job_title || '') + "'" + ')">Select →</button></td>' +
+    '</tr>'
+  ).join('');
+}
+
+function selectInteraction(interactionId, jobTitle) {
+  _selectedInteractionId = interactionId;
+  document.getElementById('rejection-selected-label').textContent = ' Selected: ' + jobTitle + ' (' + interactionId.slice(0,8) + ')';
+  const btn = document.getElementById('rejection-send-btn');
+  btn.disabled = false;
+  btn.style.background = 'var(--blue)';
+  btn.style.color = 'white';
+  btn.style.cursor = 'pointer';
+}
+
+async function sendRejection() {
+  if (!_selectedInteractionId) return;
+  const code = document.getElementById('rejection-code-select').value;
+  const notes = document.getElementById('rejection-notes-input').value.trim();
+  if (!code) { alert('Please select a reason code.'); return; }
+  const res = await api('POST', '/companies/me/interactions/' + _selectedInteractionId + '/reject', {
+    reason_code: code,
+    stage_notes: notes || undefined,
+  });
+  if (res) {
+    alert('Rejection sent.');
+    _selectedInteractionId = null;
+    document.getElementById('rejection-selected-label').textContent = '';
+    const btn = document.getElementById('rejection-send-btn');
+    btn.disabled = true; btn.style.background = 'var(--border)'; btn.style.color = 'var(--text-dim)'; btn.style.cursor = 'default';
+    document.getElementById('rejection-notes-input').value = '';
+    _tabLoaded.rejections = false; loadRejections();
+  } else {
+    alert('Failed to send rejection. Please try again.');
+  }
+}
+
+// ── Audit log tab ─────────────────────────────────────────────────────────────
+let _auditLoaded = false;
+
+async function loadAuditLog() {
+  _auditLoaded = true;
+  const data = await api('GET', '/companies/me/audit?limit=50');
+  if (!data) return;
+
+  const events = data.audit_log || [];
+  const list = document.getElementById('auditlog-list');
+  if (!events.length) {
+    list.innerHTML = '<div class="audit-row"><span class="audit-time">—</span><div class="audit-dot blue"></div><span class="audit-msg">No audit events yet.</span><span></span></div>';
+    return;
+  }
+
+  list.innerHTML = events.map(e => {
+    const typeColors = { breach:'red', strike:'amber', system:'blue', resolved:'green', posted:'blue', score:'green', notice:'blue' };
+    const color = typeColors[e.event_type] || 'blue';
+    return '<div class="audit-row">' +
+      '<span class="audit-time">' + fmtDate(e.occurred_at) + '</span>' +
+      '<div class="audit-dot ' + color + '"></div>' +
+      '<span class="audit-msg">' + e.summary + '</span>' +
+      '<span class="tag ' + (e.event_type === 'breach' ? 'fail' : e.event_type === 'strike' ? 'warn' : 'info') + ' audit-tag">' + (e.event_type || '') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+async function exportAuditLog() {
+  const res = await fetch(API_BASE + '/companies/me/audit?format=csv&limit=1000', { headers: authHeaders() });
+  if (!res.ok) { alert('Export failed.'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fhp-audit-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── Appeals tab ───────────────────────────────────────────────────────────────
+async function loadAppeals() {
+  const data = await api('GET', '/companies/me/appeals');
+  if (!data) return;
+
+  const appeals = data.appeals || [];
+  const tbody = document.getElementById('appeals-tbody');
+  if (!appeals.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:14px;color:var(--green);font-family:var(--mono);font-size:11px">✓ No appeals against your job briefs.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = appeals.map(a =>
+    '<tr>' +
+    '<td style="font-family:var(--mono);font-size:10px">' + a.appeal_id.slice(0,12) + '</td>' +
+    '<td><div class="job-title">' + (a.job_title || '—') + '</div></td>' +
+    '<td style="font-size:11px">' + (a.ground || '—') + '</td>' +
+    '<td><span class="tag ' + appealTag(a.status) + '">' + a.status + '</span></td>' +
+    '<td style="font-family:var(--mono);font-size:10px;color:var(--amber)">' + (a.twg_deadline ? fmtDate(a.twg_deadline) : '—') + '</td>' +
+    '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + (a.outcome || 'Pending') + '</td>' +
+    '</tr>'
+  ).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  showPage('overview');
+  _tabLoaded.overview = true;
+  loadOverview();
+});
+</script>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+  ADD / EDIT JOB BRIEF DIALOG
+  API: POST /v1/jobs (new) · PUT /v1/jobs/:jobId (edit)
+════════════════════════════════════════════════════════════════════ -->
+<div class="dialog-overlay" id="job-dialog-overlay" onclick="if(event.target===this)closeJobDialog()">
+  <div class="job-dialog" id="job-dialog">
+
+    <div class="dialog-header">
+      <div>
+        <div class="dialog-title" id="dialog-mode-title">Post new job brief</div>
+        <div class="dialog-subtitle" id="dialog-subtitle">New brief &middot; FHP v1.0 compliant</div>
+      </div>
+      <button class="dialog-close" onclick="closeJobDialog()">&#10005;</button>
+    </div>
+
+    <div class="dialog-body">
+
+      <!-- ── SECTION 1: ROLE BASICS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">01 &mdash; Role</div>
+        <div class="field-group">
+          <label class="field-label" for="jd-title">Job title <span style="color:var(--red)">*</span></label>
+          <input class="field-input" type="text" id="jd-title" oninput="validateJobDialog()" placeholder="e.g. Senior Backend Engineer">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="jd-summary">Role summary <span style="color:var(--red)">*</span></label>
+          <textarea class="field-textarea" id="jd-summary" oninput="validateJobDialog()"
+            placeholder="Describe what the role involves, what the team does, and what success looks like. Be specific — vague descriptions produce poor matches."></textarea>
+          <div class="field-hint">Min 100 characters. This is shown to candidates in their explanation.</div>
+        </div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-employment-type">Employment type <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-employment-type" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="permanent">Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="part_time">Part-time</option>
+              <option value="internship">Internship</option>
+              <option value="apprenticeship">Apprenticeship</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-mode">Work mode <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-work-mode" onchange="toggleConditionalSections()">
+              <option value="">Select&hellip;</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="on_site">On-site</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Contract details — shown when employment_type = contract -->
+        <div class="conditional" id="contract-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-contract-months">Contract duration (months)</label>
+              <input class="field-input" type="number" id="jd-contract-months" min="1" placeholder="e.g. 6">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-day-rate">Day rate (optional)</label>
+              <input class="field-input" type="number" id="jd-day-rate" placeholder="e.g. 650">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hybrid details — shown when work_mode = hybrid -->
+        <div class="conditional" id="hybrid-details" style="margin-top:12px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-days-onsite">Days on-site per week <span style="color:var(--red)">*</span></label>
+              <input class="field-input" type="number" id="jd-days-onsite" min="1" max="4" placeholder="e.g. 2">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-onsite-notes">On-site notes</label>
+              <input class="field-input" type="text" id="jd-onsite-notes" placeholder="e.g. London office, Tuesdays + Thursdays">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: LOCATION & SCHEDULE ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">02 &mdash; Location &amp; Schedule</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-country">Country <span style="color:var(--red)">*</span></label>
+            <select class="field-select" id="jd-country">
+              <option value="GB" selected>United Kingdom</option>
+              <option value="US">United States</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="NL">Netherlands</option>
+              <option value="IE">Ireland</option>
+              <option value="AU">Australia</option>
+              <option value="CA">Canada</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-city">City / region</label>
+            <input class="field-input" type="text" id="jd-city" placeholder="e.g. London, Manchester">
+            <div class="field-hint">Leave blank for fully remote roles.</div>
+          </div>
+        </div>
+        <div class="field-row field-row-2" style="margin-top:12px">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-work-schedule">Work schedule</label>
+            <select class="field-select" id="jd-work-schedule">
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="compressed_hours">Compressed hours</option>
+              <option value="flexitime">Flexitime</option>
+              <option value="shift_work">Shift work</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-right-to-work">Right to work required</label>
+            <select class="field-select" id="jd-right-to-work">
+              <option value="GB">UK right to work</option>
+              <option value="EU">EU / EEA right to work</option>
+              <option value="US">US work authorisation</option>
+              <option value="any">Any (sponsorship available)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: SALARY ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">03 &mdash; Salary</div>
+        <div class="notice-box notice-required">
+          &#9888; Salary range is required. Both minimum and maximum must be provided.
+          Posting &ldquo;competitive&rdquo; or an implausibly wide range is a compliance violation.
+        </div>
+        <div class="field-row field-row-4">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-currency">Currency</label>
+            <select class="field-select" id="jd-currency">
+              <option value="GBP">GBP &pound;</option>
+              <option value="USD">USD &#36;</option>
+              <option value="EUR">EUR &euro;</option>
+              <option value="AUD">AUD &#36;</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-min">Minimum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-min" oninput="clearAttestations('Salary changes'); validateJobDialog()" placeholder="e.g. 70000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-max">Maximum <span style="color:var(--red)">*</span></label>
+            <input class="field-input" type="number" id="jd-salary-max" oninput="clearAttestations('Salary changes'); validateJobDialog()" placeholder="e.g. 90000">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-salary-period">Period</label>
+            <select class="field-select" id="jd-salary-period">
+              <option value="annual">/ year</option>
+              <option value="daily">/ day</option>
+              <option value="hourly">/ hour</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="field-row field-row-2">
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-sla-days">SLA response commitment (business days) <span style="color:var(--red)">*</span></label>
+              <select class="field-select" id="jd-sla-days">
+                <option value="3">3 days (fast track)</option>
+                <option value="5" selected>5 days (standard)</option>
+                <option value="7">7 days</option>
+                <option value="10">10 days</option>
+              </select>
+              <div class="field-hint">You are contractually bound to respond within this window at every hiring stage. Breaches are logged and escalated automatically.</div>
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label class="field-label" for="jd-expires">Brief expires</label>
+              <input class="field-input" type="date" id="jd-expires">
+              <div class="field-hint">Leave blank to use the default 90-day window.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: SKILLS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">04 &mdash; Skills</div>
+        <div class="notice-box notice-prohibited">
+          &#10008; <strong>Prohibited:</strong> You may not require a specific degree, institution, graduation year,
+          or &ldquo;years of experience&rdquo; as a hard filter. These are indirect discrimination under the
+          Equality Act 2010. Describe skills and proficiency levels instead.
+        </div>
+
+        <div class="skill-requirement-list" id="skill-req-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Add skill row -->
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input class="field-input" type="text" id="skill-add-input"
+            placeholder="Search skills (e.g. Python, Kubernetes)&#8230;"
+            style="flex:1" oninput="filterDialogSkills(this.value)" onfocus="filterDialogSkills(this.value)">
+          <select class="field-select" id="skill-add-type" style="max-width:130px">
+            <option value="must_have">Must-have</option>
+            <option value="nice_to_have">Nice-to-have</option>
+          </select>
+          <select class="field-select" id="skill-add-proficiency" style="max-width:130px">
+            <option value="aware">Aware</option>
+            <option value="practitioner">Practitioner</option>
+            <option value="proficient" selected>Proficient</option>
+            <option value="expert">Expert</option>
+            <option value="authority">Authority</option>
+          </select>
+          <button class="btn-dialog-save" onclick="addSkillToJob()" style="padding:8px 14px">+ Add</button>
+        </div>
+        <div id="skill-add-suggestions" style="display:none;background:var(--bg-hover);border:1px solid var(--border);border-radius:4px;margin-top:4px;max-height:140px;overflow-y:auto"></div>
+        <div class="field-hint" style="margin-top:6px">At least one must-have skill is required. All skills must resolve in the FHP ontology v1.0.</div>
+      </div>
+
+      <!-- ── SECTION 5: NOTICE PERIOD & PROCESS ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">05 &mdash; Process &amp; Notice</div>
+        <div class="field-row field-row-2">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-notice-max">Maximum acceptable notice period</label>
+            <div style="display:flex;gap:6px">
+              <input class="field-input" type="number" id="jd-notice-n" min="0" value="3" style="max-width:70px">
+              <select class="field-select" id="jd-notice-unit" style="max-width:100px">
+                <option value="immediately">immediately</option>
+                <option value="weeks" selected>weeks</option>
+                <option value="months">months</option>
+              </select>
+            </div>
+            <div class="field-hint">Candidates with longer notice periods will not be matched.</div>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label" for="jd-stages">Hiring stages</label>
+            <input class="field-input" type="text" id="jd-stages"
+              placeholder="e.g. Screening call, Technical test, Final interview"
+              value="Screening call, Technical assessment, Final interview">
+            <div class="field-hint">Comma-separated. Shared with candidates so they know what to expect.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 6: COMPLIANCE ATTESTATION ── -->
+      <div class="dialog-section">
+        <div class="dialog-section-title">06 &mdash; Compliance Attestations</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5">
+          By posting this brief you attest that the following filters are <strong style="color:var(--text)">not</strong> applied
+          when evaluating candidates. These are logged, auditable, and legally binding.
+          All five are required to post.
+        </div>
+        <div class="attest-list" id="attest-list">
+          <div class="attest-item">
+            <input type="checkbox" id="attest-degree" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-degree">
+              <strong>No degree requirement</strong> &mdash; Candidates will not be filtered on the basis of having
+              or not having a university degree, qualification type, or institution attended.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-age" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-age">
+              <strong>No age filter</strong> &mdash; Candidates will not be filtered on the basis of age,
+              graduation year, or years since qualification.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-gaps" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-gaps">
+              <strong>No employment gap penalisation</strong> &mdash; Career breaks, gaps in employment history,
+              or non-linear career paths will not be used as negative filters.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-prestige" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-prestige">
+              <strong>No prestige bias</strong> &mdash; Previous employer name, brand recognition, or
+              perceived company prestige will not influence evaluation outcomes.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+          <div class="attest-item">
+            <input type="checkbox" id="attest-salary" onchange="validateAttestations()">
+            <label class="attest-label" for="attest-salary">
+              <strong>Salary range is accurate</strong> &mdash; The minimum and maximum salary figures
+              provided represent the genuine budget for this role and will be honoured.
+              <span class="attest-req">Required</span>
+            </label>
+          </div>
+        </div>
+        <div id="attest-warning" style="display:none;margin-top:12px" class="notice-box notice-prohibited">
+          All five attestations are required before a brief can be posted. This is a binding compliance commitment.
+        </div>
+      </div>
+
+    </div><!-- end dialog-body -->
+
+    <div class="dialog-footer">
+      <span class="validation-msg" id="dialog-validation-msg"></span>
+      <div style="display:flex;gap:10px">
+        <button class="btn-dialog-cancel" onclick="closeJobDialog()">Cancel</button>
+        <button class="btn-dialog-save" id="dialog-save-btn" onclick="saveJobBrief()" disabled>
+          Post brief
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end job-dialog -->
+</div><!-- end dialog-overlay -->
+
+<script>
+
+// ════════════════════════════════════════════════════════════
+//  JOB BRIEF DIALOG
+// ════════════════════════════════════════════════════════════
+
+const SKILL_OPTIONS = [
+  {id:'fhp:skill:python',         label:'Python',               domain:'Software Eng'},
+  {id:'fhp:skill:typescript',     label:'TypeScript',           domain:'Software Eng'},
+  {id:'fhp:skill:go',             label:'Go',                   domain:'Software Eng'},
+  {id:'fhp:skill:java',           label:'Java',                 domain:'Software Eng'},
+  {id:'fhp:skill:rust',           label:'Rust',                 domain:'Software Eng'},
+  {id:'fhp:skill:react',          label:'React',                domain:'Software Eng'},
+  {id:'fhp:skill:sql',            label:'Analytical SQL',       domain:'Data & Analytics'},
+  {id:'fhp:skill:spark',          label:'Apache Spark',         domain:'Data & Analytics'},
+  {id:'fhp:skill:dbt',            label:'dbt',                  domain:'Data & Analytics'},
+  {id:'fhp:skill:ml',             label:'Machine Learning',     domain:'Data & Analytics'},
+  {id:'fhp:skill:data-eng',       label:'Data Engineering',     domain:'Data & Analytics'},
+  {id:'fhp:skill:docker',         label:'Docker',               domain:'Infrastructure'},
+  {id:'fhp:skill:kubernetes',     label:'Kubernetes',           domain:'Infrastructure'},
+  {id:'fhp:skill:aws',            label:'AWS',                  domain:'Infrastructure'},
+  {id:'fhp:skill:terraform',      label:'Terraform',            domain:'Infrastructure'},
+  {id:'fhp:skill:product-mgmt',   label:'Product Management',   domain:'Product'},
+  {id:'fhp:skill:ux-design',      label:'UX Design',            domain:'Design'},
+  {id:'fhp:skill:figma',          label:'Figma',                domain:'Design'},
+  {id:'fhp:skill:agile',          label:'Agile / Scrum',        domain:'Process'},
+];
+
+let dialogMode = 'create';   // 'create' | 'edit'
+let dialogJobId = null;
+let jobSkills = [];           // { id, label, domain, type, minProficiency }
+
+function openJobDialog(jobTitle, jobObj) {
+  if (jobTitle) {
+    dialogMode = 'edit';
+    dialogJobId = (jobObj && jobObj.job_id) ? jobObj.job_id : null;
+    document.getElementById('dialog-mode-title').textContent = 'Edit job brief';
+    document.getElementById('dialog-subtitle').textContent = 'Edit brief · FHP v1.0 compliant';
+    prefillJobDialog(jobTitle, jobObj);
+  } else {
+    dialogMode = 'create';
+    dialogJobId = null;
+    document.getElementById('dialog-mode-title').textContent = 'Post new job brief';
+    document.getElementById('dialog-subtitle').textContent = 'New brief · FHP v1.0 compliant';
+    resetJobDialog();
+  }
+  document.getElementById('job-dialog-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderJobSkills();
+  validateJobDialog();
+  setTimeout(function() { document.getElementById('jd-title').focus(); }, 50);
+}
+
+function closeJobDialog() {
+  document.getElementById('job-dialog-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function resetJobDialog() {
+  ['jd-title','jd-summary','jd-city','jd-stages','jd-day-rate','jd-contract-months','jd-onsite-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('jd-employment-type').value = '';
+  document.getElementById('jd-work-mode').value = '';
+  document.getElementById('jd-currency').value = 'GBP';
+  document.getElementById('jd-salary-min').value = '';
+  document.getElementById('jd-salary-max').value = '';
+  document.getElementById('jd-salary-period').value = 'annual';
+  document.getElementById('jd-sla-days').value = '5';
+  document.getElementById('jd-notice-n').value = '3';
+  document.getElementById('jd-notice-unit').value = 'weeks';
+  document.getElementById('jd-work-schedule').value = 'full_time';
+  document.getElementById('jd-right-to-work').value = 'GB';
+  document.getElementById('jd-expires').value = '';
+  document.getElementById('jd-stages').value = 'Screening call, Technical assessment, Final interview';
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  jobSkills = [];
+  toggleConditionalSections();
+}
+
+function prefillJobDialog(title, jobObj) {
+  var d;
+  if (jobObj) {
+    // Real API job object — fields are flat (location_country, salary_minimum, etc.)
+    var PROF_NUM = {1:'aware',2:'practitioner',3:'proficient',4:'expert',5:'authority'};
+    d = {
+      title:           jobObj.title || '',
+      summary:         jobObj.role_summary || '',
+      employment_type: jobObj.employment_type || 'permanent',
+      work_mode:       jobObj.work_mode || 'onsite',
+      currency:        jobObj.salary_currency || 'GBP',
+      salary_min:      jobObj.salary_minimum != null ? parseFloat(jobObj.salary_minimum) : '',
+      salary_max:      jobObj.salary_maximum != null ? parseFloat(jobObj.salary_maximum) : '',
+      period:          jobObj.salary_period || 'annual',
+      sla:             String(jobObj.response_sla_days || '5'),
+      country:         jobObj.location_country || '',
+      city:            jobObj.location_city || '',
+      schedule:        jobObj.work_schedule || 'full_time',
+      rtw:             jobObj.location_country || '',
+      stages:          (jobObj.process_stages || []).join(', '),
+      notice_n:        (function() {
+                         var d = jobObj.max_notice_period_days;
+                         if (d == null) return '3';
+                         if (d === 0)   return '0';
+                         if (d % 30 === 0) return String(d / 30);
+                         return String(Math.round(d / 7));
+                       })(),
+      notice_unit:     (function() {
+                         var d = jobObj.max_notice_period_days;
+                         if (d == null || d === 0) return 'immediately';
+                         if (d % 30 === 0)         return 'months';
+                         return 'weeks';
+                       })(),
+      skills:          (jobObj.skills_required || []).map(function(s) {
+                         var reqType = s.requirement_type || (s.requirement_level === 'required' ? 'must_have' : 'nice_to_have');
+                         var prof = (typeof s.minimum_proficiency === 'number') ? (PROF_NUM[s.minimum_proficiency] || 'practitioner') : (s.min_proficiency || s.minimum_proficiency || 'practitioner');
+                         return { id: s.ontology_id, label: s.label || s.ontology_id.replace('fhp:skill:','').replace(/-/g,' '), domain: s.domain || '', type: reqType, minProficiency: prof };
+                       }),
+      attest: {
+        no_degree_requirement:     jobObj.attest_no_degree_requirement,
+        no_graduation_year_filter: jobObj.attest_no_graduation_year_filter,
+        no_institution_preference: jobObj.attest_no_institution_preference,
+        no_unpaid_work:            jobObj.attest_no_unpaid_work,
+      },
+    };
+  } else {
+    // Fallback example data keyed by title (used when no real job object available)
+    var DATA = {
+      'Senior Backend Engineer': {
+        title: 'Senior Backend Engineer', summary: 'Leading backend systems for our core payments platform. You will own the API layer, drive architectural decisions, and mentor junior engineers.',
+        employment_type: 'permanent', work_mode: 'remote', currency: 'GBP',
+        salary_min: '85000', salary_max: '110000', period: 'annual', sla: '5',
+        country: 'GB', city: 'Remote', schedule: 'full_time', rtw: 'GB',
+        notice_n: '4', notice_unit: 'weeks',
+        stages: 'Screening call, Technical assessment, System design interview, Final interview',
+        skills: [
+          {id:'fhp:skill:python',    label:'Python',          domain:'Software Eng',    type:'must_have',    minProficiency:'proficient'},
+          {id:'fhp:skill:docker',    label:'Docker',          domain:'Infrastructure',  type:'must_have',    minProficiency:'practitioner'},
+          {id:'fhp:skill:kubernetes',label:'Kubernetes',      domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+          {id:'fhp:skill:aws',       label:'AWS',             domain:'Infrastructure',  type:'nice_to_have', minProficiency:'practitioner'},
+        ],
+      },
+      'Product Manager': {
+        title: 'Product Manager', summary: 'Own the roadmap for our candidate-facing product. Work closely with engineering and design to ship features that make hiring fairer.',
+        employment_type: 'permanent', work_mode: 'hybrid', currency: 'GBP',
+        salary_min: '75000', salary_max: '95000', period: 'annual', sla: '5',
+        country: 'GB', city: 'London', schedule: 'full_time', rtw: 'GB',
+        notice_n: '3', notice_unit: 'months',
+        stages: 'Screening call, Product case study, Stakeholder interview',
+        skills: [
+          {id:'fhp:skill:product-mgmt', label:'Product Management', domain:'Product',  type:'must_have',    minProficiency:'proficient'},
+          {id:'fhp:skill:agile',        label:'Agile / Scrum',      domain:'Process',  type:'must_have',    minProficiency:'practitioner'},
+          {id:'fhp:skill:sql',          label:'Analytical SQL',     domain:'Data',     type:'nice_to_have', minProficiency:'aware'},
+        ],
+      },
+    };
+    d = DATA[title];
+    if (!d) return;
+  }
+  document.getElementById('jd-title').value           = d.title;
+  document.getElementById('jd-summary').value         = d.summary;
+  document.getElementById('jd-employment-type').value = d.employment_type;
+  document.getElementById('jd-work-mode').value       = d.work_mode;
+  document.getElementById('jd-currency').value        = d.currency;
+  document.getElementById('jd-salary-min').value      = d.salary_min;
+  document.getElementById('jd-salary-max').value      = d.salary_max;
+  document.getElementById('jd-salary-period').value   = d.period;
+  document.getElementById('jd-sla-days').value        = d.sla;
+  document.getElementById('jd-country').value         = d.country;
+  document.getElementById('jd-city').value            = d.city;
+  document.getElementById('jd-work-schedule').value   = d.schedule;
+  document.getElementById('jd-right-to-work').value   = d.rtw;
+  document.getElementById('jd-notice-n').value        = d.notice_n;
+  document.getElementById('jd-notice-unit').value     = d.notice_unit;
+  document.getElementById('jd-stages').value          = d.stages;
+  jobSkills = d.skills.map(function(s) { return Object.assign({}, s); });
+  if (d.attest) {
+    // DB has 4 columns; attest-gaps has no DB backing so default true when editing an existing job
+    if (d.attest.no_degree_requirement     != null) document.getElementById('attest-degree').checked   = d.attest.no_degree_requirement;
+    if (d.attest.no_graduation_year_filter != null) document.getElementById('attest-age').checked      = d.attest.no_graduation_year_filter;
+    document.getElementById('attest-gaps').checked = true; // not stored separately; carried forward on edit
+    if (d.attest.no_institution_preference != null) document.getElementById('attest-prestige').checked = d.attest.no_institution_preference;
+    if (d.attest.no_unpaid_work            != null) document.getElementById('attest-salary').checked   = d.attest.no_unpaid_work;
+  } else {
+    ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(function(id) {
+      document.getElementById(id).checked = true;
+    });
+  }
+  toggleConditionalSections();
+}
+
+// ── Conditional sections (hybrid / contract details) ──────────────────────────
+function toggleConditionalSections() {
+  const mode    = document.getElementById('jd-work-mode').value;
+  const empType = document.getElementById('jd-employment-type').value;
+  document.getElementById('hybrid-details').classList.toggle('visible', mode === 'hybrid');
+  document.getElementById('contract-details').classList.toggle('visible', empType === 'contract');
+  validateJobDialog();
+}
+
+// ── Skills ────────────────────────────────────────────────────────────────────
+function renderJobSkills() {
+  const list = document.getElementById('skill-req-list');
+  if (!jobSkills.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No skills added yet. At least one must-have skill is required.</div>';
+    return;
+  }
+  const PROF_LABELS = {aware:'Aware',practitioner:'Practitioner',proficient:'Proficient',expert:'Expert',authority:'Authority'};
+  list.innerHTML = jobSkills.map((s, i) => `
+    <div class="skill-req-item">
+      <div>
+        <div class="skill-req-name">${s.label}</div>
+        <div class="skill-req-domain">${s.domain}</div>
+      </div>
+      <div class="${s.type === 'must_have' ? 'skill-tag-must' : 'skill-tag-nice'}">
+        ${s.type === 'must_have' ? 'Must-have' : 'Nice-to-have'}
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">
+        Min: ${PROF_LABELS[s.minProficiency] || s.minProficiency}
+      </div>
+      <button class="skill-remove-btn" onclick="removeJobSkill(${i})">&#10005;</button>
+    </div>`).join('');
+  validateJobDialog();
+}
+
+function removeJobSkill(i) {
+  jobSkills.splice(i, 1);
+  clearAttestations('Skill changes');
+  renderJobSkills();
+}
+
+function filterDialogSkills(val) {
+  const sugg = document.getElementById('skill-add-suggestions');
+  if (!val || val.length < 1) { sugg.style.display = 'none'; return; }
+  const matches = SKILL_OPTIONS.filter(s =>
+    s.label.toLowerCase().includes(val.toLowerCase()) &&
+    !jobSkills.find(j => j.id === s.id)
+  );
+  if (!matches.length) { sugg.style.display = 'none'; return; }
+  sugg.style.display = 'block';
+  sugg.innerHTML = matches.map(s => `
+    <div style="padding:7px 11px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
+         onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"
+         onmousedown="selectDialogSkill('${s.id}','${s.label}','${s.domain}')">
+      <span style="font-weight:500;color:var(--text)">${s.label}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${s.domain}</span>
+    </div>`).join('');
+}
+
+function selectDialogSkill(id, label, domain) {
+  document.getElementById('skill-add-input').value = label;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  document.getElementById('skill-add-input').dataset.selectedId = id;
+  document.getElementById('skill-add-input').dataset.selectedDomain = domain;
+}
+
+function addSkillToJob() {
+  const input = document.getElementById('skill-add-input');
+  const label = input.value.trim();
+  if (!label) return;
+  const id     = input.dataset.selectedId || 'fhp:skill:custom-' + Date.now();
+  const domain = input.dataset.selectedDomain || 'Other';
+  const type   = document.getElementById('skill-add-type').value;
+  const prof   = document.getElementById('skill-add-proficiency').value;
+  if (jobSkills.find(s => s.id === id)) { input.value = ''; return; }
+  jobSkills.push({ id, label, domain, type, minProficiency: prof });
+  input.value = '';
+  delete input.dataset.selectedId;
+  delete input.dataset.selectedDomain;
+  document.getElementById('skill-add-suggestions').style.display = 'none';
+  clearAttestations('Skill changes');
+  renderJobSkills();
+}
+
+// ── Attestation validation ────────────────────────────────────────────────────
+function validateAttestations() {
+  const allChecked = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id).checked);
+  document.getElementById('attest-warning').style.display = allChecked ? 'none' : 'block';
+  validateJobDialog();
+}
+
+// Called when salary or skills change — sensitive fields require re-attestation
+function clearAttestations(reason) {
+  if (dialogMode !== 'edit') return; // new briefs always start unchecked
+  ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  const w = document.getElementById('attest-warning');
+  w.style.display = 'block';
+  w.textContent = (reason || 'Changes to sensitive fields') + ' require re-attestation before saving.';
+  validateJobDialog();
+}
+
+// ── Overall dialog validation ─────────────────────────────────────────────────
+function validateJobDialog() {
+  const title   = (document.getElementById('jd-title')?.value || '').trim();
+  const summary = (document.getElementById('jd-summary')?.value || '').trim();
+  const empType = document.getElementById('jd-employment-type')?.value;
+  const mode    = document.getElementById('jd-work-mode')?.value;
+  const sMin    = parseFloat(document.getElementById('jd-salary-min')?.value || '0');
+  const sMax    = parseFloat(document.getElementById('jd-salary-max')?.value || '0');
+  const allAttest = ['attest-degree','attest-age','attest-gaps','attest-prestige','attest-salary']
+    .every(id => document.getElementById(id)?.checked);
+  const hasMustHave = jobSkills.some(s => s.type === 'must_have');
+
+  const msgs = [];
+  if (!title)          msgs.push('Title required');
+  if (summary.length < 50) msgs.push('Summary too short');
+  if (!empType)        msgs.push('Employment type required');
+  if (!mode)           msgs.push('Work mode required');
+  if (!sMin || !sMax)  msgs.push('Salary range required');
+  if (sMin >= sMax)    msgs.push('Max salary must exceed min');
+  if (!hasMustHave)    msgs.push('At least one must-have skill required');
+  if (!allAttest)      msgs.push('All 5 attestations required');
+
+  const msgEl  = document.getElementById('dialog-validation-msg');
+  const saveBtn = document.getElementById('dialog-save-btn');
+  if (msgs.length) {
+    msgEl.textContent = msgs[0];
+    saveBtn.disabled = true;
+  } else {
+    msgEl.textContent = '';
+    saveBtn.disabled = false;
+    saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
+  }
+}
+
+// ── Save / submit ─────────────────────────────────────────────────────────────
+function saveJobBrief() {
+  const payload = {
+    title:            document.getElementById('jd-title').value.trim(),
+    role_summary:     document.getElementById('jd-summary').value.trim(),
+    employment_type:  document.getElementById('jd-employment-type').value,
+    work_mode:        document.getElementById('jd-work-mode').value,
+    location_country: document.getElementById('jd-country').value,
+    location_city:    document.getElementById('jd-city').value.trim() || null,
+    salary_currency:  document.getElementById('jd-currency').value,
+    salary_minimum:   parseFloat(document.getElementById('jd-salary-min').value),
+    salary_maximum:   parseFloat(document.getElementById('jd-salary-max').value),
+    salary_period:    document.getElementById('jd-salary-period').value,
+    response_sla_days: parseInt(document.getElementById('jd-sla-days').value),
+    max_notice_period_days: (function() {
+      var unit = document.getElementById('jd-notice-unit').value;
+      if (unit === 'immediately') return 0;
+      var n = parseInt(document.getElementById('jd-notice-n').value, 10);
+      if (!n || n < 0) return null;
+      return unit === 'months' ? n * 30 : n * 7;
+    })(),
+    process_stages: (function() {
+      var raw = (document.getElementById('jd-stages').value || '').trim();
+      if (!raw) return null;
+      return raw.split(',').map(s => s.trim()).filter(Boolean);
+    })(),
+    skills_required: jobSkills.map(s => ({
+      ontology_id:      s.id,
+      label:            s.label,
+      requirement_type: s.type,
+      min_proficiency:  s.minProficiency,
+    })),
+    attest_no_degree_requirement:     document.getElementById('attest-degree').checked,
+    attest_no_graduation_year_filter: document.getElementById('attest-age').checked,
+    attest_no_institution_preference: document.getElementById('attest-prestige').checked,
+    attest_no_unpaid_work:            document.getElementById('attest-salary').checked,
+  };
+
+  const saveBtn = document.getElementById('dialog-save-btn');
+  const msgEl   = document.getElementById('dialog-validation-msg');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving\u2026';
+  msgEl.textContent = '';
+
+  const apiPath = dialogMode === 'edit' ? '/jobs/' + dialogJobId : '/jobs';
+  const method  = dialogMode === 'edit' ? 'PUT' : 'POST';
+
+  api(method, apiPath, payload).then(function(result) {
+    if (result) {
+      closeJobDialog();
+      _tabLoaded.jobs = false;
+      if (document.getElementById('page-jobs').style.display !== 'none') loadJobs();
+    } else {
+      msgEl.textContent = 'Save failed \u2014 check console for details.';
+      saveBtn.disabled = false;
+      saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
+    }
+  }).catch(function() {
+    msgEl.textContent = 'Network error \u2014 please try again.';
+    saveBtn.disabled = false;
+    saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
+  });
+}
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('job-dialog-overlay').classList.contains('open')) {
+    closeJobDialog();
+  }
+});
+
+</script>
+</body>
+</html>
