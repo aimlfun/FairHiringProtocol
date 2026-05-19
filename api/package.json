@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "db:migrate": "psql $DATABASE_URL -f ../db/roles/000_roles.sql && for f in ../db/migrations/*.sql; do psql $DATABASE_URL -f \"$f\"; done",
-    "db:seed": "for f in ../db/seeds/*.sql; do psql $DATABASE_URL -f \"$f\"; done"
+    "db:seed": "for f in ../db/seeds/*.sql; do psql $DATABASE_URL -f \"$f\"; done",
+    "seed:mock": "tsx scripts/seed-mock.ts"
   },
   "dependencies": {
     "@fastify/cors": "9.0.1",
