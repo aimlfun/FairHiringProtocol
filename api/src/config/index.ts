@@ -78,8 +78,9 @@ export const config = {
     .map(o => o.trim())
     .filter(Boolean),
 
-  // Rate limiting
-  rateLimitMax: intEnv('RATE_LIMIT_MAX', 100),
+  // Rate limiting — default 500 is intentionally high for dev/test environments.
+  // Production deployments should set RATE_LIMIT_MAX to a lower value (e.g. 100).
+  rateLimitMax: intEnv('RATE_LIMIT_MAX', 500),
 
   // Logging
   logLevel: optionalEnv('LOG_LEVEL', 'info') as

@@ -372,6 +372,45 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
   });
 
   /**
+   * GET /v1/governance/versions
+   * Protocol and pipeline version history from governance_constants.
+   * Public — version history is transparency data.
+   */
+  app.get('/versions', {
+    schema: {
+      tags: ['governance'],
+      summary: 'FHP protocol and pipeline version history',
+    },
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    const versions = await app.db`
+      SELECT key, value, protocol_version, description, created_at
+      FROM config.governance_constants
+      WHERE key IN ('FHP_VERSION', 'PIPELINE_VERSION')
+      ORDER BY key
+    `;
+
+    const versionMap: Record<string, string> = {};
+    for (const row of versions as any[]) {
+      versionMap[row.key] = row.value;
+    }
+
+    return reply.send({
+      current: {
+        fhp_version:      versionMap['FHP_VERSION'] ?? '1.0.0',
+        pipeline_version: versionMap['PIPELINE_VERSION'] ?? '1.0.0',
+      },
+      history: [
+        {
+          fhp_version:      '1.0.0',
+          released_at:      '2025-01-01',
+          label:            'Inaugural release',
+          status:           'current',
+        },
+      ],
+    });
+  });
+
+  /**
    * GET /v1/governance/bodies
    * Returns the three standing governance bodies with live counts derived from
    * escalations, appeals, and pending votes. Public — no auth required.

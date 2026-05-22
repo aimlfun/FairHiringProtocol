@@ -801,6 +801,41 @@ footer{
   </div>
 </section>
 
+<!-- TERMS OF SERVICE -->
+<section id="terms" style="padding:80px 48px;max-width:760px;margin:0 auto">
+  <div class="section-label">Legal</div>
+  <h2 style="font-family:var(--serif);font-size:28px;font-weight:700;margin:12px 0 24px">Terms of Service</h2>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">Fair Hiring Protocol ("FHP") is an open standard published under the Apache 2.0 licence. Use of this platform is subject to the terms below.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">1. Eligibility</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">You must be 18 years of age or older to register as a candidate. Companies must be legally incorporated entities.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">2. Candidate data</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">Your profile data is used exclusively for matching. Your identity is never shared with employers without your explicit consent. You may download, correct, or delete your data at any time.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">3. Matching decisions</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">All match outcomes are produced by the published FHP pipeline. Every decision includes a plain-language explanation. You have the right to appeal any outcome within 30 days.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">4. Company obligations</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">Companies are bound by FHP response SLAs. Ghosting triggers automatic escalation. Salary ranges must be accurate. Discriminatory job requirements are prohibited.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">5. Governing law</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">This platform operates under the FHP Protocol Council's governance framework. Protocol changes require a supermajority of the Council and are subject to a 30-day public comment period.</p>
+  <p style="color:var(--ink-faint);font-size:12px;margin-top:32px">Version 1.0.0 · Effective 1 January 2025 · CC BY 4.0 / Apache 2.0</p>
+</section>
+
+<!-- PRIVACY POLICY -->
+<section id="privacy" style="padding:80px 48px;max-width:760px;margin:0 auto;border-top:1px solid var(--rule)">
+  <div class="section-label">Legal</div>
+  <h2 style="font-family:var(--serif);font-size:28px;font-weight:700;margin:12px 0 24px">Privacy Policy</h2>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">FHP collects only the data required to operate the matching service. We do not sell data, run advertising, or share your information with third parties outside the matching pipeline.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">Data we collect</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px"><strong>Candidates:</strong> email address (for authentication), skills, work history, preferences, and — only with explicit consent — demographic data for fairness monitoring. Your name is never required or stored.</p>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px"><strong>Companies:</strong> company name, registration number, and contact email. Job briefs and match outcomes are stored for audit purposes.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">Demographic data (special category)</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">Demographic data is processed under GDPR Article 9 explicit consent. It is write-only from the API — even FHP operators cannot read back individual values. It is used exclusively for the nightly fairness computation and is never shared with employers.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">Your rights</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">You have the right to access, correct, export, and delete your data at any time from the Data &amp; Privacy tab in your candidate portal. Deletion is permanent and processed within 30 days.</p>
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 8px">Retention</h3>
+  <p style="color:var(--ink-light);line-height:1.7;margin-bottom:16px">Match outcomes and appeal records are retained for 7 years for audit purposes. All other data is deleted when you close your account.</p>
+  <p style="color:var(--ink-faint);font-size:12px;margin-top:32px">Version 1.0.0 · Effective 1 January 2025 · Governed by the FHP Protocol Council</p>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">
@@ -809,10 +844,10 @@ footer{
   </div>
   <div class="footer-links">
     <a href="#">Spec</a>
-    <a href="#">GitHub</a>
-    <a href="#">Privacy</a>
-    <a href="#">Terms</a>
-    <a href="#">Governance</a>
+    <a href="https://github.com/aimlfun/FairHiringProtocol" target="_blank">GitHub</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#terms">Terms</a>
+    <a href="governance-dashboard.html">Governance</a>
     <a href="#">Contact</a>
   </div>
   <div class="footer-copy">v1.0.0 · CC BY 4.0 / Apache 2.0 · Open standard</div>
@@ -872,7 +907,7 @@ footer{
           </div>
           <div class="form-check">
             <input type="checkbox" id="terms-confirm">
-            <label for="terms-confirm">I agree to the <a href="#" style="color:var(--teal)">Terms of Service</a> and <a href="#" style="color:var(--teal)">Privacy Policy</a></label>
+            <label for="terms-confirm">I agree to the <a href="#terms" target="_blank" style="color:var(--teal)">Terms of Service</a> and <a href="#privacy" target="_blank" style="color:var(--teal)">Privacy Policy</a></label>
           </div>
           <div id="creg-error" style="display:none;color:#e05;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(220,0,80,0.08);border-radius:4px"></div>
           <button class="form-submit" id="creg-btn" onclick="handleCandidateRegister()">Create account — it's free</button>
@@ -977,6 +1012,10 @@ function openModal(role) {
   document.getElementById('modal').classList.add('open');
   switchRole(role);
   document.body.style.overflow = 'hidden';
+  setTimeout(() => {
+    const emailId = role === 'company' ? 'coreg-email' : 'creg-email';
+    document.getElementById(emailId)?.focus();
+  }, 50);
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
@@ -1035,11 +1074,27 @@ function isValidEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-function showError(elId, msg) {
+function showError(elId, msg, focusId) {
   const el = document.getElementById(elId);
   if (!el) return;
   el.textContent = msg;
   el.style.display = 'block';
+  if (!focusId) return;
+  const target = document.getElementById(focusId);
+  if (!target) return;
+  target.focus();
+  target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (target.type === 'checkbox') {
+    const row = target.closest('.form-check');
+    if (row) {
+      row.style.transition = 'color 0.15s';
+      row.style.color = 'var(--err, #e05)';
+      setTimeout(() => { row.style.color = ''; }, 2000);
+    }
+    target.style.outline = '2px solid #e05';
+    target.style.outlineOffset = '2px';
+    setTimeout(() => { target.style.outline = ''; target.style.outlineOffset = ''; }, 2000);
+  }
 }
 function hideError(elId) {
   const el = document.getElementById(elId);
@@ -1060,11 +1115,12 @@ async function handleCandidateRegister() {
   const ageOk    = document.getElementById('age-confirm')?.checked;
   const termsOk  = document.getElementById('terms-confirm')?.checked;
 
-  if (!email || !password) { showError('creg-error', 'Email and password are required.'); return; }
-  if (!isValidEmail(email)) { showError('creg-error', 'Please enter a valid email address.'); return; }
-  if (!ageOk)               { showError('creg-error', 'You must confirm you are 18 or older.'); return; }
-  if (!termsOk)             { showError('creg-error', 'You must accept the Terms of Service.'); return; }
-  if (password.length < 12) { showError('creg-error', 'Password must be at least 12 characters.'); return; }
+  if (!email)               { showError('creg-error', 'Email is required.', 'creg-email'); return; }
+  if (!isValidEmail(email)) { showError('creg-error', 'Please enter a valid email address.', 'creg-email'); return; }
+  if (!password)            { showError('creg-error', 'Password is required.', 'creg-password'); return; }
+  if (password.length < 12) { showError('creg-error', 'Password must be at least 12 characters.', 'creg-password'); return; }
+  if (!ageOk)               { showError('creg-error', 'You must confirm you are 18 or older.', 'age-confirm'); return; }
+  if (!termsOk)             { showError('creg-error', 'You must accept the Terms of Service.', 'terms-confirm'); return; }
 
   setLoading('creg-btn', true);
   try {
@@ -1076,9 +1132,9 @@ async function handleCandidateRegister() {
     });
     storeTokens(data.access_token, data.refresh_token, 'candidate');
     closeModal();
-    window.location.href = 'candidate-app.html';
+    window.location.href = 'candidate-app.html#profile';
   } catch (err) {
-    showError('creg-error', err.message);
+    showError('creg-error', err.message, 'creg-email');
   } finally {
     setLoading('creg-btn', false);
   }
@@ -1090,8 +1146,9 @@ async function handleCandidateLogin() {
   const email    = document.getElementById('clog-email')?.value?.trim();
   const password = document.getElementById('clog-password')?.value;
 
-  if (!email || !password) { showError('clog-error', 'Email and password are required.'); return; }
-  if (!isValidEmail(email)) { showError('clog-error', 'Please enter a valid email address.'); return; }
+  if (!email)               { showError('clog-error', 'Email is required.', 'clog-email'); return; }
+  if (!isValidEmail(email)) { showError('clog-error', 'Please enter a valid email address.', 'clog-email'); return; }
+  if (!password)            { showError('clog-error', 'Password is required.', 'clog-password'); return; }
 
   setLoading('clog-btn', true);
   try {
@@ -1100,7 +1157,7 @@ async function handleCandidateLogin() {
     closeModal();
     window.location.href = 'candidate-app.html';
   } catch (err) {
-    showError('clog-error', err.message || 'Invalid email or password.');
+    showError('clog-error', err.message || 'Invalid email or password.', 'clog-email');
   } finally {
     setLoading('clog-btn', false);
   }
@@ -1116,12 +1173,12 @@ async function handleCompanyRegister() {
   const volume      = parseInt(document.getElementById('coreg-volume').value, 10);
   const compliance  = document.getElementById('compliance-confirm').checked;
 
-  if (!legalName)           { showError('coreg-error', 'Legal company name is required.'); return; }
-  if (!email)               { showError('coreg-error', 'Compliance contact email is required.'); return; }
-  if (!isValidEmail(email)) { showError('coreg-error', 'Please enter a valid email address.'); return; }
-  if (!password)            { showError('coreg-error', 'Password is required.'); return; }
-  if (password.length < 12) { showError('coreg-error', 'Password must be at least 12 characters.'); return; }
-  if (!compliance)         { showError('coreg-error', 'You must accept the FHP Company Compliance Agreement.'); return; }
+  if (!legalName)           { showError('coreg-error', 'Legal company name is required.', 'coreg-legal-name'); return; }
+  if (!email)               { showError('coreg-error', 'Compliance contact email is required.', 'coreg-email'); return; }
+  if (!isValidEmail(email)) { showError('coreg-error', 'Please enter a valid email address.', 'coreg-email'); return; }
+  if (!password)            { showError('coreg-error', 'Password is required.', 'coreg-password'); return; }
+  if (password.length < 12) { showError('coreg-error', 'Password must be at least 12 characters.', 'coreg-password'); return; }
+  if (!compliance)          { showError('coreg-error', 'You must accept the FHP Company Compliance Agreement.', 'compliance-confirm'); return; }
 
   const btn = document.getElementById('coreg-btn');
   btn.disabled = true;
@@ -1139,7 +1196,7 @@ async function handleCompanyRegister() {
     closeModal();
     window.location.href = 'company-dashboard.html';
   } catch (err) {
-    showError('coreg-error', err.message || 'Registration failed. Please try again.');
+    showError('coreg-error', err.message || 'Registration failed. Please try again.', 'coreg-email');
     btn.disabled = false;
     btn.textContent = 'Register company';
   }
@@ -1151,8 +1208,9 @@ async function handleCompanyLogin() {
   const email    = document.getElementById('colog-email').value.trim();
   const password = document.getElementById('colog-password').value;
 
-  if (!email || !password) { showError('colog-error', 'Email and password are required.'); return; }
-  if (!isValidEmail(email)) { showError('colog-error', 'Please enter a valid email address.'); return; }
+  if (!email)               { showError('colog-error', 'Email is required.', 'colog-email'); return; }
+  if (!isValidEmail(email)) { showError('colog-error', 'Please enter a valid email address.', 'colog-email'); return; }
+  if (!password)            { showError('colog-error', 'Password is required.', 'colog-password'); return; }
 
   const btn = document.getElementById('colog-btn');
   btn.disabled = true;
@@ -1163,7 +1221,7 @@ async function handleCompanyLogin() {
     closeModal();
     window.location.href = 'company-dashboard.html';
   } catch (err) {
-    showError('colog-error', err.message || 'Invalid email or password.');
+    showError('colog-error', err.message || 'Invalid email or password.', 'colog-email');
     btn.disabled = false;
     btn.textContent = 'Sign in';
   }

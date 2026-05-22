@@ -239,7 +239,7 @@ export function generateExplanations(
       transferable_via:     e.transferableVia ?? null,
     })),
     bias_assessment:  biasAssessment,
-    appeal_eligible:  true,
+    appeal_eligible:  outcome.decision !== 'matched',
   };
 
   // Candidate explanation: skill breakdown + reasons, no bias detail

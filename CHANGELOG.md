@@ -8,18 +8,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Known gaps / next work
-- Company dashboard: Pipeline tab (wiring deferred — needs separate discussion)
-- Governance dashboard: vote submission (read-only for now — mechanism TBD)
-- Integration tests hitting real API + DB
 - MMIL implementation (spec complete at `specs/multi-model-inference-spec.md`; deferred pending API keys)
 - Email verification on sign-up (will use smtp4dev)
 - SSL on API endpoints
-- Candidate profile: profile strength is static (no API)
-- Candidate profile: data download not implemented
-- Candidate profile: save profile bug
 - Candidate profile: "no matches" state shows blank — needs empty-state message
 - Candidate profile: Fairness Monitoring fields show blank after save (by design — GDPR write-only); UI needs to replace fields with a "data provided — click to re-enter" state
 - Candidate profile: skill entry must be constrained to ontology IDs (free-text skills break job matching)
+
+---
+
+## [0.7.0] — 2026-05-21
+
+### Added
+- Playwright E2E test suite (`tests/e2e/`) — 22 tests across 4 spec files, all passing (1 flaky on first run, passes on retry #1):
+  - `auth.spec.ts` — candidate registration and login flows (5 tests)
+  - `candidate-profile.spec.ts` — profile save/restore persistence: skills, evidence URLs, salary, job type chips, work mode chips (5 tests)
+  - `profile-strength.spec.ts` — profile strength widget: partial strength from defaults, tips displayed, widget visibility, evidence URL effect, salary effect, dashboard/profile sync (8 tests); uses `beforeAll` shared registration with token injection to avoid repeated API load
+  - `regression.spec.ts` — four regression tests guarding specific bugs fixed during development (4 tests)
+- `tests/e2e/helpers.ts` — shared test utilities: `registerCandidate`, `loginCandidate`, `goToTab`, `saveProfile`, `reloadAndWait`, `profileStrengthPct`, `registerAndCaptureToken`, `injectTokenAndLoad`
+- Profile strength widget in `candidate-app.html` — SVG arc indicator + percentage label in sidebar; displayed on both dashboard and profile tab; updates live as candidate fills in evidence URLs or changes salary/preferences; tips list itemises what's missing
+
+### Fixed
+- **API: GET `/v1/candidates/me` silently stripped all preference sub-properties** — `preferences: { type: 'object' }` in the Fastify response schema caused `fast-json-stringify` to emit an empty object; fixed by adding `additionalProperties: true`; same fix applied to `privacy`; `work_history` array was missing from the schema entirely and is now declared
+- **`toggleRoleForm()` never opened the role entry form** — used `element.style.display === 'none'` which is invisible when display is set via a CSS class; fixed to use `getComputedStyle(el).display`
+- **Work schedule chips not saved** — chip elements lacked `id` and `data-val` attributes; save payload builder could not read their state; fixed with correct attributes
+- **Right-to-work chips not saved** — same attribute problem as work schedule chips
+- **Evidence URL dropped from skills save payload** — `collectSkills()` was not reading the `.ev-inp` value when building the skills array; fixed to include `evidence_url`
+
+---
+
+## [0.6.0] — 2026-05-21
+
+### Added
+- `GET /v1/companies/me/pipeline` — cross-job pipeline run history with inline employer explanations; returns stats aggregate (total runs, match rate, avg score, bias correction count) plus per-run rows joining `match_events`, `pipeline_traces` (duration), `job_briefs` (title), and `match_explanations` (employer-audience skill breakdown + summary); candidate identity never exposed
+- Company dashboard Pipeline tab fully wired: stats strip (4 KPIs), lazy-loaded runs table with expandable rows; clicking any row reveals score bars (skill / transferable / preference), plain-language employer summary, per-skill grid (required vs candidate proficiency, match type, score contribution), and a bias correction notice when applicable; `togglePipelineRun()` / `_pipelineExpandHtml()` helpers
+
+### Changed
+- Pipeline tab stub replaced — removed "coming soon" placeholder, replaced with live API-backed table
+
+---
+
+## [0.5.0] — 2026-05-21
+
+### Added
+- `GET /v1/companies/me/sla-by-stage` — SLA compliance breakdown per hiring stage (last 90 days); returns compliance %, active/breached counts, and ghosting event count for each stage from `initial_match_acknowledgement` through `post_rejection_feedback`; wired into company dashboard Overview tab SLA table (previously stuck on "No stage data yet")
+- `GET /v1/governance/versions` — Protocol and pipeline version history sourced from `config.governance_constants`; replaces the hardcoded static HTML in the governance dashboard Protocol Versions sidebar widget
+- `POST /v1/governance/votes` UI — Record Vote form added to governance dashboard Votes tab; gated behind governance-role JWT check so the button is invisible to public visitors; validates locally then calls the existing API endpoint, resets the form on success, and reloads both the vote table and the sidebar widget
+
+### Changed
+- Governance dashboard Protocol Versions sidebar now loads dynamically via `loadVersions()` instead of rendering hardcoded `v1.0.0` markup
+- Recent Votes sidebar logic extracted into `updateRecentVotesSidebar()` helper — shared by both `loadOverview()` and `submitVote()` (previously duplicated inline)
+- `api-gap-analysis.md` updated to v2.0.0: reflects current 66-endpoint inventory, closes all 27 previously-missing endpoints, and marks the document's "remaining gaps" section as clear (Pipeline tab stub is the sole open item)
 
 ---
 

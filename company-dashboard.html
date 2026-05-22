@@ -1308,14 +1308,56 @@
 <!-- ── MATCH PIPELINE ── -->
 <div id="page-pipeline" class="page-section" style="display:none">
   <div class="page-header" style="animation:fadeUp 0.3s ease both">
-    <div><div class="page-title">Match Pipeline</div><div class="page-subtitle">// recent pipeline runs for your active briefs</div></div>
+    <div><div class="page-title">Match Pipeline</div><div class="page-subtitle" id="pipeline-subtitle">// loading…</div></div>
   </div>
+  <!-- Stats strip -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:16px;animation:fadeUp 0.3s 0.02s ease both">
+    <div style="background:var(--bg-card);padding:14px 16px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:4px">TOTAL RUNS</div>
+      <div id="pipeline-stat-total" style="font-size:24px;font-weight:700">—</div>
+    </div>
+    <div style="background:var(--bg-card);padding:14px 16px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:4px">MATCH RATE</div>
+      <div id="pipeline-stat-rate" style="font-size:24px;font-weight:700">—</div>
+    </div>
+    <div style="background:var(--bg-card);padding:14px 16px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:4px">AVG SCORE</div>
+      <div id="pipeline-stat-score" style="font-size:24px;font-weight:700">—</div>
+    </div>
+    <div style="background:var(--bg-card);padding:14px 16px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:4px">BIAS CORRECTIONS</div>
+      <div id="pipeline-stat-bias" style="font-size:24px;font-weight:700">—</div>
+    </div>
+  </div>
+  <!-- Runs table -->
   <div class="panel" style="animation:fadeUp 0.3s 0.05s ease both">
-    <div class="panel-header"><span class="panel-title">Recent Pipeline Runs</span><span class="panel-action">All runs →</span></div>
-    <table class="jobs-table">
-      <thead><tr><th>Match ID</th><th>Job</th><th>Decision</th><th>Score</th><th>Duration</th><th>Bias correction</th><th>Run at</th></tr></thead>
-      <tbody>
-        <tr><td colspan="7" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">Pipeline run history coming soon — no endpoint yet.</td></tr>
+    <div class="panel-header">
+      <span class="panel-title">Pipeline Runs</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Click a row to expand explanation</span>
+    </div>
+    <table class="jobs-table" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:28px">
+        <col style="width:88px">
+        <col>
+        <col style="width:100px">
+        <col style="width:70px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:90px">
+      </colgroup>
+      <thead><tr>
+        <th></th>
+        <th>Match</th>
+        <th>Job</th>
+        <th>Decision</th>
+        <th>Score</th>
+        <th>Duration</th>
+        <th>Bias &#916;</th>
+        <th>Run at</th>
+      </tr></thead>
+      <tbody id="pipeline-tbody">
+        <tr><td colspan="8" style="padding:14px;color:var(--text-dim);font-family:var(--mono);font-size:11px">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -1368,6 +1410,7 @@ function showPage(pageId) {
     switch (pageId) {
       case 'fairness':    loadFairness(); break;
       case 'jobs':        loadJobs(); break;
+      case 'pipeline':    loadPipeline(); break;
       case 'sla':         loadSLA(); break;
       case 'ghosting':    loadGhosting(); break;
       case 'rejections':  loadRejections(); break;
@@ -1524,6 +1567,26 @@ async function loadOverview() {
   }
   document.getElementById('overview-strike-count').textContent = co.strike_count_90d != null ? co.strike_count_90d : '—';
 
+  // SLA by stage table
+  const stageData = await api('GET', '/companies/me/sla-by-stage');
+  const stageTbody = document.getElementById('sla-by-stage-tbody');
+  if (stageTbody) {
+    const stages = stageData && stageData.stages ? stageData.stages : [];
+    const stageLabel = s => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const compColor = pct => pct == null ? 'var(--text-dim)' : pct >= 90 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--red)';
+    stageTbody.innerHTML = stages.length
+      ? stages.map(s => {
+          const pct = s.compliance_pct;
+          const activeNote = s.active_count > 0 ? ' <span style="font-size:10px;color:var(--text-dim)">(' + s.active_count + ' active' + (s.active_breached > 0 ? ', ' + s.active_breached + ' breached' : '') + ')</span>' : '';
+          return '<tr style="border-bottom:1px solid var(--border)">' +
+            '<td style="padding:8px 0">' + stageLabel(s.stage) + activeNote + '</td>' +
+            '<td style="padding:8px 12px;font-family:var(--mono);color:' + compColor(pct) + '">' + (pct != null ? pct + '%' : '—') + '</td>' +
+            '<td style="padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + (s.ghosting_count > 0 ? s.ghosting_count + ' ghosting event(s)' : '—') + '</td>' +
+            '</tr>';
+        }).join('')
+      : '<tr><td colspan="3" style="padding:10px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">No stage data in the last 90 days.</td></tr>';
+  }
+
   // Compliance breakdown bars
   const bd = data.compliance_breakdown;
   const breakdownEl = document.getElementById('compliance-breakdown');
@@ -1667,6 +1730,158 @@ function openJobDialogById(jobId) {
   const job = _jobsData.find(j => j.job_id === jobId);
   if (job) openJobDialog(job.title, job);
   else openJobDialog();
+}
+
+// ── Pipeline tab ──────────────────────────────────────────────────────────────
+function togglePipelineRun(matchId) {
+  var detail = document.getElementById('pr-detail-' + matchId);
+  var icon   = document.getElementById('pr-icon-'   + matchId);
+  if (!detail) return;
+  var open = detail.style.display !== 'none';
+  detail.style.display = open ? 'none' : '';
+  if (icon) icon.textContent = open ? '▶' : '▼';
+}
+
+function _pipelineSkillLabel(ontologyId) {
+  if (!ontologyId) return '—';
+  return ontologyId.replace(/^fhp:skill:/, '').replace(/-/g, ' ');
+}
+
+function _pipelineScoreBar(label, value, color) {
+  var pct = value != null ? Math.round(parseFloat(value) * 100) : 0;
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">' +
+    '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);width:170px;flex-shrink:0">' + label + '</div>' +
+    '<div style="flex:1;background:var(--border);height:5px;border-radius:2px">' +
+      '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:2px"></div>' +
+    '</div>' +
+    '<div style="font-family:var(--mono);font-size:11px;width:36px;text-align:right">' + (value != null ? parseFloat(value).toFixed(2) : '—') + '</div>' +
+  '</div>';
+}
+
+function _pipelineExpandHtml(run) {
+  var html = '<td colspan="8" style="padding:0;border-bottom:2px solid var(--border)">' +
+    '<div style="padding:16px 20px 18px;background:var(--bg)">';
+
+  // Summary
+  if (run.plain_language_summary) {
+    html += '<div style="margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--text-mid)">' +
+      run.plain_language_summary + '</div>';
+  }
+
+  // Score bars
+  var skillColor   = parseFloat(run.skill_score) >= 0.7 ? 'var(--green)' : parseFloat(run.skill_score) >= 0.5 ? 'var(--amber)' : 'var(--red)';
+  var prefColor    = parseFloat(run.preference_alignment_score) >= 0.7 ? 'var(--green)' : parseFloat(run.preference_alignment_score) >= 0.5 ? 'var(--amber)' : 'var(--red)';
+  var transColor   = 'var(--blue)';
+  html += '<div style="margin-bottom:14px">' +
+    _pipelineScoreBar('Skill match', run.skill_score, skillColor) +
+    _pipelineScoreBar('Transferable skills', run.transferable_skill_score, transColor) +
+    _pipelineScoreBar('Preference alignment', run.preference_alignment_score, prefColor) +
+  '</div>';
+
+  // Bias note
+  if (run.bias_correction_triggered) {
+    var delta = parseFloat(run.bias_correction_delta);
+    html += '<div style="background:var(--amber-dim);border-left:3px solid var(--amber);padding:8px 12px;margin-bottom:14px;font-family:var(--mono);font-size:11px">' +
+      '&#9651; Bias correction applied: ' + (delta >= 0 ? '+' : '') + delta.toFixed(3) +
+      ' &nbsp;&middot;&nbsp; Pre-correction score: ' + parseFloat(run.pre_correction_score).toFixed(3) +
+    '</div>';
+  }
+
+  // Skill breakdown grid
+  var breakdown = run.skill_breakdown;
+  if (breakdown && breakdown.length) {
+    html += '<div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--text-dim);margin-bottom:6px">REQUIRED SKILLS</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html += '<thead><tr style="border-bottom:1px solid var(--border)">' +
+      '<th style="text-align:left;padding:5px 8px 5px 0;font-family:var(--mono);font-size:9px;color:var(--text-dim)">SKILL</th>' +
+      '<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">REQUIRED</th>' +
+      '<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">CANDIDATE</th>' +
+      '<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">MATCH</th>' +
+      '<th style="text-align:right;padding:5px 0 5px 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">CONTRIBUTION</th>' +
+    '</tr></thead><tbody>';
+
+    breakdown.forEach(function(sk) {
+      var matched    = sk.matched;
+      var matchType  = sk.match_type || '—';
+      var mustHave   = (sk.requirement_level === 'must_have');
+      var rowColor   = matched ? 'var(--green)' : (mustHave ? 'var(--red)' : 'var(--text-dim)');
+      var matchLabel = matched
+        ? (matchType === 'transferable' ? '&#10003; transferable' : '&#10003; direct')
+        : '&#10007; unmet';
+      html += '<tr style="border-bottom:1px solid var(--border)">' +
+        '<td style="padding:6px 8px 6px 0;font-weight:600">' + _pipelineSkillLabel(sk.ontology_id) +
+          (mustHave ? '' : ' <span style="font-weight:400;color:var(--text-dim);font-size:10px">optional</span>') + '</td>' +
+        '<td style="padding:6px 8px;font-family:var(--mono);font-size:10px">' + (sk.required_proficiency || '—') + '</td>' +
+        '<td style="padding:6px 8px;font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + (sk.candidate_proficiency || 'not assessed') + '</td>' +
+        '<td style="padding:6px 8px;font-family:var(--mono);font-size:10px;color:' + rowColor + '">' + matchLabel + '</td>' +
+        '<td style="padding:6px 0 6px 8px;font-family:var(--mono);font-size:10px;text-align:right">' +
+          (sk.score_contribution != null ? (parseFloat(sk.score_contribution) >= 0 ? '+' : '') + parseFloat(sk.score_contribution).toFixed(3) : '—') +
+        '</td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table>';
+  }
+
+  html += '</div></td>';
+  return html;
+}
+
+async function loadPipeline() {
+  var data = await api('GET', '/companies/me/pipeline');
+  if (!data) return;
+
+  var s = data.stats || {};
+  var total = s.total_runs || 0;
+  var matchRate = total > 0 ? Math.round(100 * (s.matched || 0) / total) : null;
+
+  document.getElementById('pipeline-stat-total').textContent = total;
+  document.getElementById('pipeline-stat-rate').textContent  = matchRate != null ? matchRate + '%' : '—';
+  document.getElementById('pipeline-stat-score').textContent = s.avg_score != null ? parseFloat(s.avg_score).toFixed(2) : '—';
+  document.getElementById('pipeline-stat-bias').textContent  = s.bias_corrected != null
+    ? s.bias_corrected + (total > 0 ? ' (' + Math.round(100 * s.bias_corrected / total) + '%)' : '') : '—';
+
+  var runs = data.runs || [];
+  var subtitle = document.getElementById('pipeline-subtitle');
+  if (subtitle) subtitle.textContent = '// ' + total + ' total run' + (total !== 1 ? 's' : '') +
+    ' · ' + (s.matched || 0) + ' matched · ' + (s.borderline || 0) + ' borderline';
+
+  var tbody = document.getElementById('pipeline-tbody');
+  if (!runs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-dim);font-family:var(--mono);font-size:11px">No pipeline runs yet. Runs appear here once candidates are matched against your active briefs.</td></tr>';
+    return;
+  }
+
+  var decisionTag = function(d) {
+    return d === 'matched' ? 'pass' : d === 'borderline' ? 'warn' : 'fail';
+  };
+  var decisionLabel = function(d) {
+    return d === 'not_matched' ? 'not matched' : d;
+  };
+
+  tbody.innerHTML = runs.map(function(r) {
+    var scoreVal = parseFloat(r.overall_score);
+    var scoreCls = scoreClass(scoreVal, 0.75, 0.5);
+    var hasBias  = r.bias_correction_triggered;
+    var delta    = hasBias ? parseFloat(r.bias_correction_delta) : null;
+    var dur      = r.duration_ms != null ? r.duration_ms + 'ms' : '—';
+    var mainRow = '<tr style="cursor:pointer;border-bottom:1px solid var(--border)" onclick="togglePipelineRun(\'' + r.match_id + '\')">' +
+      '<td style="text-align:center;font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:10px 4px"><span id="pr-icon-' + r.match_id + '">&#9654;</span></td>' +
+      '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + r.match_id.slice(0, 8) + '</td>' +
+      '<td style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (r.job_title || '—') + '</td>' +
+      '<td><span class="tag ' + decisionTag(r.decision) + '">' + decisionLabel(r.decision) + '</span></td>' +
+      '<td><span class="score-cell ' + scoreCls + '">' + scoreVal.toFixed(2) + '</span></td>' +
+      '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + dur + '</td>' +
+      '<td style="font-family:var(--mono);font-size:11px">' +
+        (hasBias ? '<span class="tag warn">' + (delta >= 0 ? '+' : '') + delta.toFixed(3) + '</span>' : '<span style="color:var(--text-dim)">—</span>') +
+      '</td>' +
+      '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + fmtDate(r.created_at) + '</td>' +
+    '</tr>';
+    var detailRow = '<tr id="pr-detail-' + r.match_id + '" style="display:none">' +
+      _pipelineExpandHtml(r) +
+    '</tr>';
+    return mainRow + detailRow;
+  }).join('');
 }
 
 // ── SLA tab ───────────────────────────────────────────────────────────────────

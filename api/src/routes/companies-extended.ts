@@ -513,14 +513,15 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
     const metricMap: Record<string, string> = {
       DIR: 'dir_within_bounds', EOD: 'eod_within_bounds', SDS: 'sds_within_bounds'
     };
-    if (breach[0]?.[metricMap[body.metric_breached]]) {
+    const metricCol = metricMap[body.metric_breached];
+    if (metricCol && breach[0]?.[metricCol]) {
       throw new ValidationError(
         `${body.metric_breached} is currently within bounds for this job. ` +
         'Remediation is only required when a metric is breached.'
       );
     }
 
-    const [row] = await app.db`
+    const rows = await app.db`
       INSERT INTO matching.company_remediations (
         company_id, escalation_id, metric_breached, breach_window_num, plan_text
       ) VALUES (
@@ -532,6 +533,7 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       )
       RETURNING remediation_id, submitted_at
     `;
+    const row = rows[0] as { remediation_id: string; submitted_at: string };
 
     // Update escalation if linked
     if (body.escalation_id) {
@@ -594,6 +596,159 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
     // but not which candidate filed it (anonymity preserved until outcome)
 
     return reply.send({ appeals: rows });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /v1/companies/me/pipeline
+  // Cross-job pipeline run history with inline employer explanations.
+  // Candidate identity is never exposed — match_id only.
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get('/me/pipeline', {
+    preHandler: [requireCompany],
+    schema: {
+      tags: ['companies'],
+      summary: 'Pipeline run history across all company jobs',
+      querystring: {
+        type: 'object',
+        properties: {
+          job_id:   { type: 'string', format: 'uuid' },
+          decision: { type: 'string', enum: ['matched','borderline','not_matched','all'], default: 'all' },
+          limit:    { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+          offset:   { type: 'integer', minimum: 0, default: 0 },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const companyId = (request.user as any).companyId as string;
+    const q = request.query as {
+      job_id?: string; decision: string; limit: number; offset: number;
+    };
+
+    const [runs, statsRows, totalRows] = await Promise.all([
+      app.db`
+        SELECT
+          me.match_id,
+          me.job_id,
+          jb.title                       AS job_title,
+          me.decision,
+          me.overall_score,
+          me.pre_correction_score,
+          me.skill_score,
+          me.transferable_skill_score,
+          me.preference_alignment_score,
+          me.bias_correction_triggered,
+          me.bias_correction_delta,
+          pt.duration_ms,
+          me.created_at,
+          expl.plain_language_summary,
+          expl.skill_breakdown
+        FROM matching.match_events me
+        JOIN matching.job_briefs jb ON jb.job_id = me.job_id
+        LEFT JOIN analytical.pipeline_traces pt ON pt.match_id = me.match_id
+        LEFT JOIN matching.match_explanations expl
+          ON expl.match_id = me.match_id AND expl.audience = 'employer'
+        WHERE me.company_id = ${companyId}
+          ${q.job_id ? app.db`AND me.job_id = ${q.job_id}` : app.db``}
+          ${q.decision !== 'all' ? app.db`AND me.decision = ${q.decision}` : app.db``}
+        ORDER BY me.created_at DESC
+        LIMIT  ${q.limit}
+        OFFSET ${q.offset}
+      `,
+      app.db`
+        SELECT
+          COUNT(*)::int                                                    AS total_runs,
+          COUNT(*) FILTER (WHERE decision = 'matched')::int                AS matched,
+          COUNT(*) FILTER (WHERE decision = 'borderline')::int             AS borderline,
+          COUNT(*) FILTER (WHERE decision = 'not_matched')::int            AS not_matched,
+          COUNT(*) FILTER (WHERE bias_correction_triggered = TRUE)::int    AS bias_corrected,
+          ROUND(AVG(overall_score)::numeric, 3)                            AS avg_score
+        FROM matching.match_events
+        WHERE company_id = ${companyId}
+          ${q.job_id ? app.db`AND job_id = ${q.job_id}` : app.db``}
+      `,
+      app.db`
+        SELECT COUNT(*)::int AS count
+        FROM matching.match_events
+        WHERE company_id = ${companyId}
+          ${q.job_id ? app.db`AND job_id = ${q.job_id}` : app.db``}
+          ${q.decision !== 'all' ? app.db`AND decision = ${q.decision}` : app.db``}
+      `,
+    ]);
+
+    return reply.send({
+      stats: statsRows[0] ?? {
+        total_runs: 0, matched: 0, borderline: 0,
+        not_matched: 0, bias_corrected: 0, avg_score: null,
+      },
+      runs,
+      total: totalRows[0]?.count ?? 0,
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /v1/companies/me/sla-by-stage
+  // SLA compliance breakdown by hiring stage — Compliance Overview table.
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get('/me/sla-by-stage', {
+    preHandler: [requireCompany],
+    schema: {
+      tags: ['companies'],
+      summary: 'SLA compliance rate per hiring stage for this company',
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const companyId = (request.user as any).companyId as string;
+
+    // Aggregate compliance per stage from all resolved interactions (30d)
+    const rows = await app.db`
+      SELECT
+        current_stage                                                           AS stage,
+        COUNT(*)::int                                                           AS total,
+        COUNT(*) FILTER (WHERE status IN ('completed','escalated')
+                           AND outcome NOT IN ('role_cancelled'))::int          AS completed,
+        COUNT(*) FILTER (
+          WHERE status IN ('completed','escalated')
+            AND outcome NOT IN ('role_cancelled')
+            AND sla_deadline >= updated_at
+        )::int                                                                  AS within_sla,
+        -- Open/active in this stage
+        COUNT(*) FILTER (WHERE status = 'active')::int                         AS active_count,
+        COUNT(*) FILTER (WHERE status = 'active' AND sla_deadline < NOW())::int AS active_breached,
+        -- Ghosting events at this stage
+        (SELECT COUNT(*)::int
+         FROM matching.ghosting_events ge
+         WHERE ge.company_id = ${companyId}
+           AND ge.stage_name = ai.current_stage
+        )                                                                       AS ghosting_count
+      FROM matching.active_interactions ai
+      WHERE ai.company_id = ${companyId}
+        AND ai.created_at > NOW() - INTERVAL '90 days'
+      GROUP BY ai.current_stage
+      ORDER BY CASE ai.current_stage
+        WHEN 'initial_match_acknowledgement' THEN 1
+        WHEN 'application_review'            THEN 2
+        WHEN 'screening_call'                THEN 3
+        WHEN 'technical_assessment'          THEN 4
+        WHEN 'interview_stage'               THEN 5
+        WHEN 'offer_stage'                   THEN 6
+        WHEN 'post_rejection_feedback'       THEN 7
+        ELSE 8
+      END
+    `;
+
+    const stages = (rows as any[]).map(r => ({
+      stage:            r.stage,
+      total:            r.total,
+      completed:        r.completed,
+      within_sla:       r.within_sla,
+      compliance_pct:   r.completed > 0
+        ? Math.round(100 * r.within_sla / r.completed)
+        : null,
+      active_count:     r.active_count,
+      active_breached:  r.active_breached,
+      ghosting_count:   r.ghosting_count,
+    }));
+
+    return reply.send({ stages });
   });
 
   // ─────────────────────────────────────────────────────────────────────────

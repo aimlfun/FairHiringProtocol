@@ -55,7 +55,7 @@ export async function companyAuthRoutes(app: FastifyInstance): Promise<void> {
         },
       },
     },
-    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as {
       legal_name:                    string;
@@ -171,7 +171,7 @@ export async function companyAuthRoutes(app: FastifyInstance): Promise<void> {
         },
       },
     },
-    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+    config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { email, password } = request.body as { email: string; password: string };
 
