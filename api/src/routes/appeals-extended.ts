@@ -116,7 +116,7 @@ export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void>
 
     if (!appeal[0]) throw new NotFoundError('Appeal', appealId);
 
-    const withdrawable = ['submitted', 'under_twg_review'];
+    const withdrawable = ['submitted', 'twg_review'];
     if (!withdrawable.includes(appeal[0].status as string)) {
       throw new ValidationError(
         `Cannot withdraw an appeal with status '${appeal[0].status}'. ` +
@@ -281,7 +281,7 @@ export async function companyPublicRoutes(app: FastifyInstance): Promise<void> {
         -- Open escalations count
         (
           SELECT COUNT(*)::int FROM matching.escalations e
-          WHERE e.company_id = c.company_id AND e.status = 'open'
+          WHERE e.linked_company_id = c.company_id AND e.status = 'open'
         ) AS open_escalation_count
       FROM matching.companies c
       WHERE c.company_id = ${companyId}

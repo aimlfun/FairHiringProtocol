@@ -79,12 +79,18 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ── Rate limiting ────────────────────────────────────────────────────────────
   // Applied globally — individual routes can override with stricter limits
   await app.register(rateLimit, {
-    max:       config.rateLimitMax,
+    max:        config.rateLimitMax,
     timeWindow: '1 minute',
-    errorResponseBuilder: () => ({
-      error:   'RATE_LIMITED',
-      message: 'Too many requests. Please slow down.',
-    }),
+    // Must return an Error with statusCode — the plugin throws the return value,
+    // so a plain object would fall through to the 500 handler.
+    errorResponseBuilder: (_req, _ctx) => {
+      const err: Error & { statusCode?: number; error?: string } = new Error(
+        'Too many requests. Please slow down.'
+      );
+      err.statusCode = 429;
+      err.error      = 'RATE_LIMITED';
+      return err;
+    },
   });
 
   // ── JWT authentication ───────────────────────────────────────────────────────
@@ -223,11 +229,22 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
 
+    // Fastify built-in HTTP errors (content-type issues, route not found, etc.)
+    // These have a numeric statusCode < 500 but don't match the patterns above.
+    if (typeof error.statusCode === 'number' && error.statusCode < 500) {
+      return reply.status(error.statusCode).send({
+        error:   (error as any).code ?? 'CLIENT_ERROR',
+        message: error.message,
+      });
+    }
+
     // Unknown errors — log fully, return minimal detail to client
     log.error({ err: error }, 'Unhandled error');
+    const isDev = process.env.NODE_ENV === 'development';
     return reply.status(500).send({
-      error:   'INTERNAL_ERROR',
-      message: 'An unexpected error occurred',
+      error:     'INTERNAL_ERROR',
+      message:   isDev ? (error instanceof Error ? error.message : String(error)) : 'An unexpected error occurred',
+      dev_stack: isDev && error instanceof Error ? error.stack : undefined,
       requestId: request.id,
     });
   });

@@ -34,8 +34,9 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
             candidate_id:      { type: 'string', format: 'uuid' },
             fhp_version:       { type: 'string' },
             skills:            { type: 'array' },
-            preferences:       { type: 'object' },
-            privacy:           { type: 'object' },
+            work_history:      { type: 'array' },
+            preferences:       { type: 'object', additionalProperties: true },
+            privacy:           { type: 'object', additionalProperties: true },
             matching_eligible: { type: 'boolean' },
             profile_strength:  { type: 'number' },
             created_at:        { type: 'string' },
@@ -100,14 +101,21 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
     const prefsVal       = body.preferences  ? app.db.json(body.preferences)  : null;
     const privacyVal     = body.privacy      ? app.db.json(body.privacy)      : null;
 
+    // Auto-manage matching_eligible based on skills presence.
+    // null = skills not provided in this request → keep current DB value.
+    const eligibleVal: boolean | null = body.skills !== undefined
+      ? (Array.isArray(body.skills) && body.skills.length > 0)
+      : null;
+
     const rows = await app.db`
       UPDATE matching.candidate_profiles
       SET
-        skills       = COALESCE(${skillsVal},      skills),
-        work_history = COALESCE(${workHistoryVal}, work_history),
-        preferences  = COALESCE(${prefsVal},       preferences),
-        privacy      = COALESCE(${privacyVal},     privacy),
-        updated_at   = NOW()
+        skills            = COALESCE(${skillsVal},      skills),
+        work_history      = COALESCE(${workHistoryVal}, work_history),
+        preferences       = COALESCE(${prefsVal},       preferences),
+        privacy           = COALESCE(${privacyVal},     privacy),
+        matching_eligible = COALESCE(${eligibleVal}, matching_eligible),
+        updated_at        = NOW()
       WHERE candidate_id = ${candidateId}
         AND status != 'deleted'
       RETURNING candidate_id, skills, work_history, preferences, privacy, matching_eligible,
@@ -122,13 +130,30 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
   /**
    * GET /v1/candidates/me/export
    * GDPR Art. 15 (access) + Art. 20 (portability) — full data export in FHP JSON format.
+   *
+   * Accepts the JWT via the standard Authorization header OR as a ?token= query parameter.
+   * The query-parameter form exists solely to support browser window.location.href navigation
+   * (which cannot carry custom headers), so the browser's native download handler receives
+   * the Content-Disposition filename directly rather than relying on the JS download attribute.
    */
   app.get('/me/export', {
-    preHandler: [requireCandidate],
+    preHandler: [
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const q = request.query as { token?: string };
+        if (q.token && !request.headers.authorization) {
+          (request.headers as Record<string, string>).authorization = `Bearer ${q.token}`;
+        }
+        return requireCandidate(request, reply);
+      },
+    ],
     schema: {
       tags:    ['candidates'],
       summary: 'Export all candidate data (GDPR Art. 15 + 20)',
       security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: { token: { type: 'string' } },
+      },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const candidateId = (request.user as any).candidateId as string;
@@ -182,8 +207,9 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         (${candidateId}, 'access', 'in_app', 'completed', NOW(), NOW())
     `;
 
+    const exportDate = new Date().toISOString().slice(0, 10);
     return reply
-      .header('Content-Disposition', `attachment; filename="fhp-export-${candidateId}.json"`)
+      .header('Content-Disposition', `attachment; filename="fhp-export-${exportDate}.json"`)
       .header('Content-Type', 'application/json')
       .send(exportData);
   });
@@ -327,7 +353,7 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         me.match_id,
         me.job_id,
         me.decision,
-        me.overall_score,
+        me.overall_score::float AS overall_score,
         me.bias_correction_triggered,
         me.appeal_eligible,
         (me.created_at + INTERVAL '30 days') AS appeal_deadline,
@@ -443,16 +469,17 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
       SELECT
         trace_id, match_id, pipeline_version,
         started_at, completed_at, duration_ms, status,
-        -- Return stage summaries only (not full trace_data) to candidates
+        -- Stage summaries for candidates (name, status, duration only)
         -- Full trace_data is available to governance via /governance/traces/:id
-        (
-          SELECT jsonb_agg(jsonb_build_object(
+        COALESCE(
+          (SELECT jsonb_agg(jsonb_build_object(
             'stage_name',  s->>'stage_name',
             'status',      s->>'status',
-            'duration_ms', s->>'duration_ms'
+            'duration_ms', (s->>'duration_ms')::int
           ))
-          FROM jsonb_array_elements(trace_data->'stages') s
-        ) AS stage_summary,
+          FROM jsonb_array_elements(trace_data->'stages') s),
+          '[]'::jsonb
+        ) AS stages,
         under_appeal
       FROM analytical.pipeline_traces
       WHERE match_id    = ${matchId}

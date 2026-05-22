@@ -29,13 +29,18 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
 
     // Verify match belongs to candidate and get submission deadline
     const match = await app.db`
-      SELECT match_id, job_id, created_at,
+      SELECT match_id, job_id, decision, created_at,
              (created_at + INTERVAL '30 days') AS appeal_deadline
       FROM matching.match_events
       WHERE match_id = ${body.match_id} AND candidate_id = ${candidateId}
       LIMIT 1
     `;
     if (!match[0]) throw new NotFoundError('Match', body.match_id);
+
+    // Matched decisions are not eligible for appeal
+    if (match[0].decision === 'matched') {
+      throw new ValidationError('Matched decisions are not eligible for appeal.');
+    }
 
     // Check appeal window
     if (match[0].appeal_deadline && new Date(match[0].appeal_deadline as string) < new Date()) {
@@ -56,11 +61,11 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
     const rows = await app.db`
       INSERT INTO matching.appeals (
         match_id, candidate_id, job_id, ground, detail,
-        status, outcome, submission_deadline, twg_deadline, twg_assigned_at
+        status, outcome, submission_deadline, twg_deadline
       ) VALUES (
         ${body.match_id}, ${candidateId}, ${match[0].job_id as string},
-        ${body.ground}, ${body.detail}, 'twg_review', 'pending',
-        ${submissionDeadline}, ${twgDeadline}, NOW()
+        ${body.ground}, ${body.detail}, 'submitted', 'pending',
+        ${submissionDeadline}, ${twgDeadline}
       )
       RETURNING appeal_id, match_id, ground, status, submitted_at, twg_deadline
     `;
@@ -69,11 +74,12 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
     await app.db`
       INSERT INTO matching.escalations (
         escalation_type, subject_entity_type, subject_entity_id,
-        linked_appeal_id, priority, assignee_body, status, resolution_deadline
+        linked_appeal_id, priority, assignee_body, status,
+        resolution_deadline, raised_by
       ) VALUES (
         'candidate_appeal', 'match', ${body.match_id},
         ${rows[0]!.appeal_id as string}, 'standard', 'twg',
-        'open', ${twgDeadline}
+        'open', ${twgDeadline}, 'candidate'
       )
     `;
 
@@ -93,7 +99,7 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
 
     const rows = await app.db`
       SELECT appeal_id, match_id, ground, detail, status, outcome,
-             twg_finding, pc_decision, submitted_at, resolved_at, twg_deadline
+             twg_finding, pc_decision, submitted_at, resolved_at, twg_deadline, created_at
       FROM matching.appeals
       WHERE appeal_id = ${appealId} AND candidate_id = ${candidateId}
       LIMIT 1

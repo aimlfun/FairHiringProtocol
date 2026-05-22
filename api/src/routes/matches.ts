@@ -3,7 +3,7 @@ import { requireCompany, requireCandidate, requireGovernance } from '../middlewa
 import {
   NotFoundError, ValidationError, ConflictError,
   JobBriefNotActiveError, CompanyNotActiveError, AppealWindowExpiredError,
-  DuplicateAppealError
+  DuplicateAppealError, MatchingIneligibleError
 } from '../errors/index.ts';
 
 export async function matchRoutes(app: FastifyInstance): Promise<void> {
@@ -34,9 +34,8 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       WHERE candidate_id = ${candidateId} LIMIT 1
     `;
     if (!candidate[0] || !candidate[0].matching_eligible) {
-      throw new ValidationError(
-        'Your profile is not yet eligible for matching. ' +
-        'Ensure you have confirmed your age and added at least one skill.'
+      throw new MatchingIneligibleError(
+        'profile not eligible — confirm your age and add at least one skill'
       );
     }
 
@@ -69,17 +68,28 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
     const { StubCohortService }         = await import('../../../reference-impl/bias/cohort.ts');
     const { StubFairnessMetricsStore }  = await import('../../../reference-impl/fairness/store.ts');
 
-    const candidateProfile = await app.db`
+    const candidateRow = await app.db`
       SELECT * FROM matching.candidate_profiles WHERE candidate_id = ${candidateId}
     `;
-    const jobBrief = await app.db`
+    const jobRow = await app.db`
       SELECT * FROM matching.job_briefs WHERE job_id = ${job_id}
     `;
 
-    const ctx    = buildContext(getOntology(), new StubFairnessMetricsStore(), new StubCohortService());
-    const result = await runPipeline(candidateProfile[0] as any, jobBrief[0] as any, ctx);
+    // Map DB rows to the pipeline's canonical type shapes.
+    // The DB stores flat columns (salary_currency, location_country) and uses
+    // different JSONB field names (requirement_type / min_proficiency) from
+    // what the reference implementation expects (requirement_level / minimum_proficiency).
+    const mappedCandidate = mapCandidateProfile(candidateRow[0]);
+    const mappedJob       = mapJobBrief(jobRow[0]);
 
-    // Persist match event and explanations
+    const ctx    = buildContext(getOntology(), new StubFairnessMetricsStore(), new StubCohortService());
+    const result = await runPipeline(mappedCandidate as any, mappedJob as any, ctx);
+
+    const decision   = result.candidateExplanation.outcome.decision;
+    const companyId  = jobRow[0]!.company_id as string;
+    const jobTitle   = jobRow[0]!.title as string;
+
+    // Persist match event, explanations, trace, and notification atomically
     await app.db.begin(async (tx) => {
       const matchEvent = result.governanceExplanation;
       await tx`
@@ -90,7 +100,7 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
           bias_correction_delta, bias_correction_triggered, qualified
         ) VALUES (
           ${result.matchId}, ${candidateId}, ${job_id},
-          ${jobBrief[0]!.company_id as string}, '1.0.0', '1.0.0',
+          ${companyId}, '1.0.0', '1.0.0',
           ${matchEvent.outcome.decision},
           ${matchEvent.outcome.overall_score}, ${matchEvent.outcome.pre_correction_score ?? matchEvent.outcome.overall_score},
           ${matchEvent.scores.skill_score}, ${matchEvent.scores.transferable_skill_score},
@@ -129,9 +139,29 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
           ${trace.trace_id}, ${result.matchId}, ${candidateId}, ${job_id},
           '1.0.0', '1.0.0', ${trace.started_at}, ${trace.completed_at},
           ${trace.duration_ms ?? 0}, ${trace.status},
-          ${JSON.stringify(trace)}::jsonb, ${trace.checksum}
+          ${app.db.json(trace)}, ${trace.checksum}
         )
       `;
+
+      // Notify candidate for matched and borderline decisions only.
+      // not_matched decisions are silent per FHP protocol §7.2.
+      if (decision === 'matched' || decision === 'borderline') {
+        const notifTitle = decision === 'matched'
+          ? `Matched: ${jobTitle}`
+          : `Borderline match: ${jobTitle}`;
+        const notifBody = decision === 'matched'
+          ? 'Great news — your profile matched this role. Check the details below.'
+          : 'Your profile is a borderline match for this role. You can appeal this decision.';
+        await tx`
+          INSERT INTO matching.candidate_notifications (
+            candidate_id, notification_type, title, body,
+            match_id, job_id, company_id, actions
+          ) VALUES (
+            ${candidateId}, 'match_result', ${notifTitle}, ${notifBody},
+            ${result.matchId}, ${job_id}, ${companyId}, '[]'::jsonb
+          )
+        `;
+      }
     });
 
     return reply.status(201).send({
@@ -141,4 +171,88 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       explanation: result.candidateExplanation,
     });
   });
+}
+
+// ── DB → Pipeline type mappers ───────────────────────────────────────────────
+// The DB stores flat columns and uses API-friendly field names that differ
+// from the reference implementation's canonical schema.  These functions
+// bridge the gap so the pipeline always receives correctly-shaped objects.
+
+function mapCandidateProfile(row: any) {
+  const prefs = row.preferences ?? {};
+  return {
+    fhp_version:  row.fhp_version ?? '1.0.0',
+    candidate_id: row.candidate_id,
+    created_at:   String(row.created_at),
+    updated_at:   row.updated_at ? String(row.updated_at) : undefined,
+    skills: (row.skills ?? []).map((s: any) => ({
+      ontology_id:          s.ontology_id,
+      proficiency:          s.proficiency,
+      years_of_experience:  s.years_of_experience ?? s.years_experience,
+      evidence: s.evidence_url
+        ? [{ type: 'url', value: s.evidence_url }]
+        : (s.evidence ?? undefined),
+    })),
+    work_history: row.work_history,
+    preferences: {
+      // DB stores work_mode (array key), pipeline expects work_modes
+      work_modes:       prefs.work_modes ?? prefs.work_mode,
+      // DB stores location_countries, pipeline expects locations
+      locations:        prefs.locations ?? prefs.location_countries,
+      // DB stores employment_type (array), pipeline expects employment_types
+      employment_types: prefs.employment_types ?? prefs.employment_type,
+      // DB stores salary_min + salary_currency flat; pipeline expects nested salary object
+      salary: prefs.salary?.minimum != null
+        ? prefs.salary
+        : prefs.salary_min != null
+          ? {
+              currency: prefs.salary_currency ?? 'GBP',
+              minimum:  Number(prefs.salary_min),
+              period:   'annual' as const,
+            }
+          : undefined,
+      notice_period_days:  prefs.notice_period_days,
+      open_to_relocation:  prefs.open_to_relocation,
+    },
+    privacy: row.privacy,
+  };
+}
+
+function mapJobBrief(row: any) {
+  return {
+    fhp_version:  row.fhp_version ?? '1.0.0',
+    job_id:       row.job_id,
+    company_id:   row.company_id,
+    created_at:   String(row.created_at),
+    updated_at:   row.updated_at ? String(row.updated_at) : undefined,
+    expires_at:   row.expires_at ? String(row.expires_at) : undefined,
+    status:       row.status,
+    title:        row.title,
+    role_summary: row.role_summary,
+    // DB stores requirement_type / min_proficiency; pipeline uses requirement_level / minimum_proficiency
+    skills_required: (row.skills_required ?? []).map((s: any) => ({
+      ontology_id:         s.ontology_id,
+      requirement_level:   s.requirement_level   ?? s.requirement_type,
+      minimum_proficiency: s.minimum_proficiency ?? s.min_proficiency,
+      context:             s.context,
+    })),
+    // DB stores flat salary columns; pipeline expects a nested salary object
+    salary: {
+      currency: row.salary_currency,
+      minimum:  Number(row.salary_minimum),
+      maximum:  Number(row.salary_maximum),
+      period:   row.salary_period ?? 'annual',
+    },
+    work_mode: row.work_mode,
+    // DB stores flat location columns; pipeline expects a nested location object
+    location: {
+      country: row.location_country,
+      region:  row.location_region,
+      city:    row.location_city,
+    },
+    employment_type: row.employment_type,
+    process: row.process_stages
+      ? { stages: row.process_stages, response_sla_days: row.response_sla_days }
+      : undefined,
+  };
 }

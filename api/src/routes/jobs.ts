@@ -100,7 +100,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         ${body.attest_no_institution_preference ?? false},
         ${body.attest_no_graduation_year_filter ?? false},
         ${body.attest_no_unpaid_work ?? false},
-        ${allAttested ? 'active' : 'pending_review'},
+        ${allAttested ? 'active' : 'draft'},
         ${allAttested ? new Date() : null}
       )
       RETURNING *
