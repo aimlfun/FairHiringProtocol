@@ -179,6 +179,10 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
 .rlbl{font-size:11px;color:var(--ink-light)}
 .tip{display:flex;gap:6px;padding:7px 9px;background:var(--gold-bg);border-radius:4px;font-size:11px;color:var(--ink-mid);margin-bottom:5px;line-height:1.4}
 .ti{color:var(--gold);flex-shrink:0}
+.ev-inp{font-size:10px;border:1px solid var(--rule);border-radius:3px;padding:2px 6px;color:var(--ink-light);background:var(--bg);width:120px;min-width:0;outline:none;transition:border-color .15s}
+.ev-inp:focus{border-color:var(--teal-dim)}
+.ev-inp::placeholder{color:var(--ink-faint)}
+.ev-inp.ev-invalid{border-color:var(--rust);color:var(--rust)}
 .rr{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:12px;color:var(--ink-mid);line-height:1.4}
 .rr:last-child{border-bottom:none}
 .rck{color:var(--teal);font-size:12px;flex-shrink:0;padding-top:1px}
@@ -396,9 +400,9 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         </div>
       </div>
       <div class="h-stats">
-        <div class="hs"><div class="hs-v">18</div><div class="hs-l">Matches</div></div>
-        <div class="hs"><div class="hs-v">7</div><div class="hs-l">Matched</div></div>
-        <div class="hs"><div class="hs-v">0</div><div class="hs-l">Ghosts</div></div>
+        <div class="hs"><div class="hs-v" id="kpi-active-matches">—</div><div class="hs-l">Matches</div></div>
+        <div class="hs"><div class="hs-v" id="kpi-matched">—</div><div class="hs-l">Matched</div></div>
+        <div class="hs"><div class="hs-v" id="kpi-ghosts">—</div><div class="hs-l">Ghosts</div></div>
       </div>
     </div>
   </div>
@@ -417,12 +421,11 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           <div class="rrow">
             <svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0">
               <circle cx="27" cy="27" r="21" fill="none" stroke="var(--cream-d)" stroke-width="5"/>
-              <circle cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="26.4" stroke-linecap="round" transform="rotate(-90 27 27)"/>
+              <circle class="strength-arc" cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="131.9" stroke-linecap="round" transform="rotate(-90 27 27)"/>
             </svg>
-            <div><div class="rval">80%</div><div class="rlbl">Complete</div></div>
+            <div><div class="strength-pct rval">0%</div><div class="rlbl">Complete</div></div>
           </div>
-          <div class="tip"><span class="ti">&#128161;</span>Set salary range &mdash; hard constraint in matching.</div>
-          <div class="tip"><span class="ti">&#128161;</span>Add evidence links to skill claims.</div>
+          <div class="strength-tips"></div>
           <button class="btn btn-t" style="width:100%;justify-content:center;margin-top:8px" onclick="go('profile')">Edit profile &#8594;</button>
         </div>
       </div>
@@ -444,10 +447,10 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
     <div class="sh" style="margin-bottom:14px">
       <div class="st">Match History</div>
       <div class="frow">
-        <button class="ft active" onclick="setFilter(this)">All (18)</button>
-        <button class="ft" onclick="setFilter(this)">Matched (7)</button>
-        <button class="ft" onclick="setFilter(this)">Not matched (9)</button>
-        <button class="ft" onclick="setFilter(this)">Borderline (2)</button>
+        <button class="ft active" data-decision="" onclick="setFilter(this)">All (0)</button>
+        <button class="ft" data-decision="matched" onclick="setFilter(this)">Matched (0)</button>
+        <button class="ft" data-decision="not_matched" onclick="setFilter(this)">Not matched (0)</button>
+        <button class="ft" data-decision="borderline" onclick="setFilter(this)">Borderline (0)</button>
       </div>
     </div>
     <div id="mh-cards"></div>
@@ -575,55 +578,44 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="pref-row">
           <div class="pref-lbl">Job type</div>
           <div class="pchips" id="chips-job-type">
-            <div class="pch on" data-val="permanent" onclick="this.classList.toggle('on')">Permanent</div>
-            <div class="pch" data-val="contract" onclick="this.classList.toggle('on')">Contract</div>
-            <div class="pch" data-val="part_time" onclick="this.classList.toggle('on')">Part-time</div>
-            <div class="pch" data-val="internship" onclick="this.classList.toggle('on')">Internship</div>
-            <div class="pch" data-val="apprenticeship" onclick="this.classList.toggle('on')">Apprenticeship</div>
+            <div class="pch" data-val="permanent" onclick="toggleChip(this)">Permanent</div>
+            <div class="pch" data-val="contract" onclick="toggleChip(this)">Contract</div>
+            <div class="pch" data-val="part_time" onclick="toggleChip(this)">Part-time</div>
+            <div class="pch" data-val="internship" onclick="toggleChip(this)">Internship</div>
+            <div class="pch" data-val="apprenticeship" onclick="toggleChip(this)">Apprenticeship</div>
           </div>
         </div>
         <div class="pref-row">
           <div class="pref-lbl">Work mode</div>
           <div class="pchips" id="chips-work-mode">
-            <div class="pch on" data-val="remote" onclick="this.classList.toggle('on')">Remote</div>
-            <div class="pch on" data-val="hybrid" onclick="this.classList.toggle('on')">Hybrid</div>
-            <div class="pch" data-val="on_site" onclick="this.classList.toggle('on')">On-site</div>
+            <div class="pch" data-val="remote" onclick="toggleChip(this)">Remote</div>
+            <div class="pch" data-val="hybrid" onclick="toggleChip(this)">Hybrid</div>
+            <div class="pch" data-val="on_site" onclick="toggleChip(this)">On-site</div>
           </div>
         </div>
         <div class="pref-row">
           <div class="pref-lbl">Work schedule</div>
-          <div class="pchips">
-            <div class="pch on" onclick="this.classList.toggle('on')">Full-time</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Part-time</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Compressed hours</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Flexitime</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">Shift work</div>
-            <div class="pch"    onclick="this.classList.toggle('on')">On-call</div>
+          <div class="pchips" id="chips-schedule">
+            <div class="pch"    data-val="full-time"         onclick="toggleChip(this)">Full-time</div>
+            <div class="pch"    data-val="part-time"         onclick="toggleChip(this)">Part-time</div>
+            <div class="pch"    data-val="compressed-hours"  onclick="toggleChip(this)">Compressed hours</div>
+            <div class="pch"    data-val="flexitime"         onclick="toggleChip(this)">Flexitime</div>
+            <div class="pch"    data-val="shift-work"        onclick="toggleChip(this)">Shift work</div>
+            <div class="pch"    data-val="on-call"           onclick="toggleChip(this)">On-call</div>
           </div>
         </div>
         <div class="pref-row">
           <div class="pref-lbl">Salary minimum<div class="pref-note">Hard constraint in matching</div></div>
           <div class="sal-row">
             <select class="pfld" id="pref-currency" style="max-width:72px"><option value="GBP">GBP &#163;</option><option value="USD">USD &#36;</option><option value="EUR">EUR &#8364;</option><option value="AUD">AUD &#36;</option></select>
-            <input class="pfld" id="pref-salary-min" type="number" value="70000" style="max-width:110px">
+            <input class="pfld" id="pref-salary-min" type="number" value="" style="max-width:110px" oninput="recalcStrength()">
             <select class="pfld" id="pref-salary-period" style="max-width:95px"><option value="annual">/ year</option><option value="daily">/ day</option><option value="hourly">/ hour</option><option value="weekly">/ week</option><option value="monthly">/ month</option></select>
           </div>
         </div>
         <div class="pref-row">
           <div class="pref-lbl">Locations<div class="pref-note">Country + city list</div></div>
           <div>
-            <div class="loc-list" id="loc-list">
-              <div class="loc-entry">
-                <select class="pfld" style="font-size:12px"><option>UK</option><option>US</option><option>DE</option><option>FR</option><option>NL</option><option>IE</option><option>AU</option><option>CA</option></select>
-                <input class="pfld" type="text" value="London, Reading, Bristol" placeholder="City 1, City 2&#8230;">
-                <button class="btn btn-g btn-sm" onclick="this.closest('.loc-entry').remove()">&#10005;</button>
-              </div>
-              <div class="loc-entry">
-                <select class="pfld" style="font-size:12px"><option>Remote</option></select>
-                <input class="pfld" type="text" value="UK (remote)" placeholder="Region or Worldwide">
-                <button class="btn btn-g btn-sm" onclick="this.closest('.loc-entry').remove()">&#10005;</button>
-              </div>
-            </div>
+            <div class="loc-list" id="loc-list"></div>
             <button class="btn btn-o btn-sm" style="margin-top:6px" onclick="addLoc()">+ Add location</button>
             <div style="font-size:11px;color:var(--ink-faint);margin-top:5px">Country is matched exactly. Cities are used in Stage 3 constraint satisfaction.</div>
           </div>
@@ -632,12 +624,12 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           <div class="pref-lbl">Notice period<div class="pref-note">Constraint in matching</div></div>
           <div style="display:flex;gap:6px;align-items:center">
             <select class="pfld" style="max-width:80px" id="np-n">
-              <option>0</option><option>1</option><option>2</option><option selected>4</option>
+              <option selected>0</option><option>1</option><option>2</option><option>4</option>
               <option>6</option><option>8</option><option>12</option><option>16</option>
             </select>
             <select class="pfld" style="max-width:120px" id="np-u">
-              <option value="immediately">immediately</option>
-              <option value="weeks" selected>weeks</option>
+              <option value="immediately" selected>immediately</option>
+              <option value="weeks">weeks</option>
               <option value="months">months</option>
             </select>
           </div>
@@ -645,13 +637,13 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="pref-row">
           <div class="pref-lbl">Right to work<div class="pref-note">Stage 3 constraint</div></div>
           <div>
-            <div class="pchips" style="margin-bottom:6px">
-              <div class="pch on" onclick="this.classList.toggle('on')">UK</div>
-              <div class="pch on" onclick="this.classList.toggle('on')">EU / EEA</div>
-              <div class="pch"    onclick="this.classList.toggle('on')">US</div>
-              <div class="pch"    onclick="this.classList.toggle('on')">Canada</div>
-              <div class="pch"    onclick="this.classList.toggle('on')">Australia</div>
-              <div class="pch"    onclick="this.classList.toggle('on')">UAE</div>
+            <div class="pchips" id="chips-rtw" style="margin-bottom:6px">
+              <div class="pch" data-val="GB" onclick="toggleChip(this)">UK</div>
+              <div class="pch" data-val="EU" onclick="toggleChip(this)">EU / EEA</div>
+              <div class="pch"    data-val="US" onclick="toggleChip(this)">US</div>
+              <div class="pch"    data-val="CA" onclick="toggleChip(this)">Canada</div>
+              <div class="pch"    data-val="AU" onclick="toggleChip(this)">Australia</div>
+              <div class="pch"    data-val="AE" onclick="toggleChip(this)">UAE</div>
             </div>
             <div style="font-size:11px;color:var(--ink-faint);line-height:1.4">Verifying right to work before employment is a legal obligation in most countries. FHP uses this in Stage 3 constraint satisfaction &mdash; roles requiring sponsorship are flagged, not excluded automatically.</div>
           </div>
@@ -666,23 +658,17 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           <div class="rrow">
             <svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0">
               <circle cx="27" cy="27" r="21" fill="none" stroke="var(--cream-d)" stroke-width="5"/>
-              <circle cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="26.4" stroke-linecap="round" transform="rotate(-90 27 27)"/>
+              <circle class="strength-arc" cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="131.9" stroke-linecap="round" transform="rotate(-90 27 27)"/>
             </svg>
-            <div><div class="rval">80%</div><div class="rlbl">Complete</div></div>
+            <div><div class="strength-pct rval">0%</div><div class="rlbl">Complete</div></div>
           </div>
-          <div class="tip"><span class="ti">&#128161;</span>Set salary range to unlock full matching.</div>
-          <div class="tip"><span class="ti">&#128161;</span>Add evidence URLs to skills.</div>
-          <div class="tip"><span class="ti">&#128161;</span>Set right-to-work countries.</div>
+          <div class="strength-tips"></div>
         </div>
       </div>
       <div class="sc">
         <div class="sc-h">Matching Eligibility</div>
-        <div class="sc-b">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:17px;color:var(--sage)">&#10003;</span>
-            <div style="font-size:13px;color:var(--sage);font-weight:500">Eligible for matching</div>
-          </div>
-          <div style="font-size:11px;color:var(--ink-light);line-height:1.5">Age confirmed &middot; Terms accepted &middot; 1+ skills on profile</div>
+        <div class="sc-b" id="eligibility-widget">
+          <div style="padding:8px 0;color:var(--ink-faint);font-size:12px">Checking…</div>
         </div>
       </div>
     </aside>
@@ -732,10 +718,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="gdpr-c">
           <div class="gdpr-t">&#128229; Access &amp; Export</div>
           <div class="gdpr-b">Download everything FHP holds about you in open FHP JSON format &mdash; your profile, match history, explanations, and appeal records. Your right to receive a copy of your personal data and to take it elsewhere. Fulfilled instantly, any time.</div>
-          <button class="btn btn-o btn-sm" onclick="(async () => {
-        const data = await api('GET', '/candidates/me/export');
-        if (data) alert('Your data export is ready. In production this would trigger a download.');
-      })()">Download my data</button>
+          <button class="btn btn-o btn-sm" id="download-data-btn" onclick="downloadMyData(this)">Download my data</button>
         </div>
         <div class="gdpr-c">
           <div class="gdpr-t">&#9999;&#65039; Rectification</div>
@@ -745,11 +728,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="gdpr-c" style="background:var(--rust-bg);border-color:rgba(160,56,32,.2)">
           <div class="gdpr-t" style="color:var(--rust)">&#128465;&#65039; Delete Account</div>
           <div class="gdpr-b" style="color:var(--ink-mid)">Your email, profile, and login credentials are permanently deleted. Historical match records are retained in fully anonymised form &mdash; your identifier is replaced with a new random UUID with no link to you &mdash; to preserve the governance audit trail. This is permitted where retention serves a legitimate purpose and you cannot be re-identified from the retained data. This cannot be undone.</div>
-          <button class="btn btn-r btn-sm" onclick="(async () => {
-        if (!confirm('Delete account? Your PII is removed. Anonymised audit records are retained for the governance trail.')) return;
-        const result = await api('DELETE', '/candidates/me');
-        if (result) { sessionStorage.clear(); window.location.href = 'landing-page.html'; }
-      })()">Delete my account</button>
+          <button class="btn btn-r btn-sm" onclick="openDelModal()">Delete my account</button>
         </div>
       </div>
       <div class="pc">
@@ -782,12 +761,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
               <th style="text-align:left;padding:6px 0;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-light)">Given</th>
               <th style="padding:6px 0;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-light)">Withdraw</th>
             </tr></thead>
-            <tbody>
-              <tr style="border-bottom:1px solid var(--rule)"><td style="padding:8px 0">Job matching service</td><td style="padding:8px 10px;color:var(--ink-light)">Contract &mdash; necessary to provide the service</td><td style="padding:8px 0;color:var(--sage);font-family:var(--mono);font-size:10px">&#10003; Nov 01</td><td style="padding:8px 0;font-size:11px;color:var(--ink-faint)">Delete account</td></tr>
-              <tr style="border-bottom:1px solid var(--rule)"><td style="padding:8px 0">Age confirmation (18+)</td><td style="padding:8px 10px;color:var(--ink-light)">Legal obligation &mdash; minimum age required</td><td style="padding:8px 0;color:var(--sage);font-family:var(--mono);font-size:10px">&#10003; Nov 01</td><td style="padding:8px 0;font-size:11px;color:var(--ink-faint)">Irrevocable</td></tr>
-              <tr style="border-bottom:1px solid var(--rule)"><td style="padding:8px 0">Fairness metric contribution</td><td style="padding:8px 10px;color:var(--ink-light)">Explicit consent &mdash; special category demographic data</td><td style="padding:8px 0;color:var(--sage);font-family:var(--mono);font-size:10px">&#10003; Nov 01</td><td style="padding:8px 0"><button class="btn btn-g btn-sm" style="font-size:10px" onclick="alert('Withdraws fairness consent')">Withdraw</button></td></tr>
-              <tr><td style="padding:8px 0">Platform terms</td><td style="padding:8px 10px;color:var(--ink-light)">Contract</td><td style="padding:8px 0;color:var(--sage);font-family:var(--mono);font-size:10px">&#10003; Nov 01</td><td style="padding:8px 0"><a href="#" style="font-size:11px;color:var(--teal)">View terms</a></td></tr>
-            </tbody>
+            <tbody id="consent-record-body"></tbody>
           </table>
         </div>
       </div>
@@ -1051,6 +1025,37 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
     </div>
   </div>
 </div>
+
+<!-- ── DELETE ACCOUNT MODAL ── -->
+<div class="overlay" id="del-modal" onclick="if(event.target===this)closeDelModal()">
+  <div class="modal" style="max-width:440px">
+    <div class="mhdr" style="background:var(--rust);border-bottom:none">
+      <h2 class="mtitle" style="color:#fff;display:flex;align-items:center;gap:10px"><span style="font-size:20px">&#9888;&#65039;</span> Delete account</h2>
+      <button class="mx" style="color:#fff;opacity:.8" onclick="closeDelModal()">&#10005;</button>
+    </div>
+    <div class="mbody">
+      <p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:14px">
+        The following will be <strong>permanently deleted</strong>:
+      </p>
+      <ul style="font-size:12px;color:var(--ink-mid);line-height:1.8;margin:0 0 14px 18px">
+        <li>Your email address and login credentials</li>
+        <li>Your skills profile, work history, and preferences</li>
+        <li>Your demographic data (if provided)</li>
+      </ul>
+      <p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:6px">
+        Match and appeal records are <strong>retained in anonymised form</strong> only — your candidate ID is replaced with a new random UUID with no link to you. This is required to preserve the governance audit trail.
+      </p>
+      <div style="background:var(--rust-bg);border:1px solid rgba(160,56,32,.25);border-radius:5px;padding:10px 14px;margin:16px 0;font-size:12px;color:var(--rust);font-weight:600">
+        This cannot be undone. There is no recovery path.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-g" onclick="closeDelModal()">Cancel</button>
+        <button class="btn btn-r" id="del-confirm-btn" onclick="confirmDeleteAccount()">Delete my account permanently</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── NAVIGATION ──────────────────────────────────────────────────────────────────
 const PAGES = ['dashboard','matches','profile','appeals','data','rights'];
@@ -1065,6 +1070,7 @@ function go(p) {
   if (p === 'dashboard') loadMatches();
   if (p === 'matches')   loadMatches();
   if (p === 'appeals')   { loadAppeals(); loadAppealableMatches(); }
+  if (p === 'data')      loadConsentRecord();
 }
 
 // ── MOBILE MENU ─────────────────────────────────────────────────────────────────
@@ -1072,12 +1078,32 @@ function openMenu()  { document.getElementById('mob-bg').classList.add('open'); 
 function closeMenu() { document.getElementById('mob-bg').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── NOTIFICATIONS ───────────────────────────────────────────────────────────────
-const NOTIFS = [
-  { id:1, unread:true,  body:'<strong>Meridian Technologies</strong> has progressed your application to technical assessment.', time:'2h ago', job:'Senior Data Engineer', actions:true },
-  { id:2, unread:true,  body:'<strong>Citadel Group</strong> has invited you to a screening call for Data Analytics Lead.', time:'Yesterday', job:'Data Analytics Lead', actions:true },
-  { id:3, unread:false, body:'Your match for <strong>Staff ML Engineer at Apex Labs</strong> has been processed.', time:'Nov 04', actions:false },
-  { id:4, unread:false, body:'Appeal <strong>APP-2025-0108</strong> assigned to Technical Working Group.', time:'Nov 05', actions:false },
-];
+let NOTIFS = [];
+
+async function loadNotifications() {
+  const data = await api('GET', '/candidates/me/notifications?limit=20');
+  if (!data) return;
+  NOTIFS = (data.notifications || []).map(function(n) {
+    var d = new Date(n.created_at);
+    var now = new Date();
+    var diffMs = now - d;
+    var diffH = diffMs / 3600000;
+    var time = diffH < 1 ? 'Just now'
+             : diffH < 24 ? Math.floor(diffH) + 'h ago'
+             : diffH < 48 ? 'Yesterday'
+             : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+    return {
+      id:             n.notification_id,
+      interaction_id: n.interaction_id || null,
+      unread:         n.read_at === null,
+      body:           n.body || n.title || '',
+      time:           time,
+      job:            n.title || '',
+      actions:        !!(n.actions && n.interaction_id),
+    };
+  });
+  renderNotifs();
+}
 
 function renderNotifs() {
   const list  = document.getElementById('nlist');
@@ -1104,7 +1130,11 @@ async function toggleNotif(e) {
   e.stopPropagation();
   document.getElementById('ndrop').classList.toggle('open');
 }
-async function clearNotifs() { NOTIFS.forEach(n => n.unread = false); renderNotifs(); }
+async function clearNotifs() {
+  NOTIFS.forEach(n => n.unread = false);
+  renderNotifs();
+  await api('PUT', '/candidates/me/notifications/read-all', {});
+}
 async function respond(id, action) {
   const n = NOTIFS.find(x => x.id === id);
   if (n) {
@@ -1112,11 +1142,10 @@ async function respond(id, action) {
     n.body = (action === 'accept' ? '&#10003; Accepted' : '&#10007; Declined') + ' &mdash; ' + n.job;
     n.actions = false;
     renderNotifs();
-  }
-  // Real API call
-  const result = await api('PUT', '/candidates/me/interactions/' + id, { action });
-  if (result) {
-    alert((action === 'accept' ? 'Accepted' : 'Declined') + ' — saved.');
+    await api('PUT', '/candidates/me/notifications/' + id + '/read', {});
+    if (n.interaction_id) {
+      await api('PUT', '/candidates/me/interactions/' + n.interaction_id, { action });
+    }
   }
 }
 document.addEventListener('click', e => {
@@ -1125,56 +1154,41 @@ document.addEventListener('click', e => {
 });
 
 // ── MATCH CARDS ─────────────────────────────────────────────────────────────────
-const MATCHES = [
-  { id:'mx:a1b2', d:'matched',     sc:0.89, role:'Senior Data Engineer',
-    co:'Meridian Technologies', loc:'Remote \u00b7 \u00a385\u201390k \u00b7 Perm',
-    date:'Nov 06', trust:92, tl:'g',
-    sum:'Strong match \u2014 6 of 7 skills directly met. Spark transferred to data pipeline requirement.',
-    srows:[{l:'Skill match',v:0.92,c:'var(--sage)'},{l:'Transfer',v:0.60,c:'var(--teal-hi)'},{l:'Preference',v:1.00,c:'var(--sage)'}],
-    skills:[{i:'\u2713',c:'si-m',n:'Python',lv:'You: expert \u00b7 Required: proficient'},{i:'\u2713',c:'si-m',n:'Analytical SQL',lv:'expert / proficient'},{i:'\u27f3',c:'si-t',n:'Kubernetes (nice-to-have)',lv:'Via Docker \u00b7 49%'}],
-    ad:'Dec 06' },
-  { id:'mx:e5f6', d:'not_matched', sc:0.41, role:'Staff Machine Learning Engineer',
-    co:'Apex Labs', loc:'Hybrid \u00b7 \u00a3120\u2013160k \u00b7 Perm',
-    date:'Nov 04', trust:78, tl:'w',
-    sum:'Deep Learning and LLM Engineering below required proficiency levels.',
-    reasons:[{code:'below_minimum_proficiency',text:"'Deep Learning' requires expert. Your profile shows practitioner."},{code:'below_minimum_proficiency',text:"'LLM Engineering' requires proficient. Your profile shows aware."}],
-    next:['Build Deep Learning to expert \u2014 a published project or deployed system would qualify.','Develop LLM Engineering to proficient \u2014 a production deployment would qualify.'],
-    srows:[{l:'Skill match',v:0.34,c:'var(--rust)'},{l:'Preference',v:0.83,c:'var(--sage)'}],
-    ad:'Dec 04' },
-  { id:'mx:1a2b', d:'borderline',  sc:0.57, role:'Data Analytics Lead',
-    co:'Citadel Group', loc:'Hybrid \u00b7 \u00a375\u201395k \u00b7 Perm',
-    date:'Nov 01', trust:65, tl:'p',
-    sum:'0.03 below threshold. Employer opted into borderline review \u2014 a human reviewer will assess alongside the score.',
-    srows:[{l:'Skill match',v:0.62,c:'var(--gold)'},{l:'Preference',v:0.50,c:'var(--gold)'}],
-    ad:'Dec 01' },
-];
-
-const BD = d => d==='matched'?'b-m':d==='borderline'?'b-b':'b-n';
-const BI = d => d==='matched'?'\u2713':d==='borderline'?'\u25d1':'\u2717';
-const SN = d => d==='matched'?'sn-m':d==='borderline'?'sn-b':'sn-n';
-const CH = d => d==='matched'?'ch-m':d==='borderline'?'ch-b':'ch-n';
-const TC = t => t==='g'?'tb-g':t==='w'?'tb-w':'tb-p';
-const TT = m => m.tl==='g'?'\u2713 '+m.trust+'% compliance':m.tl==='w'?'\u26a0 '+m.trust+'% compliance':'\u2717 '+m.trust+'% compliance';
 
 async function loadMatches() {
   var c = document.getElementById('mh-cards');
   if (!c) return;
   c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">Loading matches…</div>';
   var data = await api('GET', '/candidates/me/matches?limit=50');
+  var fts = document.querySelectorAll('#pg-matches .ft');
+  function updateFilterCounts(all, matched, notMatched, borderline) {
+    if (fts.length >= 4) {
+      fts[0].textContent = 'All (' + all + ')';
+      fts[1].textContent = 'Matched (' + matched + ')';
+      fts[2].textContent = 'Not matched (' + notMatched + ')';
+      fts[3].textContent = 'Borderline (' + borderline + ')';
+    }
+  }
   if (!data || !data.matches || !data.matches.length) {
     c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">No matches yet. Complete your profile and enable matching to get started.</div>';
+    updateFilterCounts(0, 0, 0, 0);
     return;
   }
   c.innerHTML = '';
+  var matchedCount = 0, notMatchedCount = 0, borderlineCount = 0;
   data.matches.forEach(function(m, i) {
     var dec   = m.decision || 'not_matched';
-    var score = (m.composite_score || m.overall_score || 0);
+    if (dec === 'matched') matchedCount++;
+    else if (dec === 'borderline') borderlineCount++;
+    else notMatchedCount++;
+    var score = parseFloat(m.composite_score || m.overall_score || 0);
     var date  = m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
     var adDate = m.appeal_deadline ? new Date(m.appeal_deadline).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '30 days';
 
     var card = document.createElement('div');
     card.className = 'mc';
     card.style.animationDelay = (i * 0.06) + 's';
+    card.dataset.decision = dec;
 
     var badgeCls = dec === 'matched' ? 'mc-badge-m' : (dec === 'borderline' ? 'mc-badge-b' : 'mc-badge-n');
     var badgeIco = dec === 'matched' ? '✓' : (dec === 'borderline' ? '▲' : '✕');
@@ -1242,44 +1256,7 @@ async function loadMatches() {
     card.appendChild(xp);
     c.appendChild(card);
   });
-}
-
-
-function renderCards(cid, lim) {
-  const c = document.getElementById(cid);
-  if (!c) return;
-  c.innerHTML = MATCHES.slice(0, lim).map((m, i) => `
-    <div class="mc" style="animation-delay:${i*0.06}s">
-      <div class="mc-hdr" onclick="toggleExp(this)">
-        <div class="mc-badge ${BD(m.d)}">${BI(m.d)}</div>
-        <div class="mc-meta">
-          <div class="mc-role">${m.role}</div>
-          <div class="mc-co">${m.loc}
-            <span class="tb ${TC(m.tl)}" onclick="event.stopPropagation();showTrust('${m.id}')">${TT(m)}</span>
-          </div>
-          <div class="chips">
-            <span class="chip ${CH(m.d)}">${m.d.replace('_',' ')}</span>
-            <span class="chip ch-x">${m.date}</span>
-          </div>
-        </div>
-        <div class="mc-score"><div class="snum ${SN(m.d)}">${m.sc.toFixed(2)}</div><div class="slbl">score</div></div>
-      </div>
-      <div class="xbar" onclick="toggleXbar(this)"><span>Read full explanation</span><span class="xa">\u25be</span></div>
-      <div class="xp">
-        <div class="xsum">${m.sum}</div>
-        ${m.srows ? `<div class="elbl">Score breakdown</div><div class="srows">${m.srows.map(r=>`<div class="srow"><span class="srl">${r.l}</span><div class="sbar"><div class="sbf" style="width:${Math.round(r.v*100)}%;background:${r.c}"></div></div><span class="srv">${r.v.toFixed(2)}</span></div>`).join('')}</div>` : ''}
-        ${m.skills ? `<div class="elbl">Skill assessment</div><div class="sgrid">${m.skills.map(s=>`<div class="si ${s.c}"><span class="si-ico">${s.i}</span><div><div class="si-name">${s.n}</div><div class="si-lvl">${s.lv}</div></div></div>`).join('')}</div>` : ''}
-        ${m.reasons ? `<div class="elbl">Why not matched</div>${m.reasons.map(r=>`<div class="rc"><div class="rc-code">${r.code}</div><div class="rc-text">${r.text}</div></div>`).join('')}` : ''}
-        ${m.next ? `<div class="elbl">Next steps</div>${m.next.map(n=>`<div class="nxt"><span class="ni2">\u2192</span>${n}</div>`).join('')}` : ''}
-        <div class="ar">
-          <span class="an">${m.d==='matched'?'Matched':'Not matched'} ${m.date} \u00b7 appealable until ${m.ad}</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-o btn-sm" onclick="(async (mid) => { const t = await api('GET', '/candidates/me/matches/' + mid + '/trace'); if(t) alert('Trace loaded — ' + (t.stages?.length || 0) + ' pipeline stages. Check console for full trace.'); console.log('Match trace:', t); })(m.id)">Trace \u2197</button>
-            ${m.d !== 'matched' ? `<button class="btn btn-r btn-sm" onclick="openAppeal('${m.role}','${m.id}')">Appeal \u2192</button>` : ''}
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
+  updateFilterCounts(data.matches.length, matchedCount, notMatchedCount, borderlineCount);
 }
 
 function toggleExp(hdr) {
@@ -1295,13 +1272,13 @@ function toggleXbar(bar) {
   xa.classList.toggle('open', open);
   bar.querySelector('span:first-child').textContent = open ? 'Close explanation' : 'Read full explanation';
 }
-function showTrust(id) {
-  const m = MATCHES.find(x => x.id === id);
-  alert(m.co + ' compliance record\nScore: ' + m.trust + '%\nSee: governance-dashboard.html\nAPI: GET /v1/governance/metrics?company=' + id);
-}
 function setFilter(tab) {
   document.querySelectorAll('#pg-matches .ft').forEach(t => t.classList.remove('active'));
   tab.classList.add('active');
+  var dec = tab.dataset.decision;
+  document.querySelectorAll('#mh-cards .mc').forEach(function(card) {
+    card.style.display = (!dec || card.dataset.decision === dec) ? '' : 'none';
+  });
 }
 
 // ── SKILLS EDITOR ────────────────────────────────────────────────────────────────
@@ -1329,16 +1306,7 @@ const TRANSFERS = [
   {from:'fhp:skill:dbt',    to:'ELT Pipeline Design', weight:90, fromLabel:'dbt'},
 ];
 
-let skills = [
-  {id:'fhp:skill:python',   label:'Python',           domain:'Software Eng',    level:3},
-  {id:'fhp:skill:data-eng', label:'Data Engineering', domain:'Data & Analytics',level:3},
-  {id:'fhp:skill:sql',      label:'Analytical SQL',   domain:'Data & Analytics',level:3},
-  {id:'fhp:skill:spark',    label:'Apache Spark',      domain:'Data & Analytics',level:2},
-  {id:'fhp:skill:dbt',      label:'dbt',              domain:'Data & Analytics',level:1},
-  {id:'fhp:skill:docker',   label:'Docker',           domain:'Infrastructure',  level:2},
-  {id:'fhp:skill:aws',      label:'AWS',              domain:'Infrastructure',  level:1},
-  {id:'fhp:skill:k8s',      label:'Kubernetes',       domain:'Infrastructure',  level:0},
-];
+let skills = [];
 
 function renderSkills() {
   const el = document.getElementById('skills-list');
@@ -1353,9 +1321,14 @@ function renderSkills() {
           style="${li <= s.level ? 'background:' + PC[s.level] + ';border-color:' + PC[s.level] : ''}"></div>`).join('')}
       </div>
       <span class="plvl">${PROF[s.level]}</span>
+      <input class="ev-inp" type="text" placeholder="Evidence URL" value="${s.evidence_url || ''}"
+        oninput="skills[${i}].evidence_url=this.value;validateEvUrl(this);recalcStrength()"
+        title="Link to portfolio, cert, or work sample">
       <button class="sdel" onclick="removeSkill(${i})">&#10005;</button>
     </div>`).join('');
   renderTransfers();
+  document.querySelectorAll('#skills-list .ev-inp').forEach(validateEvUrl);
+  recalcStrength();
 }
 
 function setLvl(i, l)  { skills[i].level = l; renderSkills(); }
@@ -1414,7 +1387,8 @@ let certifications = [];
 
 function toggleRoleForm() {
   const f = document.getElementById('role-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  const hidden = getComputedStyle(f).display === 'none';
+  f.style.display = hidden ? 'block' : 'none';
 }
 
 function renderRoles() {
@@ -1423,6 +1397,7 @@ function renderRoles() {
   if (!list) return;
   if (!workHistory.length) {
     list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="role-empty">No roles added yet.</div>';
+    recalcStrength();
     return;
   }
   list.innerHTML = workHistory.map((r, i) => `
@@ -1433,6 +1408,7 @@ function renderRoles() {
       </div>
       <button class="sdel" onclick="removeRole(${i})" style="flex-shrink:0">&#10005;</button>
     </div>`).join('');
+  recalcStrength();
 }
 
 function removeRole(i) {
@@ -1488,6 +1464,7 @@ function renderCerts() {
   // Re-append the form div (it's inside the list container)
   const form = document.getElementById('cert-form');
   if (form) list.appendChild(form);
+  recalcStrength();
 }
 
 function removeCert(i) {
@@ -1523,8 +1500,9 @@ function addLoc() {
       <option>NL</option><option>IE</option><option>AU</option><option>CA</option>
     </select>
     <input class="pfld" type="text" placeholder="City 1, City 2\u2026">
-    <button class="btn btn-g btn-sm" onclick="this.closest('.loc-entry').remove()">&#10005;</button>`;
+    <button class="btn btn-g btn-sm" onclick="this.closest('.loc-entry').remove();recalcStrength()">&#10005;</button>`;
   list.appendChild(div);
+  recalcStrength();
 }
 
 // ── CERTS ─────────────────────────────────────────────────────────────────────────
@@ -1772,6 +1750,83 @@ function authHeaders() {
   };
 }
 
+// ── DOWNLOAD MY DATA ─────────────────────────────────────────────────────────────
+function _triggerDownload(data, filename, type) {
+  filename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+  var blob = new Blob([data], { type: type });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 0);
+}
+
+async function downloadMyData(btn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Preparing download…';
+  try {
+    const res = await fetch(API + '/candidates/me/export', {
+      headers: { Authorization: 'Bearer ' + (_token || '') },
+    });
+    if (!res.ok) throw new Error('Export failed: ' + res.status);
+    const text = await res.text();
+    _triggerDownload(
+      text,
+      'fhp-export-' + new Date().toISOString().slice(0, 10) + '.json',
+      'application/json'
+    );
+  } catch(e) {
+    btn.style.color = 'var(--rust)';
+    btn.textContent = 'Download failed — please try again';
+    setTimeout(() => { btn.style.color = ''; btn.textContent = label; btn.disabled = false; }, 3000);
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = label;
+}
+
+// ── DELETE ACCOUNT MODAL ──────────────────────────────────────────────────────────
+function openDelModal() {
+  document.getElementById('del-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDelModal() {
+  document.getElementById('del-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  const btn = document.getElementById('del-confirm-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Delete my account permanently'; }
+}
+async function confirmDeleteAccount() {
+  const btn = document.getElementById('del-confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  const result = await api('DELETE', '/candidates/me');
+  if (result) {
+    sessionStorage.clear();
+    window.location.href = 'landing-page.html';
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete my account permanently'; }
+  }
+}
+
+function isValidEvidenceUrl(url) {
+  if (!url || !url.trim()) return true; // empty is fine
+  try {
+    const u = new URL(url.trim());
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch { return false; }
+}
+function validateEvUrl(input) {
+  const ok = isValidEvidenceUrl(input.value);
+  input.classList.toggle('ev-invalid', !ok && input.value.trim() !== '');
+  input.title = (!ok && input.value.trim() !== '')
+    ? 'Must be a valid http:// or https:// URL'
+    : 'Link to portfolio, cert, or work sample';
+  return ok || input.value.trim() === '';
+}
+
 async function api(method, path, body) {
   try {
     const res = await fetch(API + path, {
@@ -1805,10 +1860,15 @@ async function loadDashboard() {
 
   // Match history summary
   const matches = await api('GET', '/candidates/me/matches?limit=3');
+  const elTotal   = document.getElementById('kpi-active-matches');
+  const elMatched = document.getElementById('kpi-matched');
   if (matches && matches.matches) {
-    const activeCount  = matches.matches.filter(m => m.decision === 'matched').length;
-    const el = document.getElementById('kpi-active-matches');
-    if (el) el.textContent = matches.total ?? activeCount;
+    const matchedCount = matches.matches.filter(m => m.decision === 'matched').length;
+    if (elTotal)   elTotal.textContent   = matches.total ?? matches.matches.length;
+    if (elMatched) elMatched.textContent = matchedCount;
+  } else {
+    if (elTotal)   elTotal.textContent   = 0;
+    if (elMatched) elMatched.textContent = 0;
   }
 
   // Ghosting events
@@ -1819,6 +1879,60 @@ async function loadDashboard() {
   }
 }
 
+
+async function loadConsentRecord() {
+  var tbody = document.getElementById('consent-record-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="padding:12px 0;color:var(--ink-faint)">Loading…</td></tr>';
+
+  var me = await api('GET', '/candidates/me');
+  var consentsData = await api('GET', '/candidates/me/consents');
+  if (!me) { tbody.innerHTML = ''; return; }
+
+  var regDate = me.created_at
+    ? new Date(me.created_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+    : '—';
+
+  var fairness = consentsData && consentsData.consents
+    && consentsData.consents.find(function(c) { return c.consent_type === 'fairness_metrics' && !c.withdrawn_at; });
+  var fairnessDate = fairness
+    ? new Date(fairness.given_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+    : null;
+
+  var cellStyle = 'padding:8px 0;';
+  var bdStyle = 'border-bottom:1px solid var(--rule);';
+  var givenCell = function(d) {
+    return '<td style="' + cellStyle + 'color:var(--sage);font-family:var(--mono);font-size:10px">✓ ' + d + '</td>';
+  };
+  var notGivenCell = '<td style="' + cellStyle + 'color:var(--ink-faint);font-family:var(--mono);font-size:10px">Not given</td>';
+
+  var rows = '';
+  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Job matching service</td>'
+    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Contract — necessary to provide the service</td>'
+    + givenCell(regDate)
+    + '<td style="' + cellStyle + 'font-size:11px;color:var(--ink-faint)">Delete account</td></tr>';
+
+  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Age confirmation (18+)</td>'
+    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Legal obligation — minimum age required</td>'
+    + givenCell(regDate)
+    + '<td style="' + cellStyle + 'font-size:11px;color:var(--ink-faint)">Irrevocable</td></tr>';
+
+  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Fairness metric contribution</td>'
+    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Explicit consent — special category demographic data</td>'
+    + (fairnessDate ? givenCell(fairnessDate) : notGivenCell)
+    + '<td style="' + cellStyle + '">'
+    + (fairness
+        ? '<button class="btn btn-g btn-sm" style="font-size:10px" onclick="alert(\'Withdraws fairness consent\')">Withdraw</button>'
+        : '<span style="font-size:11px;color:var(--ink-faint)">N/A</span>')
+    + '</td></tr>';
+
+  rows += '<tr><td style="' + cellStyle + '">Platform terms</td>'
+    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Contract</td>'
+    + givenCell(regDate)
+    + '<td style="' + cellStyle + '"><a href="#" style="font-size:11px;color:var(--teal)">View terms</a></td></tr>';
+
+  tbody.innerHTML = rows;
+}
 
 async function loadConsentAndDemographics() {
   // Check DB for active fairness consent
@@ -1869,12 +1983,20 @@ async function saveProfile() {
   if (ok)  ok.style.display  = 'none';
   if (err) err.style.display = 'none';
 
+  const badUrls = skills.filter(s => s.evidence_url && !isValidEvidenceUrl(s.evidence_url));
+  if (badUrls.length > 0) {
+    if (err) { err.textContent = 'Fix invalid evidence URL(s) before saving.'; err.style.display = 'inline'; }
+    if (btn) btn.disabled = false;
+    return;
+  }
+
   // Build skills payload
   const skillsPayload = skills.map(s => ({
-    ontology_id:  s.id,
-    label:        s.label,
-    domain:       s.domain,
-    proficiency:  PROF_KEYS[s.level] || 'practitioner',
+    ontology_id:     s.id,
+    label:           s.label,
+    domain:          s.domain,
+    proficiency:     PROF_KEYS[s.level] || 'practitioner',
+    evidence_url:    s.evidence_url || null,
     years_experience: null,
   }));
 
@@ -1883,10 +2005,19 @@ async function saveProfile() {
     const chips = document.querySelectorAll('#' + groupId + ' .pch.on');
     return Array.from(chips).map(c => c.dataset.val || c.textContent.trim().toLowerCase());
   };
+  const locEntries = [...document.querySelectorAll('#loc-list .loc-entry')].map(e => {
+    const sel = e.querySelector('select');
+    const inp = e.querySelector('input');
+    return { country: sel?.value || '', cities: inp?.value || '' };
+  }).filter(l => l.country);
+
   const prefsPayload = {
     certifications,
-    job_types:      chipVals('chips-job-type'),
-    work_modes:     chipVals('chips-work-mode'),
+    job_types:       chipVals('chips-job-type'),
+    work_modes:      chipVals('chips-work-mode'),
+    work_schedules:  chipVals('chips-schedule'),
+    right_to_work:   chipVals('chips-rtw'),
+    locations:       locEntries,
     salary_minimum: parseFloat(document.getElementById('pref-salary-min')?.value || '0'),
     salary_currency: document.getElementById('pref-currency')?.value || 'GBP',
     salary_period:  document.getElementById('pref-salary-period')?.value || 'annual',
@@ -1917,10 +2048,11 @@ async function loadProfile() {
   // Restore skills
   if (profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0) {
     skills = profile.skills.map(s => ({
-      id:     s.ontology_id || s.id || 'fhp:skill:unknown',
-      label:  s.label       || s.ontology_id || 'Unknown',
-      domain: s.domain      || 'Other',
-      level:  PROF_KEYS.indexOf(s.proficiency) >= 0 ? PROF_KEYS.indexOf(s.proficiency) : 1,
+      id:           s.ontology_id  || s.id || 'fhp:skill:unknown',
+      label:        s.label        || s.ontology_id || 'Unknown',
+      domain:       s.domain       || 'Other',
+      level:        PROF_KEYS.indexOf(s.proficiency) >= 0 ? PROF_KEYS.indexOf(s.proficiency) : 1,
+      evidence_url: s.evidence_url || '',
     }));
     renderSkills();
   }
@@ -1976,18 +2108,109 @@ async function loadProfile() {
         chip.classList.toggle('on', p.work_modes.includes(chip.dataset.val));
       });
     }
+
+    // Chips — work schedules
+    if (Array.isArray(p.work_schedules)) {
+      document.querySelectorAll('#chips-schedule .pch').forEach(chip => {
+        chip.classList.toggle('on', p.work_schedules.includes(chip.dataset.val));
+      });
+    }
+
+    // Chips — right to work
+    if (Array.isArray(p.right_to_work)) {
+      document.querySelectorAll('#chips-rtw .pch').forEach(chip => {
+        chip.classList.toggle('on', p.right_to_work.includes(chip.dataset.val));
+      });
+    }
+
+    recalcStrength();
   }
+  renderEligibility(profile.skills);
+}
+
+// ── MATCHING ELIGIBILITY ──────────────────────────────────────────────────────────
+function renderEligibility(profileSkills) {
+  var w = document.getElementById('eligibility-widget');
+  if (!w) return;
+  var hasSkills  = Array.isArray(profileSkills) && profileSkills.length > 0;
+  var eligible   = hasSkills; // age + terms always true for registered users
+  var iconColor  = eligible ? 'var(--sage)' : 'var(--gold)';
+  var icon       = eligible ? '&#10003;' : '&#9888;';
+  var label      = eligible ? 'Eligible for matching' : 'Not yet eligible';
+  var labelColor = eligible ? 'var(--sage)' : 'var(--gold)';
+  var checks = [
+    { met: true,      text: 'Age confirmed' },
+    { met: true,      text: 'Terms accepted' },
+    { met: hasSkills, text: hasSkills ? skills.length + ' skill' + (skills.length === 1 ? '' : 's') + ' on profile' : 'Add at least 1 skill' },
+  ];
+  w.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+    + '<span style="font-size:17px;color:' + iconColor + '">' + icon + '</span>'
+    + '<div style="font-size:13px;color:' + labelColor + ';font-weight:500">' + label + '</div>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--ink-light);line-height:1.8">'
+    + checks.map(function(c) {
+        return '<span style="color:' + (c.met ? 'var(--sage)' : 'var(--rust)') + '">'
+          + (c.met ? '&#10003;' : '&#10007;') + '</span> ' + c.text;
+      }).join(' &middot; ')
+    + '</div>';
+}
+
+// ── PROFILE STRENGTH ─────────────────────────────────────────────────────────────
+function toggleChip(el) { el.classList.toggle('on'); recalcStrength(); }
+
+function recalcStrength() {
+  const CIRC = 131.9;
+  const components = [
+    { weight: 20, met: skills.length > 0,
+      tip: 'Add at least one skill to enable matching.' },
+    { weight: 15, met: workHistory.length > 0,
+      tip: 'Add a work history role to improve match quality.' },
+    { weight: 15, met: parseFloat(document.getElementById('pref-salary-min')?.value || '0') > 0,
+      tip: 'Set a salary minimum — it\'s a hard constraint in matching.' },
+    { weight: 10, met: document.querySelectorAll('#chips-rtw .pch.on').length > 0,
+      tip: 'Set your right-to-work countries.' },
+    { weight: 10, met: document.querySelectorAll('#loc-list .loc-entry').length > 0,
+      tip: 'Add at least one preferred location.' },
+    { weight: 10, met: document.querySelectorAll('#chips-job-type .pch.on').length > 0,
+      tip: 'Select your preferred job type (permanent, contract…).' },
+    { weight: 10, met: document.querySelectorAll('#chips-work-mode .pch.on').length > 0,
+      tip: 'Select your preferred work mode (remote, hybrid…).' },
+    { weight: 10, met: skills.some(s => s.evidence_url && isValidEvidenceUrl(s.evidence_url)),
+      tip: 'Add a valid evidence URL (http/https) to at least one skill claim.' },
+  ];
+
+  const pct = components.reduce((sum, c) => sum + (c.met ? c.weight : 0), 0);
+  const offset = CIRC * (1 - pct / 100);
+  const tips = components.filter(c => !c.met).map(c =>
+    `<div class="tip"><span class="ti">&#128161;</span>${c.tip}</div>`).join('');
+
+  document.querySelectorAll('.strength-arc').forEach(el => {
+    el.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  });
+  document.querySelectorAll('.strength-pct').forEach(el => {
+    el.textContent = pct + '%';
+  });
+  document.querySelectorAll('.strength-tips').forEach(el => {
+    el.innerHTML = tips;
+  });
+  renderEligibility(skills);
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────────
 renderSkills();
 renderRoles();
 renderCerts();
-renderNotifs();
+loadNotifications();
 loadMatches();
 loadDashboard();
 loadConsentAndDemographics();
 loadProfile();
+
+const _startTab = window.location.hash.replace('#', '');
+if (_startTab && document.getElementById('pg-' + _startTab)) {
+  go(_startTab);
+  history.replaceState(null, '', window.location.pathname);
+}
 
 </script>
 </body>

@@ -786,6 +786,63 @@
       <!-- ── VOTES TAB ── -->
       <div id="gov-votes" class="gov-tab-content" style="display:none">
         <div class="section-rule"><div class="section-rule-line"></div><span class="section-label">Protocol Council Vote Record</span><div class="section-rule-line"></div></div>
+
+        <!-- Record vote form — only shown when authenticated as governance role -->
+        <div id="record-vote-panel" style="display:none;background:var(--bg-card);border:1px solid var(--rule);padding:20px;margin-bottom:24px">
+          <div style="font-family:var(--serif);font-size:15px;font-weight:700;margin-bottom:14px">Record a Protocol Council Vote</div>
+          <div id="record-vote-error" style="display:none;color:var(--crimson);font-family:var(--mono);font-size:11px;margin-bottom:10px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">RESOLUTION REF *</label>
+              <input id="vote-resolution-ref" type="text" placeholder="e.g. FHP-PC-2025-001" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:12px">
+            </div>
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">QUESTION *</label>
+              <input id="vote-question" type="text" placeholder="Resolution question text" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:12px">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr) repeat(2,1fr) 1fr;gap:12px;margin-bottom:12px;align-items:end">
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">VOTES FOR *</label>
+              <input id="vote-for" type="number" min="0" max="6" value="0" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:13px;text-align:center">
+            </div>
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">VOTES AGAINST *</label>
+              <input id="vote-against" type="number" min="0" max="6" value="0" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:13px;text-align:center">
+            </div>
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">ABSTAIN *</label>
+              <input id="vote-abstain" type="number" min="0" max="6" value="0" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:13px;text-align:center">
+            </div>
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">MAJORITY REQ.</label>
+              <input id="vote-majority" type="number" min="1" max="10" value="4" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:13px;text-align:center">
+            </div>
+            <div>
+              <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">ELIGIBLE</label>
+              <input id="vote-eligible" type="number" min="1" max="10" value="6" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:13px;text-align:center">
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end">
+              <label style="font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input id="vote-fob-veto" type="checkbox"> FOB VETO
+              </label>
+            </div>
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-mid);margin-bottom:4px">NOTES (optional)</label>
+            <textarea id="vote-notes" rows="2" style="width:100%;padding:8px;border:1px solid var(--rule);background:var(--bg);font-family:var(--mono);font-size:12px;resize:vertical" placeholder="Context or record notes…"></textarea>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onclick="submitVote()" style="padding:9px 20px;background:var(--ink);color:var(--bg);border:none;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:0.08em">RECORD VOTE</button>
+            <button onclick="document.getElementById('record-vote-panel').style.display='none'" style="padding:9px 16px;background:transparent;border:1px solid var(--rule);cursor:pointer;font-family:var(--mono);font-size:11px">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Show button if governance-authenticated -->
+        <div id="record-vote-btn-wrap" style="display:none;margin-bottom:16px">
+          <button onclick="document.getElementById('record-vote-panel').style.display='block';this.closest('div').style.display='none'" style="padding:9px 18px;background:transparent;border:1px solid var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:0.08em">+ Record Vote</button>
+        </div>
+
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr style="border-bottom:2px solid var(--ink)">
             <th style="text-align:left;padding:10px 0;font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Resolution</th>
@@ -830,13 +887,9 @@
       <!-- Protocol versions -->
       <div class="side-widget">
         <div class="side-widget-title">Protocol Versions</div>
-        <div class="version-row">
-          <span class="version-num">v1.0.0</span>
-          <span class="version-date">2025-01-01</span>
-          <span class="version-desc">Initial release</span>
-          <span class="version-tag current">Current</span>
+        <div id="versions-list">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">Loading…</div>
         </div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--ink-faint);padding:6px 0;letter-spacing:0.08em">No prior versions · inaugural release</div>
       </div>
 
     </aside>
@@ -1073,22 +1126,7 @@ async function loadOverview() {
 
   // Recent votes sidebar
   const votesData = await api('GET', '/governance/votes?limit=4');
-  if (votesData) {
-    const votes = votesData.votes || [];
-    const el = document.getElementById('recent-votes-list');
-    el.innerHTML = votes.length
-      ? votes.map(v => {
-          const passed = v.result === 'passed';
-          const pending = v.result === 'pending' || !v.result;
-          return '<div class="vote-record">' +
-            '<span class="vote-proposal">' + (v.resolution_ref || v.proposal_id || '—') + ' · ' + (v.title || '').slice(0,40) + '</span>' +
-            '<span class="vote-result ' + (pending ? 'pending' : passed ? 'passed' : 'failed') + '">' +
-            (pending ? 'Pending' : (v.votes_for || '—') + '/' + (v.total_voters || '—') + (passed ? ' ✓' : ' ✗')) +
-            '</span>' +
-            '</div>';
-        }).join('')
-      : '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">No votes recorded.</div>';
-  }
+  if (votesData) updateRecentVotesSidebar(votesData.votes || []);
 }
 
 // ── Escalations tab ───────────────────────────────────────────────────────────
@@ -1225,11 +1263,130 @@ async function loadVotes() {
   }).join('');
 }
 
+// ── Submit vote ───────────────────────────────────────────────────────────────
+async function submitVote() {
+  const errEl = document.getElementById('record-vote-error');
+  errEl.style.display = 'none';
+
+  const resolution_ref = document.getElementById('vote-resolution-ref').value.trim();
+  const question       = document.getElementById('vote-question').value.trim();
+  const votes_for      = parseInt(document.getElementById('vote-for').value, 10);
+  const votes_against  = parseInt(document.getElementById('vote-against').value, 10);
+  const votes_abstain  = parseInt(document.getElementById('vote-abstain').value, 10);
+  const majority_required = parseInt(document.getElementById('vote-majority').value, 10);
+  const total_eligible    = parseInt(document.getElementById('vote-eligible').value, 10);
+  const fob_veto_exercised = document.getElementById('vote-fob-veto').checked;
+  const notes = document.getElementById('vote-notes').value.trim() || undefined;
+
+  if (!resolution_ref || resolution_ref.length < 5) {
+    errEl.textContent = 'Resolution ref must be at least 5 characters.';
+    errEl.style.display = '';
+    return;
+  }
+  if (!question || question.length < 10) {
+    errEl.textContent = 'Question must be at least 10 characters.';
+    errEl.style.display = '';
+    return;
+  }
+  if (isNaN(votes_for) || isNaN(votes_against) || isNaN(votes_abstain)) {
+    errEl.textContent = 'Vote counts must be valid numbers.';
+    errEl.style.display = '';
+    return;
+  }
+
+  const body = { resolution_ref, question, votes_for, votes_against, votes_abstain,
+                 majority_required, total_eligible, fob_veto_exercised, notes };
+
+  try {
+    const res = await fetch(API_BASE + '/governance/votes', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      errEl.textContent = json.message || 'Failed to record vote.';
+      errEl.style.display = '';
+      return;
+    }
+    // Reset form and refresh
+    document.getElementById('record-vote-panel').style.display = 'none';
+    document.getElementById('record-vote-btn-wrap').style.display = '';
+    document.getElementById('vote-resolution-ref').value = '';
+    document.getElementById('vote-question').value = '';
+    document.getElementById('vote-for').value = '0';
+    document.getElementById('vote-against').value = '0';
+    document.getElementById('vote-abstain').value = '0';
+    document.getElementById('vote-fob-veto').checked = false;
+    document.getElementById('vote-notes').value = '';
+    // Reload the votes table and sidebar
+    _tabLoaded.votes = false;
+    loadVotes();
+    // Refresh sidebar
+    const sideData = await api('GET', '/governance/votes?limit=4');
+    if (sideData) updateRecentVotesSidebar(sideData.votes || []);
+  } catch (e) {
+    errEl.textContent = 'Network error — check connection and try again.';
+    errEl.style.display = '';
+  }
+}
+
+// ── Protocol versions sidebar ─────────────────────────────────────────────────
+async function loadVersions() {
+  const data = await api('GET', '/governance/versions');
+  const el = document.getElementById('versions-list');
+  if (!el) return;
+  if (!data) {
+    el.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">Version data unavailable.</div>';
+    return;
+  }
+  const history = data.history || [];
+  const current = data.current || {};
+  el.innerHTML = history.map(v => {
+    const isCurrent = v.status === 'current';
+    return '<div class="version-row">' +
+      '<span class="version-num">v' + v.fhp_version + '</span>' +
+      '<span class="version-date">' + (v.released_at || '—') + '</span>' +
+      '<span class="version-desc">' + (v.label || '') + '</span>' +
+      (isCurrent ? '<span class="version-tag current">Current</span>' : '') +
+      '</div>';
+  }).join('') + (current.pipeline_version
+    ? '<div style="font-family:var(--mono);font-size:9px;color:var(--ink-faint);padding:6px 0;letter-spacing:0.08em">Pipeline v' + current.pipeline_version + '</div>'
+    : '');
+}
+
+function updateRecentVotesSidebar(votes) {
+  const el = document.getElementById('recent-votes-list');
+  if (!el) return;
+  el.innerHTML = votes.length
+    ? votes.map(v => {
+        const passed = v.result === 'passed';
+        const pending = v.result === 'pending' || !v.result;
+        return '<div class="vote-record">' +
+          '<span class="vote-proposal">' + (v.resolution_ref || v.proposal_id || '—') + '</span>' +
+          '<span class="vote-result ' + (pending ? 'pending' : passed ? 'passed' : 'failed') + '">' +
+          (pending ? 'Pending' : (v.votes_for || '—') + '/' + (v.total_eligible || '—') + (passed ? ' ✓' : ' ✗')) +
+          '</span>' +
+          '</div>';
+      }).join('')
+    : '<div style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">No votes recorded.</div>';
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   govShowTab('overview');
   _tabLoaded.overview = true;
   loadOverview();
+  loadVersions();
+  // Show vote-record button if authenticated as governance role
+  if (_token) {
+    try {
+      const payload = JSON.parse(atob(_token.split('.')[1]));
+      if (payload.role === 'governance') {
+        document.getElementById('record-vote-btn-wrap').style.display = '';
+      }
+    } catch (_) {}
+  }
 });
 </script>
 
