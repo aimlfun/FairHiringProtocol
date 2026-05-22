@@ -11,14 +11,8 @@
 import { v4 as uuidv4 }         from 'uuid';
 import type { PipelineContext }  from './context.ts';
 import { normalise }             from './stages/1-normalise.ts';
-import { expandSemantics }       from './stages/2-expand.ts';
-import { checkConstraints }      from './stages/3-constraints.ts';
-import { scoreSkills }           from './stages/4-skill-score.ts';
-import { applyTransfer }         from './stages/5-transfer.ts';
-import { scorePreferences }      from './stages/6-preference.ts';
-import { detectBias }            from './stages/7-bias-detect.ts';
-import { applyBiasCorrection }   from './stages/8-bias-correct.ts';
-import { generateExplanations }  from './stages/9-explain.ts';
+import { expandSemantics, checkConstraints, scoreSkills, applyTransfer } from './stages/2-5-stages.ts';
+import { scorePreferences, detectBias, applyBiasCorrection, generateExplanations } from './stages/6-9-stages.ts';
 import { TraceBuilder }          from '../shared/logger/trace-builder.ts';
 import { redistributeWeights }   from './utils/proficiency.ts';
 import { PipelineStageError }    from '../shared/errors/index.ts';
