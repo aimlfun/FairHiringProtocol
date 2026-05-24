@@ -97,11 +97,23 @@ export const config = {
   // Governance
   governanceApiKey: optionalEnv('GOVERNANCE_API_KEY', ''),
 
+  // Test helpers (dev only) — shared secret required on every request
+  testHelperKey: optionalEnv('TEST_HELPER_KEY', ''),
+
 } as const;
 
 // Validate at module load time — server will refuse to start if invalid
 if (config.jwt.secret.length < 32) {
   throw new Error('JWT_SECRET must be at least 32 characters. Generate with: openssl rand -base64 64');
+}
+
+if (config.isProduction) {
+  if (!config.governanceApiKey || config.governanceApiKey.startsWith('CHANGE_ME')) {
+    throw new Error('GOVERNANCE_API_KEY must be set in production. Generate with: openssl rand -base64 32');
+  }
+  if (config.corsOrigins.includes('*')) {
+    throw new Error('CORS_ORIGINS must not be * in production. Set explicit allowed origins.');
+  }
 }
 
 export type Config = typeof config;

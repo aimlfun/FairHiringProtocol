@@ -140,6 +140,7 @@ export async function withTransaction<T>(
 export async function checkDatabaseHealth(): Promise<{
   api:      'ok' | 'error';
   identity: 'ok' | 'error';
+  fairness: 'ok' | 'error';
 }> {
   const [apiResult, identityResult, fairnessResult] = await Promise.allSettled([
     db`SELECT 1 AS ok`,

@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 }                                from 'uuid';
 import { ConflictError, UnauthorisedError, ValidationError } from '../errors/index.ts';
+import { rejectHtml } from '../utils/validation.ts';
 
 const JURISDICTIONS = ['GB','US','DE','FR','NL','IE','AU','CA','SE','DK','NO','FI','SG','AE'];
 
@@ -72,6 +73,10 @@ export async function companyAuthRoutes(app: FastifyInstance): Promise<void> {
       throw new ValidationError(`Unsupported jurisdiction: ${body.jurisdiction}`);
     }
 
+    rejectHtml(body.legal_name,               'legal_name');
+    rejectHtml(body.compliance_contact_name,  'compliance_contact_name');
+    rejectHtml(body.registration_number,      'registration_number');
+
     // Check for duplicate company
     const existing = await app.db`
       SELECT company_id FROM matching.companies
@@ -107,7 +112,7 @@ export async function companyAuthRoutes(app: FastifyInstance): Promise<void> {
         registration_number, compliance_contact_name,
         compliance_contact_email, status, declared_monthly_roles,
         compliance_agreement_accepted, compliance_agreement_accepted_at,
-        compliance_agreement_version, created_at, updated_at
+        compliance_agreement_version, compliance_score, created_at, updated_at
       ) VALUES (
         ${companyId}, '1.0.0', ${body.legal_name}, ${body.jurisdiction},
         ${body.registration_number ?? null},
@@ -118,6 +123,7 @@ export async function companyAuthRoutes(app: FastifyInstance): Promise<void> {
         ${body.compliance_agreement_accepted ?? false},
         ${body.compliance_agreement_accepted ? now : null},
         ${body.compliance_agreement_accepted ? '1.0' : null},
+        1.0,
         ${now}, ${now}
       )
     `;

@@ -14,6 +14,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireCandidate }                                    from '../middleware/auth.ts';
 import { NotFoundError, ValidationError }                      from '../errors/index.ts';
+import { rejectHtml }                                          from '../utils/validation.ts';
 
 export async function notificationRoutes(app: FastifyInstance): Promise<void> {
 
@@ -138,6 +139,8 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
     const candidateId      = (request.user as any).candidateId as string;
     const { interactionId } = request.params as { interactionId: string };
     const { action, reason } = request.body as { action: 'accept' | 'decline'; reason?: string };
+
+    rejectHtml(reason, 'reason');
 
     // Verify interaction belongs to candidate and is active
     const interaction = await app.db`
@@ -291,7 +294,7 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
         WHERE consent_id = ${existing[0].consent_id as string}
         RETURNING consent_id, given_at
       `;
-      return reply.status(201).send({ consent_id: row.consent_id, consent_type, given_at: row.given_at });
+      return reply.status(201).send({ consent_id: row!.consent_id, consent_type, given_at: row!.given_at });
     }
 
     // New consent record
@@ -304,9 +307,9 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
     `;
 
     return reply.status(201).send({
-      consent_id:   row.consent_id,
+      consent_id:   row!.consent_id,
       consent_type,
-      given_at:     row.given_at,
+      given_at:     row!.given_at,
     });
   });
 

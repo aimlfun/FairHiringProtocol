@@ -5,6 +5,7 @@ import {
   JobBriefNotActiveError, CompanyNotActiveError, AppealWindowExpiredError,
   DuplicateAppealError
 } from '../errors/index.ts';
+import { rejectHtml } from '../utils/validation.ts';
 
 export async function jobRoutes(app: FastifyInstance): Promise<void> {
 
@@ -62,6 +63,18 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
 
     if (body.salary_maximum < body.salary_minimum) {
       throw new ValidationError('salary_maximum must be greater than or equal to salary_minimum');
+    }
+
+    rejectHtml(body.title as string,        'title');
+    rejectHtml(body.role_summary as string, 'role_summary');
+
+    // Validate skill ontology IDs against config.skills
+    const skillIds = (body.skills_required as any[]).map((s: any) => s.ontology_id as string);
+    const validSkills = await app.db`SELECT skill_id FROM config.skills WHERE skill_id = ANY(${skillIds}) AND active = TRUE`;
+    const validSet = new Set(validSkills.map((r: any) => r.skill_id as string));
+    const invalidSkills = skillIds.filter(id => !validSet.has(id));
+    if (invalidSkills.length > 0) {
+      throw new ValidationError(`Unknown skill ontology ID(s): ${invalidSkills.join(', ')}`);
     }
 
     const expiresAt = body.expires_at
@@ -142,6 +155,9 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
       LIMIT 1
     `;
     if (!check[0]) throw new NotFoundError('Job brief', jobId);
+
+    rejectHtml(body.title,        'title');
+    rejectHtml(body.role_summary, 'role_summary');
 
     const rows = await app.db`
       UPDATE matching.job_briefs SET

@@ -62,11 +62,9 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
 
     // Run pipeline in-process (reference impl)
     // In production: enqueue to job queue and return 202 Accepted
-    const { runPipeline }    = await import('../../../reference-impl/matching-engine/pipeline.ts');
-    const { buildContext }   = await import('../../../reference-impl/matching-engine/context.ts');
-    const { getOntology }    = await import('../../../reference-impl/ontology/loader.ts');
-    const { StubCohortService }         = await import('../../../reference-impl/bias/cohort.ts');
-    const { StubFairnessMetricsStore }  = await import('../../../reference-impl/fairness/store.ts');
+    const { runPipeline }  = await import('../../../reference-impl/matching-engine/pipeline.ts');
+    const { buildContext } = await import('../../../reference-impl/matching-engine/context.ts');
+    const { getOntology }  = await import('../../../reference-impl/ontology/loader.ts');
 
     const candidateRow = await app.db`
       SELECT * FROM matching.candidate_profiles WHERE candidate_id = ${candidateId}
@@ -75,6 +73,37 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       SELECT * FROM matching.job_briefs WHERE job_id = ${job_id}
     `;
 
+    // Pre-load cohort memberships and platform fairness metrics for real bias detection
+    const [cohortRows, metricsRows] = await Promise.all([
+      app.db`
+        SELECT cohort_id, characteristic
+        FROM matching.candidate_cohorts
+        WHERE candidate_id = ${candidateId}
+      `,
+      app.db`
+        SELECT cohort_stats
+        FROM analytical.fairness_metrics
+        WHERE scope_level = 'platform' AND cohort_stats IS NOT NULL
+        ORDER BY computed_at DESC LIMIT 1
+      `,
+    ]);
+
+    const candidateCohorts = (cohortRows as any[]).map(r => ({
+      characteristic: r.characteristic as string,
+      cohortId:       r.cohort_id as string,
+    }));
+    const cohortMetricsMap: Record<string, any> =
+      (metricsRows[0] as any)?.cohort_stats ?? {};
+
+    const realCohortService = {
+      async getCohorts(id: string) { return id === candidateId ? candidateCohorts : []; },
+    };
+    const realFairnessStore = {
+      getForCohort: (id: string): any   => cohortMetricsMap[id] ?? null,
+      getForJob:    (_id: string): any[] => [],
+      getForCompany:(_id: string): any[] => [],
+    };
+
     // Map DB rows to the pipeline's canonical type shapes.
     // The DB stores flat columns (salary_currency, location_country) and uses
     // different JSONB field names (requirement_type / min_proficiency) from
@@ -82,7 +111,7 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
     const mappedCandidate = mapCandidateProfile(candidateRow[0]);
     const mappedJob       = mapJobBrief(jobRow[0]);
 
-    const ctx    = buildContext(getOntology(), new StubFairnessMetricsStore(), new StubCohortService());
+    const ctx = buildContext(getOntology(), realFairnessStore as any, realCohortService as any);
     const result = await runPipeline(mappedCandidate as any, mappedJob as any, ctx);
 
     const decision   = result.candidateExplanation.outcome.decision;
@@ -142,6 +171,35 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
           ${app.db.json(trace)}, ${trace.checksum}
         )
       `;
+
+      // Create active_interaction when a match decision is 'matched'.
+      // The company must acknowledge, progress, or reject within the SLA window.
+      if (decision === 'matched') {
+        const slaDays = (jobRow[0]?.response_sla_days as number) ?? 10;
+        await tx`
+          INSERT INTO matching.active_interactions (
+            match_id, candidate_id, company_id, job_id,
+            current_stage, sla_deadline
+          ) VALUES (
+            ${result.matchId}, ${candidateId}, ${companyId}, ${job_id},
+            'initial_match_acknowledgement',
+            NOW() + (${slaDays}::smallint * INTERVAL '1 day')
+          )
+        `;
+        // stage_invitation notifies the candidate that the company has created
+        // an interaction and they are expected to acknowledge (FHP §7, scenario 5.8).
+        await tx`
+          INSERT INTO matching.candidate_notifications (
+            candidate_id, notification_type, title, body,
+            match_id, job_id, company_id, actions
+          ) VALUES (
+            ${candidateId}, 'stage_invitation',
+            ${'Interview process started: ' + jobTitle},
+            'The employer has acknowledged your match and opened the hiring process. Check your interactions.',
+            ${result.matchId}, ${job_id}, ${companyId}, '[]'::jsonb
+          )
+        `;
+      }
 
       // Notify candidate for matched and borderline decisions only.
       // not_matched decisions are silent per FHP protocol §7.2.

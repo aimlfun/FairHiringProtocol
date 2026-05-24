@@ -19,6 +19,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireCompany }                                       from '../middleware/auth.ts';
 import { NotFoundError, ValidationError }                       from '../errors/index.ts';
+import { rejectHtml }                                           from '../utils/validation.ts';
 
 export async function companiesExtendedRoutes(app: FastifyInstance): Promise<void> {
 
@@ -246,6 +247,8 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       reason_code: string; stage_notes?: string;
     };
 
+    rejectHtml(stage_notes, 'stage_notes');
+
     const interaction = await app.db`
       SELECT ai.interaction_id, ai.candidate_id, ai.match_id, ai.job_id, ai.status
       FROM matching.active_interactions ai
@@ -398,6 +401,8 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       action: 'resolve' | 'dispute'; resolution_notes?: string;
     };
 
+    rejectHtml(resolution_notes, 'resolution_notes');
+
     const event = await app.db`
       SELECT ghosting_id, status
       FROM matching.ghosting_events
@@ -493,6 +498,8 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
       metric_breached: string; job_id: string;
       escalation_id?: string; plan_text: string;
     };
+
+    rejectHtml(body.plan_text, 'plan_text');
 
     // Verify job belongs to this company
     const job = await app.db`

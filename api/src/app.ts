@@ -14,7 +14,7 @@
  *   6. Swagger (last — needs all routes registered to document them)
  */
 
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyError } from 'fastify';
 import helmet         from '@fastify/helmet';
 import cors           from '@fastify/cors';
 import rateLimit      from '@fastify/rate-limit';
@@ -49,7 +49,9 @@ import {
   referenceRoutes,
 }                                   from './routes/companies-extended.ts';
 import { governanceExtendedRoutes } from './routes/governance-extended.ts';
+import { authGovernanceRoutes }     from './routes/auth-governance.ts';
 import { demographicsRoutes }        from './routes/demographics.ts';
+import { testHelperRoutes }          from './routes/test-helpers.ts';
 
 export async function buildApp(): Promise<FastifyInstance> {
 
@@ -69,11 +71,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // ── CORS ────────────────────────────────────────────────────────────────────
+  const wildcardCors = config.corsOrigins.includes('*');
   await app.register(cors, {
-    origin: config.corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
-    credentials: true,
+    origin:         wildcardCors ? '*' : config.corsOrigins,
+    methods:        ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Governance-Api-Key'],
+    // credentials:true is incompatible with origin:* (CORS spec §3.2).
+    // Only enable when a specific origin list is configured.
+    credentials: !wildcardCors,
   });
 
   // ── Rate limiting ────────────────────────────────────────────────────────────
@@ -118,7 +123,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.decorate('fairnessDb', fairnessDb);  // fhp_fairness_service role — demographics only
 
   // ── OpenAPI / Swagger ────────────────────────────────────────────────────────
-  if (config.enableSwagger) {
+  if (config.enableSwagger && !config.isProduction) {
     await app.register(swagger, {
       openapi: {
         info: {
@@ -169,7 +174,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // In C# terms: this is the equivalent of UseExceptionHandler middleware.
   // Maps FHPApiError instances to structured JSON responses.
   // Handles Postgres errors, JWT errors, and validation errors from Fastify.
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler<FastifyError>((error, request, reply) => {
     const log = request.log;
 
     // FHP application errors — known, expected
@@ -261,7 +266,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   // All routes are prefixed with /v1 for versioning.
   // In C# terms: these are equivalent to controller registrations in MapControllers().
   await app.register(healthRoutes,     { prefix: '/v1' });
-  await app.register(authRoutes,       { prefix: '/v1/auth' });
+  await app.register(authRoutes,           { prefix: '/v1/auth' });
+  await app.register(authGovernanceRoutes, { prefix: '/v1/auth' });
   await app.register(candidateRoutes,  { prefix: '/v1/candidates' });
   await app.register(jobRoutes,        { prefix: '/v1/jobs' });
   await app.register(matchRoutes,      { prefix: '/v1/matches' });
@@ -279,6 +285,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(referenceRoutes,          { prefix: '/v1/reference' });
   await app.register(governanceExtendedRoutes, { prefix: '/v1/governance' });
   await app.register(demographicsRoutes,       { prefix: '/v1/candidates' });
+
+  // Dev-only endpoints for E2E test infrastructure (time manipulation, synthetic events)
+  if (config.isDevelopment) {
+    await app.register(testHelperRoutes, { prefix: '/v1/test-helpers' });
+  }
 
   return app;
 }

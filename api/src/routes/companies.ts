@@ -15,7 +15,8 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const companyId = (request.user as any).companyId as string;
     const rows = await app.db`
-      SELECT company_id, legal_name, jurisdiction, status, compliance_score,
+      SELECT company_id, legal_name, jurisdiction, status,
+             compliance_score::float AS compliance_score,
              strike_count_90d, declared_monthly_roles, created_at
       FROM matching.companies WHERE company_id = ${companyId} LIMIT 1
     `;
@@ -34,7 +35,7 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
       company, latestMetrics, openGhosting, activeJobs, recentAudit,
       bdSla, bdGhosting, bdFairness, bdRejection,
     ] = await Promise.all([
-      app.db`SELECT compliance_score, strike_count_90d, status FROM matching.companies WHERE company_id = ${companyId}`,
+      app.db`SELECT company_id, legal_name, compliance_score, strike_count_90d, status FROM matching.companies WHERE company_id = ${companyId}`,
       app.db`
         SELECT dir_value, dir_within_bounds, eod_value, eod_within_bounds,
                sds_value, sds_within_bounds, any_metric_breached,

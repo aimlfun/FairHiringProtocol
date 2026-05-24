@@ -124,7 +124,7 @@ export async function demographicsRoutes(app: FastifyInstance): Promise<void> {
         birth_year: {
           label:    'Birth year',
           type:     'integer',
-          min:      1930,
+          min:      1900,
           max:      new Date().getFullYear() - 16,
           legal_ref: 'Equality Act 2010 s.5',
         },
@@ -191,7 +191,7 @@ export async function demographicsRoutes(app: FastifyInstance): Promise<void> {
           },
           birth_year: {
             type: 'integer',
-            minimum: 1930,
+            minimum: 1900,
           },
           education_level: {
             type: 'string',

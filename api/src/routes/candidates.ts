@@ -13,6 +13,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireCandidate }                                    from '../middleware/auth.ts';
 import { NotFoundError, ValidationError, ForbiddenError }     from '../errors/index.ts';
+import { rejectHtml }                                          from '../utils/validation.ts';
 import { v4 as uuidv4 }                                        from 'uuid';
 
 export async function candidateRoutes(app: FastifyInstance): Promise<void> {
@@ -93,13 +94,35 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
       privacy?:      Record<string, unknown>;
     };
 
+    // Validate skill ontology IDs against config.skills
+    if (body.skills && body.skills.length > 0) {
+      const ids = (body.skills as any[]).map((s: any) => s.ontology_id).filter(Boolean) as string[];
+      if (ids.length !== body.skills.length) {
+        throw new ValidationError('Each skill must include an ontology_id');
+      }
+      const valid = await app.db`SELECT skill_id FROM config.skills WHERE skill_id = ANY(${ids}) AND active = TRUE`;
+      const validSet = new Set(valid.map((r: any) => r.skill_id as string));
+      const invalid = ids.filter(id => !validSet.has(id));
+      if (invalid.length > 0) {
+        throw new ValidationError(`Unknown skill ontology ID(s): ${invalid.join(', ')}`);
+      }
+    }
+
+    // Validate free-text fields in work_history
+    if (body.work_history) {
+      for (const entry of body.work_history as any[]) {
+        rejectHtml(entry.description,    'work_history[].description');
+        rejectHtml(entry.skills_context, 'work_history[].skills_context');
+      }
+    }
+
     // Build update dynamically — only update provided fields.
     // postgres.js requires JSON values to be wrapped in app.db.json() so the
     // driver sends them with the correct jsonb type binding rather than as text.
-    const skillsVal      = body.skills       ? app.db.json(body.skills)       : null;
-    const workHistoryVal = body.work_history ? app.db.json(body.work_history) : null;
-    const prefsVal       = body.preferences  ? app.db.json(body.preferences)  : null;
-    const privacyVal     = body.privacy      ? app.db.json(body.privacy)      : null;
+    const skillsVal      = body.skills       ? app.db.json(body.skills       as any) : null;
+    const workHistoryVal = body.work_history ? app.db.json(body.work_history as any) : null;
+    const prefsVal       = body.preferences  ? app.db.json(body.preferences  as any) : null;
+    const privacyVal     = body.privacy      ? app.db.json(body.privacy      as any) : null;
 
     // Auto-manage matching_eligible based on skills presence.
     // null = skills not provided in this request → keep current DB value.

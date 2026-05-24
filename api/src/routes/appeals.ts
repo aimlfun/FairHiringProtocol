@@ -5,6 +5,7 @@ import {
   JobBriefNotActiveError, CompanyNotActiveError, AppealWindowExpiredError,
   DuplicateAppealError
 } from '../errors/index.ts';
+import { rejectHtml } from '../utils/validation.ts';
 
 export async function appealRoutes(app: FastifyInstance): Promise<void> {
 
@@ -54,6 +55,8 @@ export async function appealRoutes(app: FastifyInstance): Promise<void> {
       LIMIT 1
     `;
     if (existing[0]) throw new DuplicateAppealError();
+
+    rejectHtml(body.detail, 'detail');
 
     const submissionDeadline = new Date((match[0].created_at as Date).getTime() + 30 * 24 * 60 * 60 * 1000);
     const twgDeadline        = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000); // 10 business days approx

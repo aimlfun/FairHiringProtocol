@@ -5,6 +5,7 @@ import {
   JobBriefNotActiveError, CompanyNotActiveError, AppealWindowExpiredError,
   DuplicateAppealError
 } from '../errors/index.ts';
+import { rejectHtml } from '../utils/validation.ts';
 
 export async function governanceRoutes(app: FastifyInstance): Promise<void> {
 
@@ -15,11 +16,12 @@ export async function governanceRoutes(app: FastifyInstance): Promise<void> {
       querystring: {
         type: 'object',
         properties: {
-          status:   { type: 'string', enum: ['open','in_review','pending_response','resolved'] },
-          priority: { type: 'string', enum: ['standard','urgent','critical'] },
-          assignee: { type: 'string' },
-          page:     { type: 'integer', minimum: 1, default: 1 },
-          limit:    { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          status:           { type: 'string', enum: ['open','in_review','pending_response','resolved'] },
+          priority:         { type: 'string', enum: ['standard','urgent','critical'] },
+          assignee:         { type: 'string' },
+          linked_appeal_id: { type: 'string', format: 'uuid' },
+          page:             { type: 'integer', minimum: 1, default: 1 },
+          limit:            { type: 'integer', minimum: 1, maximum: 100, default: 20 },
         },
       },
     },
@@ -28,13 +30,18 @@ export async function governanceRoutes(app: FastifyInstance): Promise<void> {
     const offset = ((q.page ?? 1) - 1) * (q.limit ?? 20);
 
     const rows = await app.db`
-      SELECT e.*, a.ground AS appeal_ground, a.detail AS appeal_detail
+      SELECT e.*,
+             a.ground        AS appeal_ground,
+             a.detail        AS appeal_detail,
+             co.legal_name   AS company_legal_name
       FROM matching.escalations e
-      LEFT JOIN matching.appeals a ON a.appeal_id = e.linked_appeal_id
+      LEFT JOIN matching.appeals  a  ON a.appeal_id  = e.linked_appeal_id
+      LEFT JOIN matching.companies co ON co.company_id = e.linked_company_id
       WHERE TRUE
-        ${q.status   ? app.db`AND e.status = ${q.status}`     : app.db``}
-        ${q.priority ? app.db`AND e.priority = ${q.priority}` : app.db``}
-        ${q.assignee ? app.db`AND e.assignee_body = ${q.assignee}` : app.db``}
+        ${q.status           ? app.db`AND e.status = ${q.status}`                   : app.db``}
+        ${q.priority         ? app.db`AND e.priority = ${q.priority}`               : app.db``}
+        ${q.assignee         ? app.db`AND e.assignee_body = ${q.assignee}`           : app.db``}
+        ${q.linked_appeal_id ? app.db`AND e.linked_appeal_id = ${q.linked_appeal_id}` : app.db``}
       ORDER BY
         CASE e.priority WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 ELSE 3 END,
         e.resolution_deadline ASC
@@ -63,6 +70,9 @@ export async function governanceRoutes(app: FastifyInstance): Promise<void> {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { escalationId } = request.params as { escalationId: string };
     const body = request.body as any;
+
+    rejectHtml(body.outcome_notes,  'outcome_notes');
+    rejectHtml(body.public_summary, 'public_summary');
 
     const rows = await app.db`
       UPDATE matching.escalations SET

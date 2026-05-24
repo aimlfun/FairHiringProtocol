@@ -13,6 +13,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireCandidate }                                    from '../middleware/auth.ts';
 import { NotFoundError, ValidationError }                      from '../errors/index.ts';
+import { rejectHtml }                                          from '../utils/validation.ts';
 
 export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void> {
 
@@ -105,6 +106,8 @@ export async function appealsExtendedRoutes(app: FastifyInstance): Promise<void>
     const candidateId  = (request.user as any).candidateId as string;
     const { appealId } = request.params as { appealId: string };
     const { action, reason } = request.body as { action: string; reason?: string };
+
+    rejectHtml(reason, 'reason');
 
     const appeal = await app.db`
       SELECT appeal_id, status

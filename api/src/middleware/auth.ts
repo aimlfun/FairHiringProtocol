@@ -23,7 +23,7 @@ import { config } from '../config/index.ts';
 // Extend FastifyRequest to carry the decoded JWT payload
 export interface JwtPayload {
   sub:          string;         // candidate_id or company_id
-  role:         'candidate' | 'company' | 'governance';
+  role:         'candidate' | 'company' | 'governance' | 'admin';
   candidateId?: string;
   companyId?:   string;
   iat:          number;
@@ -120,7 +120,7 @@ export async function requireGovernance(
   }
 
   const payload = request.user as unknown as JwtPayload;
-  if (payload.role !== 'governance') {
+  if (payload.role !== 'governance' && payload.role !== 'admin') {
     throw new ForbiddenError('This endpoint requires governance-level access');
   }
 }

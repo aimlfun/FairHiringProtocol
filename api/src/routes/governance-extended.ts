@@ -6,12 +6,14 @@
  * GET  /v1/governance/votes               — Protocol Council vote record
  * POST /v1/governance/votes               — record a PC vote
  * GET  /v1/governance/proposals           — FHP-P proposals list
+ * POST /v1/governance/proposals           — submit new proposal (governance auth)
  * GET  /v1/governance/proposals/:id       — single proposal detail
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireGovernance }                                   from '../middleware/auth.ts';
 import { NotFoundError }                                       from '../errors/index.ts';
+import { rejectHtml }                                          from '../utils/validation.ts';
 
 export async function governanceExtendedRoutes(app: FastifyInstance): Promise<void> {
 
@@ -216,10 +218,18 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
       fob_veto_exercised?: boolean; notes?: string;
     };
 
+    const totalCast = body.votes_for + body.votes_against + body.votes_abstain;
+    if (totalCast === 0) {
+      return reply.status(400).send({ error: 'VALIDATION_ERROR', message: 'At least one vote must be cast (for, against, or abstain).' });
+    }
+
     const majority = body.majority_required ?? 4;
     const result = body.fob_veto_exercised
       ? 'failed'
       : body.votes_for >= majority ? 'passed' : 'failed';
+
+    rejectHtml(body.question as string, 'question');
+    rejectHtml(body.notes    as string, 'notes');
 
     const [row] = await app.db`
       INSERT INTO matching.governance_votes (
@@ -255,13 +265,13 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
       INSERT INTO audit.governance_log (
         event_type, entity_type, entity_id, actor_type, actor_id, summary
       ) VALUES (
-        'pc_vote_recorded', 'vote', ${row.vote_id},
+        'pc_vote_recorded', 'vote', ${row!.vote_id},
         'governance', 'protocol-council',
         ${body.resolution_ref + ': ' + result.toUpperCase() + ' (' + body.votes_for + '/' + (body.total_eligible ?? 6) + ')'}
       )
     `;
 
-    return reply.status(201).send({ vote_id: row.vote_id, result, voted_at: row.voted_at });
+    return reply.status(201).send({ vote_id: row!.vote_id, result, voted_at: row!.voted_at });
   });
 
   /**
@@ -372,6 +382,61 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
   });
 
   /**
+   * POST /v1/governance/proposals
+   * Submit a new governance proposal. Requires governance or admin role.
+   */
+  app.post('/proposals', {
+    preHandler: [requireGovernance],
+    schema: {
+      tags: ['governance'],
+      summary: 'Submit a governance proposal (FHP-P)',
+      body: {
+        type: 'object',
+        required: ['proposal_ref', 'title', 'summary', 'submitted_by', 'document_body'],
+        additionalProperties: false,
+        properties: {
+          proposal_ref:       { type: 'string', minLength: 5, maxLength: 64 },
+          title:              { type: 'string', minLength: 5, maxLength: 256 },
+          summary:            { type: 'string', minLength: 10, maxLength: 2048 },
+          submitted_by:       { type: 'string', minLength: 1, maxLength: 256 },
+          affiliation:        { type: 'string', maxLength: 128 },
+          review_deadline:    { type: 'string', format: 'date-time' },
+          fhp_version_target: { type: 'string', maxLength: 32 },
+          document_body:      { type: 'string', minLength: 10, maxLength: 16384 },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const b = request.body as any;
+
+    rejectHtml(b.proposal_ref,       'proposal_ref');
+    rejectHtml(b.title,              'title');
+    rejectHtml(b.summary,            'summary');
+    rejectHtml(b.submitted_by,       'submitted_by');
+    rejectHtml(b.affiliation ?? '',  'affiliation');
+    rejectHtml(b.document_body,      'document_body');
+
+    const document = app.db.json({
+      sections: [{ heading: 'Proposal', body: b.document_body }],
+    });
+
+    const rows = await app.db`
+      INSERT INTO matching.governance_proposals (
+        proposal_ref, title, summary, submitted_by, affiliation,
+        status, review_deadline, fhp_version_target, document, submitted_at, created_at
+      ) VALUES (
+        ${b.proposal_ref}, ${b.title}, ${b.summary}, ${b.submitted_by},
+        ${b.affiliation ?? null}, 'under_review',
+        ${b.review_deadline ?? null}, ${b.fhp_version_target ?? null},
+        ${document}, NOW(), NOW()
+      )
+      RETURNING proposal_id, proposal_ref, status, submitted_at
+    `;
+
+    return reply.status(201).send(rows[0]);
+  });
+
+  /**
    * GET /v1/governance/versions
    * Protocol and pipeline version history from governance_constants.
    * Public — version history is transparency data.
@@ -382,15 +447,22 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
       summary: 'FHP protocol and pipeline version history',
     },
   }, async (_request: FastifyRequest, reply: FastifyReply) => {
-    const versions = await app.db`
-      SELECT key, value, protocol_version, description, created_at
-      FROM config.governance_constants
-      WHERE key IN ('FHP_VERSION', 'PIPELINE_VERSION')
-      ORDER BY key
-    `;
+    const [constants, history] = await Promise.all([
+      app.db`
+        SELECT key, value
+        FROM config.governance_constants
+        WHERE key IN ('FHP_VERSION', 'PIPELINE_VERSION')
+        ORDER BY key
+      `,
+      app.db`
+        SELECT fhp_version, released_at::text, label, status, changelog_url
+        FROM config.protocol_versions
+        ORDER BY released_at DESC
+      `,
+    ]);
 
     const versionMap: Record<string, string> = {};
-    for (const row of versions as any[]) {
+    for (const row of constants as any[]) {
       versionMap[row.key] = row.value;
     }
 
@@ -399,14 +471,7 @@ export async function governanceExtendedRoutes(app: FastifyInstance): Promise<vo
         fhp_version:      versionMap['FHP_VERSION'] ?? '1.0.0',
         pipeline_version: versionMap['PIPELINE_VERSION'] ?? '1.0.0',
       },
-      history: [
-        {
-          fhp_version:      '1.0.0',
-          released_at:      '2025-01-01',
-          label:            'Inaugural release',
-          status:           'current',
-        },
-      ],
+      history,
     });
   });
 

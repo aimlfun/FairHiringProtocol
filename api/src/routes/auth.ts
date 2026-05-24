@@ -74,6 +74,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
    * Candidate registration — creates identity + profile records atomically.
    */
   app.post('/register', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
     schema: {
       tags: ['auth'],
       summary: 'Register a new candidate account',
