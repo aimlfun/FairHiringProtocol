@@ -1379,7 +1379,9 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_token || '') };
 }
 
+let _lastApiError = null;
 async function api(method, path, body) {
+  _lastApiError = null;
   try {
     const res = await fetch(API_BASE + path, {
       method,
@@ -1387,7 +1389,12 @@ async function api(method, path, body) {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (res.status === 401) { sessionStorage.clear(); window.location.href = 'landing-page.html'; return null; }
-    return res.ok ? await res.json() : null;
+    if (!res.ok) {
+      try { _lastApiError = await res.json(); } catch { _lastApiError = { message: 'Request failed (' + res.status + ')' }; }
+      console.error('API error:', method, path, _lastApiError);
+      return null;
+    }
+    return await res.json();
   } catch (e) {
     console.error('API error:', method, path, e);
     return null;
@@ -1421,6 +1428,9 @@ function showPage(pageId) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function h(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 function fmtDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -1540,7 +1550,7 @@ async function loadOverview() {
       const exp = fmtDate(j.expires_at);
       const expiring = j.expires_at && (new Date(j.expires_at) - Date.now()) < 7 * 86400000;
       return '<tr>' +
-        '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
+        '<td><div class="job-title">' + h(j.title) + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
         '<td style="font-family:var(--mono)">' + (j.total_candidates || 0) + '</td>' +
         '<td style="font-family:var(--mono)">' + (j.matched_count || 0) + '</td>' +
         '<td><span class="score-cell ' + scoreClass(j.dir_value, 0.8, 0.7) + '">' + fmtScore(j.dir_value) + '</span></td>' +
@@ -1557,11 +1567,11 @@ async function loadOverview() {
     ghostList.innerHTML = '<div style="padding:12px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ No open ghosting events.</div>';
   } else {
     ghostList.innerHTML = ghosts.map(g =>
-      '<div class="ghost-item ' + g.severity + '">' +
+      '<div class="ghost-item ' + h(g.severity) + '">' +
       '<span class="ghost-id">' + g.ghosting_id.slice(0,8) + '</span>' +
-      '<span class="ghost-stage">' + g.stage_name + '</span>' +
+      '<span class="ghost-stage">' + h(g.stage_name) + '</span>' +
       '<span class="ghost-overdue">+' + Math.round(g.overdue_hours) + 'h overdue</span>' +
-      '<span class="tag ' + ghostTag(g.severity) + '">' + g.severity + '</span>' +
+      '<span class="tag ' + ghostTag(g.severity) + '">' + h(g.severity) + '</span>' +
       '</div>'
     ).join('');
   }
@@ -1619,8 +1629,8 @@ async function loadOverview() {
       '<div class="audit-row">' +
       '<span class="audit-time">' + fmtDate(e.occurred_at) + '</span>' +
       '<div class="audit-dot blue"></div>' +
-      '<span class="audit-msg">' + e.summary + '</span>' +
-      '<span class="tag info audit-tag">' + (e.event_type || '') + '</span>' +
+      '<span class="audit-msg">' + h(e.summary) + '</span>' +
+      '<span class="tag info audit-tag">' + h(e.event_type || '') + '</span>' +
       '</div>'
     ).join('');
   }
@@ -1643,7 +1653,7 @@ async function loadFairness() {
   tbody.innerHTML = _fairnessData.map(j => {
     const breach = j.breach_level !== 'ok';
     return '<tr>' +
-      '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
+      '<td><div class="job-title">' + h(j.title) + '</div><div class="job-id">' + j.job_id.slice(0,8) + '</div></td>' +
       '<td style="font-family:var(--mono)">' + (j.total_candidates_evaluated || 0) + '</td>' +
       '<td><span class="score-cell ' + scoreClass(j.dir_value, 0.85, 0.8) + '">' + fmtScore(j.dir_value) + '</span></td>' +
       '<td><span class="score-cell ' + (Math.abs(j.eod_value) <= 0.05 ? 'good' : 'poor') + '">' + fmtScore(j.eod_value) + '</span></td>' +
@@ -1714,8 +1724,8 @@ async function loadJobs() {
     const expiring = j.days_until_expiry != null && j.days_until_expiry <= 7;
     const sal = j.salary_currency + j.salary_minimum / 1000 + 'k–' + j.salary_maximum / 1000 + 'k';
     return '<tr>' +
-      '<td><div class="job-title">' + j.title + '</div><div class="job-id">' + j.employment_type + ' · ' + j.work_mode + '</div></td>' +
-      '<td><span class="tag ' + statusTag(j.status) + '">' + j.status + '</span></td>' +
+      '<td><div class="job-title">' + h(j.title) + '</div><div class="job-id">' + h(j.employment_type) + ' · ' + h(j.work_mode) + '</div></td>' +
+      '<td><span class="tag ' + statusTag(j.status) + '">' + h(j.status) + '</span></td>' +
       '<td style="font-family:var(--mono)">' + j.response_sla_days + 'd</td>' +
       '<td style="font-family:var(--mono)">' + (j.total_candidates || 0) + '</td>' +
       '<td style="font-family:var(--mono)">' + (j.matched_count || 0) + '</td>' +
@@ -1868,7 +1878,7 @@ async function loadPipeline() {
     var mainRow = '<tr style="cursor:pointer;border-bottom:1px solid var(--border)" onclick="togglePipelineRun(\'' + r.match_id + '\')">' +
       '<td style="text-align:center;font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:10px 4px"><span id="pr-icon-' + r.match_id + '">&#9654;</span></td>' +
       '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + r.match_id.slice(0, 8) + '</td>' +
-      '<td style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (r.job_title || '—') + '</td>' +
+      '<td style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + h(r.job_title || '—') + '</td>' +
       '<td><span class="tag ' + decisionTag(r.decision) + '">' + decisionLabel(r.decision) + '</span></td>' +
       '<td><span class="score-cell ' + scoreCls + '">' + scoreVal.toFixed(2) + '</span></td>' +
       '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + dur + '</td>' +
@@ -1918,11 +1928,11 @@ async function loadSLA() {
       (hrs < 24 ? Math.round(hrs) + 'h' : Math.round(hrs / 24) + 'd');
     const timeColor = isBreached ? 'var(--red)' : (hrs < 48 ? 'var(--amber)' : 'var(--green)');
     return '<tr>' +
-      '<td style="font-size:12px">' + (i.job_title || '—') + '</td>' +
-      '<td>' + (i.current_stage || '—') + '</td>' +
+      '<td style="font-size:12px">' + h(i.job_title || '—') + '</td>' +
+      '<td>' + h(i.current_stage || '—') + '</td>' +
       '<td style="font-family:var(--mono);font-size:10px;color:' + (isBreached ? 'var(--red)' : 'var(--text-dim)') + '">' + fmtDate(i.sla_deadline) + (isBreached ? ' ⚠' : '') + '</td>' +
       '<td style="font-family:var(--mono);font-size:11px;color:' + timeColor + '">' + timeStr + '</td>' +
-      '<td><span class="tag ' + slaTag(i.sla_status) + '">' + i.sla_status + '</span></td>' +
+      '<td><span class="tag ' + slaTag(i.sla_status) + '">' + h(i.sla_status) + '</span></td>' +
       '</tr>';
   }).join('');
 }
@@ -1948,11 +1958,11 @@ async function loadGhosting() {
   }
 
   list.innerHTML = _ghostingData.map(g =>
-    '<div class="ghost-item ' + g.severity + '" style="cursor:pointer">' +
+    '<div class="ghost-item ' + h(g.severity) + '" style="cursor:pointer">' +
     '<span class="ghost-id">' + g.ghosting_id.slice(0,8) + '</span>' +
-    '<span class="ghost-stage">' + g.stage_name + ' — ' + (g.status === 'open' ? '+' + Math.round(g.overdue_hours) + 'h overdue' : g.status) + '</span>' +
+    '<span class="ghost-stage">' + h(g.stage_name) + ' — ' + (g.status === 'open' ? '+' + Math.round(g.overdue_hours) + 'h overdue' : h(g.status)) + '</span>' +
     '<span class="ghost-overdue">' + (g.company_strike_count_at_detection > 0 ? 'Strike recorded' : 'No strike yet') + '</span>' +
-    '<span class="tag ' + ghostTag(g.severity) + '">' + g.severity + '</span>' +
+    '<span class="tag ' + ghostTag(g.severity) + '">' + h(g.severity) + '</span>' +
     (g.status === 'open'
       ? ' <button style="margin-left:8px;font-family:var(--mono);font-size:9px;background:var(--bg-hover);border:1px solid var(--border);color:var(--text);padding:2px 8px;cursor:pointer" onclick="resolveGhosting(' + "'" + g.ghosting_id + "'" + ')">Resolve →</button>'
       : '') +
@@ -1996,7 +2006,7 @@ async function loadRejections() {
     const sel = document.getElementById('rejection-code-select');
     sel.innerHTML = '<option value="">— Select reason code —</option>' +
       codesRes.rejection_codes.map(c =>
-        '<option value="' + c.code + '">' + c.code + ' — ' + c.label + '</option>'
+        '<option value="' + h(c.code) + '">' + h(c.code) + ' — ' + h(c.label) + '</option>'
       ).join('');
   }
 
@@ -2011,8 +2021,8 @@ async function loadRejections() {
   tbody.innerHTML = interactions.map(i =>
     '<tr>' +
     '<td style="font-family:var(--mono);font-size:10px">' + i.interaction_id.slice(0,8) + '</td>' +
-    '<td style="font-size:12px">' + (i.job_title || '—') + '</td>' +
-    '<td>' + (i.current_stage || '—') + '</td>' +
+    '<td style="font-size:12px">' + h(i.job_title || '—') + '</td>' +
+    '<td>' + h(i.current_stage || '—') + '</td>' +
     '<td style="font-family:var(--mono);font-size:10px;color:var(--amber)">' + fmtDate(i.sla_deadline) + '</td>' +
     '<td><button style="font-family:var(--mono);font-size:10px;background:var(--blue);color:white;border:none;padding:4px 10px;cursor:pointer" onclick="selectInteraction(' + "'" + i.interaction_id + "'" + ',' + "'" + (i.job_title || '') + "'" + ')">Select →</button></td>' +
     '</tr>'
@@ -2072,8 +2082,8 @@ async function loadAuditLog() {
     return '<div class="audit-row">' +
       '<span class="audit-time">' + fmtDate(e.occurred_at) + '</span>' +
       '<div class="audit-dot ' + color + '"></div>' +
-      '<span class="audit-msg">' + e.summary + '</span>' +
-      '<span class="tag ' + (e.event_type === 'breach' ? 'fail' : e.event_type === 'strike' ? 'warn' : 'info') + ' audit-tag">' + (e.event_type || '') + '</span>' +
+      '<span class="audit-msg">' + h(e.summary) + '</span>' +
+      '<span class="tag ' + (e.event_type === 'breach' ? 'fail' : e.event_type === 'strike' ? 'warn' : 'info') + ' audit-tag">' + h(e.event_type || '') + '</span>' +
       '</div>';
   }).join('');
 }
@@ -2103,11 +2113,11 @@ async function loadAppeals() {
   tbody.innerHTML = appeals.map(a =>
     '<tr>' +
     '<td style="font-family:var(--mono);font-size:10px">' + a.appeal_id.slice(0,12) + '</td>' +
-    '<td><div class="job-title">' + (a.job_title || '—') + '</div></td>' +
-    '<td style="font-size:11px">' + (a.ground || '—') + '</td>' +
-    '<td><span class="tag ' + appealTag(a.status) + '">' + a.status + '</span></td>' +
+    '<td><div class="job-title">' + h(a.job_title || '—') + '</div></td>' +
+    '<td style="font-size:11px">' + h(a.ground || '—') + '</td>' +
+    '<td><span class="tag ' + appealTag(a.status) + '">' + h(a.status) + '</span></td>' +
     '<td style="font-family:var(--mono);font-size:10px;color:var(--amber)">' + (a.twg_deadline ? fmtDate(a.twg_deadline) : '—') + '</td>' +
-    '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + (a.outcome || 'Pending') + '</td>' +
+    '<td style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">' + h(a.outcome || 'Pending') + '</td>' +
     '</tr>'
   ).join('');
 }
@@ -2649,14 +2659,14 @@ function renderJobSkills() {
   list.innerHTML = jobSkills.map((s, i) => `
     <div class="skill-req-item">
       <div>
-        <div class="skill-req-name">${s.label}</div>
-        <div class="skill-req-domain">${s.domain}</div>
+        <div class="skill-req-name">${h(s.label)}</div>
+        <div class="skill-req-domain">${h(s.domain)}</div>
       </div>
       <div class="${s.type === 'must_have' ? 'skill-tag-must' : 'skill-tag-nice'}">
         ${s.type === 'must_have' ? 'Must-have' : 'Nice-to-have'}
       </div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">
-        Min: ${PROF_LABELS[s.minProficiency] || s.minProficiency}
+        Min: ${h(PROF_LABELS[s.minProficiency] || s.minProficiency)}
       </div>
       <button class="skill-remove-btn" onclick="removeJobSkill(${i})">&#10005;</button>
     </div>`).join('');
@@ -2681,9 +2691,9 @@ function filterDialogSkills(val) {
   sugg.innerHTML = matches.map(s => `
     <div style="padding:7px 11px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
          onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"
-         onmousedown="selectDialogSkill('${s.id}','${s.label}','${s.domain}')">
-      <span style="font-weight:500;color:var(--text)">${s.label}</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${s.domain}</span>
+         onmousedown="selectDialogSkill('${s.id}','${h(s.label)}','${h(s.domain)}')">
+      <span style="font-weight:500;color:var(--text)">${h(s.label)}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${h(s.domain)}</span>
     </div>`).join('');
 }
 
@@ -2698,8 +2708,15 @@ function addSkillToJob() {
   const input = document.getElementById('skill-add-input');
   const label = input.value.trim();
   if (!label) return;
-  const id     = input.dataset.selectedId || 'fhp:skill:custom-' + Date.now();
-  const domain = input.dataset.selectedDomain || 'Other';
+  // Require selection from ontology suggestions — free-text skills break matching
+  if (!input.dataset.selectedId) {
+    const sugg = document.getElementById('skill-add-suggestions');
+    sugg.style.display = 'block';
+    sugg.innerHTML = '<div style="padding:7px 11px;font-size:12px;color:var(--rust)">Please select a skill from the suggestions list.</div>';
+    return;
+  }
+  const id     = input.dataset.selectedId;
+  const domain = input.dataset.selectedDomain || '';
   const type   = document.getElementById('skill-add-type').value;
   const prof   = document.getElementById('skill-add-proficiency').value;
   if (jobSkills.find(s => s.id === id)) { input.value = ''; return; }
@@ -2819,7 +2836,7 @@ function saveJobBrief() {
       _tabLoaded.jobs = false;
       if (document.getElementById('page-jobs').style.display !== 'none') loadJobs();
     } else {
-      msgEl.textContent = 'Save failed \u2014 check console for details.';
+      msgEl.textContent = (_lastApiError && (_lastApiError.detail || _lastApiError.message)) ? (_lastApiError.detail || _lastApiError.message) : 'Save failed \u2014 please try again.';
       saveBtn.disabled = false;
       saveBtn.textContent = dialogMode === 'edit' ? 'Save changes' : 'Post brief';
     }

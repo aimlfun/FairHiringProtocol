@@ -17,6 +17,117 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.13.0] — 2026-05-24
+
+### Added
+- **Governance dashboard fully wired** (`governance-dashboard.html`) — all tabs now connected to the API with governance authentication:
+  - Auth zone: Sign In modal (username/password → `POST /v1/auth/login-governance`), user badge (display name + role tag), Sign Out — all persisted in `sessionStorage`
+  - Proposals tab: submit-proposal modal (POST `/v1/governance/proposals`), VOTE REQUIRED badge on proposals without a recorded vote result, displays `proposal_ref` (human-readable) instead of raw UUID
+  - Escalations tab: inline Respond form per escalation (PUT `/v1/governance/escalations/:id`) with Status, Outcome, Outcome Notes, and Public Summary fields; Respond button on same header line as escalation type; escalation type labels humanised (`candidate_appeal` → "Candidate Appeal")
+  - Vote recording form: uses governance JWT (`govAuthHeaders()`) instead of candidate token
+- **`POST /v1/auth/login-governance`** — new endpoint in `api/src/routes/auth-governance.ts`; rate-limited 10 req/min; constant-time bcrypt comparison to prevent username enumeration; returns `{ access_token, role, display_name, username }`; JWT carries `aud: 'fhp-governance'`
+- **`identity.governance_users` table** — `db/migrations/024_governance_users.sql`: `user_id`, `username`, `password_hash`, `role` (`governance`|`admin`), `display_name`, `is_active`, `created_at`, `last_login_at`
+- **`api/scripts/seed-governance.ts`** — seeds governance users from `GOVERNANCE_ADMIN_*` / `GOVERNANCE_USER_*` env vars (bcrypt 12 rounds, upsert by username); called by `npm run seed:governance`
+- **`start-dev.ps1`** — PowerShell 5.1-compatible dev startup script replacing `build.cmd`: starts fhp-postgres Docker container, runs SQL migrations, seeds governance users, starts static file server on `:9999` and Fastify API on `:3000`
+
+### Changed
+- `api/src/app.ts`: registered `authGovernanceRoutes` at `/v1/auth`; JWT `verify.audience` extended to accept `'fhp-governance'` tokens
+- `governance-dashboard.html`: escalation render now accepts `allowRespond` flag — overview tab passes `false` to avoid duplicate DOM IDs that broke the Respond toggle
+
+### Fixed
+- **Governance respond form broken**: both the Overview tab and the Escalations tab called `renderEscalationItem()` for the same data, generating duplicate `id="esc-respond-{safeId}"` elements; `getElementById` returned the hidden Overview copy, so clicking Respond had no visible effect; fixed by passing `allowRespond = false` for overview renders
+- **Modal errors silently hidden**: `errEl.style.display = ''` reverted to the CSS `display:none` rule; changed to `errEl.style.display = 'block'` throughout all modal error paths
+- **Vote endpoint**: added server-side validation rejecting votes where `for + against + abstain = 0`; `rejectHtml()` applied to all free-text proposal fields (`proposal_ref`, `title`, `summary`, `submitted_by`, `affiliation`, `document_body`)
+
+---
+
+## [0.12.0] — 2026-05-23
+
+### Added
+- **E2E test suite: 179/179 scenarios (100%), ~240 tests, 32 spec files**
+- `tests/e2e/bias-pipeline.spec.ts` — 4 tests (scenarios 10.1–10.4): bias correction fires for a candidate in a breached cohort; `bias_correction_triggered` stored on match event; `correctionApplied.direction = 'upward'` with non-zero magnitude; no correction for candidates with no cohort data
+- `tests/e2e/bias-selection-pattern.spec.ts` — 7 tests (scenarios 10.5–10.11): full end-to-end company selection bias scenario — 5 candidates (3 young, 2 old), company only engages young ones, compute-job-fairness detects DIR breach, compliance score decreases, governance endpoints reflect state
+- `tests/e2e/cohort-assignment.spec.ts` — 4 tests (scenarios 13.1–13.2): assign-cohorts helper seeds `candidate_cohorts`; pipeline reads real cohort data; idempotency (ON CONFLICT DO UPDATE); cohort memberships feed into per-job disparate impact via compute-job-fairness
+- `tests/e2e/twg-review.spec.ts` — 5 tests (scenario 9.11): TWG governance body can GET escalations, update outcome with `X-Governance-Api-Key`, verify resolved appeal; 401 without key
+- `api/src/routes/test-helpers.ts` — three new dev-only endpoints:
+  - `POST /v1/test-helpers/assign-cohorts` — seeds `matching.candidate_cohorts` rows (ON CONFLICT DO UPDATE)
+  - `POST /v1/test-helpers/seed-fairness-breach` — inserts a platform-level `analytical.fairness_metrics` row with `cohort_stats` JSONB marking a cohort's DIR as out-of-bounds
+  - `POST /v1/test-helpers/compute-job-fairness` — reads match events + cohort memberships + active interactions, computes per-cohort engagement rates and DIR, inserts job-level fairness record, decreases company `compliance_score` by 10 if breach detected
+- `api/src/routes/matches.ts`: replaced stub `CohortService` and `FairnessMetricsStore` with real DB-backed implementations — pre-loads `candidate_cohorts` and `analytical.fairness_metrics.cohort_stats` before calling `buildContext()`, enabling live bias detection and correction in the pipeline
+
+### Fixed
+- `reference-impl/` TypeScript compilation errors (12 files): `.ts` → `.js` import extensions (NodeNext module resolution), `exactOptionalPropertyTypes` violations (`prop?: T` → `prop: T | undefined`), `noUncheckedIndexedAccess` non-null assertions in `cohort-service.ts`, `fairness-job-updated.ts`, and `tests/conformance/demographics.test.ts`
+
+---
+
+## [0.11.0] — 2026-05-23
+
+### Added
+- **E2E test suite: SLA-triggered ghosting now covered — 168/179 (94%), 218 tests, 28 spec files**
+- `tests/e2e/sla-ghosting.spec.ts` — 5 tests: SLA expiry → monitor creates ghosting event visible to candidate (7.5); event has correct structure incl. severity/stage/overdue_hours (8.1); monitor idempotency; expire with unknown ID → 404; monitor on live interaction → 0 breaches
+- `api/src/routes/test-helpers.ts` — two new dev-only endpoints:
+  - `POST /v1/test-helpers/expire-interaction-sla` — sets `stage_entered_at = NOW() - 3h`, `sla_deadline = NOW() - 2h` on an `active_interaction` (satisfies `sla_deadline > stage_entered_at` CHECK constraint)
+  - `POST /v1/test-helpers/run-sla-monitor` — minimal SLA breach scanner: finds `sla_deadline < NOW() AND status = active` interactions, creates `ghosting_events` for those without one; optional `interaction_id` scopes the scan; idempotent
+
+---
+
+## [0.10.0] — 2026-05-23
+
+### Added
+- **E2E test suite: all partial scenarios converted to full coverage — 0 partial scenarios remain** (166/179 = 93%; 213 tests, 27 spec files)
+- `2.14` — `location_countries` preference round-trip test added to `candidate-profile-api.spec.ts`
+- `4.10` — Explicit `preference_alignment_score > 0` assertion added to matched-with-aligned-work-mode test in `matching-decisions.spec.ts`
+- `4.19` — Explicit `plain_language_summary` truthy assertion added to borderline test in `matching-decisions.spec.ts`
+- `9.2` — Dedicated borderline-appeal test added to `appeals.spec.ts`; uses `aware` proficiency Python candidate against `practitioner`-required job to produce a borderline decision, then submits an appeal
+- `12.1` — Two API-level tests added to `demographics-consent.spec.ts`: `created_at` timestamp validity after registration; empty `consents` list before explicit consent is given
+
+---
+
+## [0.9.0] — 2026-05-23
+
+### Added
+- **E2E test suite expanded: 188 → 203 tests, 24 → 27 spec files, 87% → 89% scenario coverage** (160 of 179 scenarios in `tests/e2e/TESTING-SCENARIOS.md`)
+- `tests/e2e/notification-stage-invitation.spec.ts` — 3 tests: `stage_invitation` notification present after matched run (5.8a–c); verifies borderline runs do NOT produce stage_invitation
+- `tests/e2e/post-deadline-appeal.spec.ts` — 5 tests: appeal after 30-day window → 422 APPEAL_WINDOW_EXPIRED; appeal at 29 days → 201; test-helper guards (9.10a–e)
+- `tests/e2e/ghosting-resolve-dispute.spec.ts` — 6 tests: resolve → status resolved; dispute → status disputed; wrong-company → 404; already-resolved dispute → 404; no-auth → 401; unknown-interaction → 404 (8.4, 8.5)
+- `api/src/routes/test-helpers.ts` — Dev-only (`NODE_ENV=development`) endpoints:
+  - `POST /v1/test-helpers/create-backdated-match` — inserts synthetic `not_matched` event with explicit `created_at` N days ago (avoids the `match_events` immutability trigger which blocks UPDATE; INSERT with explicit timestamp is permitted)
+  - `POST /v1/test-helpers/create-ghosting-event` — inserts a synthetic open ghosting event for an existing `active_interaction` with `sla_deadline` 2 hours in the past (satisfying the `detected_at >= sla_deadline` DB constraint)
+
+### Changed
+- **`POST /v1/matches`**: when pipeline decision is `matched`, now also inserts a `stage_invitation` notification into `candidate_notifications` (in addition to the existing `match_result` notification). This implements FHP §7 scenario 5.8 — the candidate is informed when the employer opens the hiring process.
+- `tests/e2e/notifications.spec.ts`: tightened the `find()` predicate to match `notification_type === 'match_result'` explicitly; prevents false failure when both `stage_invitation` and `match_result` are present for the same match.
+
+### Fixed
+- `tests/e2e/TESTING-SCENARIOS.md` summary table: Notifications row incorrectly showed 11/11 while 5.8 was still ❌; now correct after implementation.
+
+---
+
+## [0.8.0] — 2026-05-23
+
+### Added
+- **E2E test suite expanded: 22 → 188 tests, 18 → 24 spec files, 71% → 87% scenario coverage** (156 of 179 scenarios in `tests/e2e/TESTING-SCENARIOS.md`)
+- `tests/e2e/governance-votes.spec.ts` — 8 tests: POST /governance/votes pass/fail/FOB-veto/wrong-key/missing-fields, vote appears in public list (scenarios 17.9a–g); uses `X-Governance-Api-Key` header
+- `tests/e2e/transfer-credits.spec.ts` — 4 tests: fresh account returns empty array; docker/proficient → Kubernetes 35% raw credit; docker/expert → 52% (IEEE 754 rounding); unauthenticated → 401 (scenarios 14.1–14.4)
+- `tests/e2e/candidate-profile-api.spec.ts` — 5 tests: ontology skill ID round-trip, `matching_eligible` auto-set false on empty skills and true on non-empty, preferences round-trip, 401 guards (scenarios 2.13, 2.15–2.19)
+- `tests/e2e/interactions-ghosting.spec.ts` — 11 tests: active_interaction auto-created on matched pipeline run (7.1); company structured rejection via `POST /interactions/:id/reject` (7.4); candidate accept/decline via `PUT /interactions/:id` (7.2, 7.3); SLA shape (7.6); GET ghosting endpoints for candidate and company (8.2–8.3)
+- `tests/e2e/fairness-company.spec.ts` — 7 tests: GET /companies/me/fairness/jobs shape; POST /companies/me/fairness/remediation (accepted, invalid metric, unknown job, no auth, audit log entry) (scenarios 10.12–10.13)
+- `tests/e2e/ui-candidate-app.spec.ts` — 3 browser tests: no-token redirect to landing page (1.11); match score filter buttons filter cards by decision (4.23); bell badge shown/hidden by unread count (5.11)
+
+### Changed
+- **`POST /v1/matches`**: when pipeline decision is `matched`, now automatically inserts a row into `matching.active_interactions` (`current_stage = 'initial_match_acknowledgement'`, `sla_deadline = NOW() + response_sla_days`). Previously this table had no creation path via the API, blocking all interaction/ghosting tests and making the SLA/Rejections dashboard permanently empty.
+- `api/.env`: `GOVERNANCE_API_KEY` set to `e2e-test-governance-key` — previously empty, which disabled the API-key auth path in `requireGovernance` and made POST /governance/votes untestable without a governance JWT.
+
+### Fixed
+- **Transfer credit formula floating point**: `Math.round(0.525 * 100)` evaluates to 52 (not 53) in IEEE 754 because `3/4 * 0.70 * 100 = 52.4999...` in double precision. Tests and comments corrected.
+- **Rejection code validation**: `POST /companies/me/interactions/:id/reject` validates `reason_code` against `config.rejection_codes` table. The seeded codes are `AS-01–AS-03`, `PL-01–PL-04`, `PR-01–PR-04`, `SR-01–SR-04`. Free-text codes like `skills_gap` are rejected with 400. Tests updated to use `PR-01`.
+- **Remediation `plan_text` minimum length**: `POST /companies/me/fairness/remediation` requires `plan_text` with `minLength: 100`. Fastify schema validation runs before preHandler (auth), so a short plan_text body returns 400 even without a token. Tests updated with compliant text.
+
+### Discovered (not yet fixed)
+- `5.8` — no `stage_invitation` notification type in the pipeline; when a company initiates contact (creates active_interaction), no notification is sent to the candidate. Tracked in known gaps above.
+
+---
+
 ## [0.7.0] — 2026-05-21
 
 ### Added

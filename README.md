@@ -227,8 +227,9 @@ fair-hiring-protocol/
 │  └─ trace.schema.json
 │
 ├─ api-gap-analysis.md -  WIP gaps in the API prior to build.
-├─ build.cmd - drops and rebuilds the DB, runs node.js REST api-server on localhost:3000
+├─ start-dev.ps1 - starts Docker Postgres, runs migrations, seeds governance users, serves static pages on :9999, runs API on :3000
 ├─ candidate-app.html - candidate UI wired up to REST API / DB
+├─ governance-dashboard.html - governance dashboard wired up to REST API / DB (auth, proposals, escalations, votes)
 ├─ CONTRIBUTING.md
 ├─ LICENSE-reference-impl.txt
 ├─ LICENSE-specs.txt

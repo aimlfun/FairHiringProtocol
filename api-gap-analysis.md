@@ -1,6 +1,6 @@
 # FHP API Gap Analysis — Screen-by-Screen
 
-**Version:** 2.0.0 — Updated 2026-05-21  
+**Version:** 2.1.0 — Updated 2026-05-23  
 **Purpose:** Map every UI data point and action to its API endpoint. Identify gaps, missing fields, and new endpoints needed.
 
 **Legend:**
@@ -21,6 +21,7 @@ DELETE /v1/auth/logout
 POST   /v1/auth/register-company
 POST   /v1/auth/login-company
 POST   /v1/auth/accept-compliance-agreement
+POST   /v1/auth/login-governance
 
 GET    /v1/candidates/me
 PUT    /v1/candidates/me
@@ -51,7 +52,7 @@ GET    /v1/jobs/:jobId
 PUT    /v1/jobs/:jobId
 GET    /v1/jobs/:jobId/matches
 
-POST   /v1/matches
+POST   /v1/matches                           ← also creates active_interaction on 'matched' decision
 
 GET    /v1/companies/me
 GET    /v1/companies/me/dashboard
@@ -91,7 +92,7 @@ GET    /v1/health
 GET    /v1/health/conformance
 ```
 
-**Total: 67 endpoints across 14 route files**
+**Total: 68 endpoints across 14 route files**
 
 ---
 
@@ -562,8 +563,7 @@ CREATE TABLE identity.company_auth (
   POST   /v1/auth/register-company
   POST   /v1/auth/login-company
 
-❌ 1 tab still a stub:
-  Pipeline tab — needs a cross-job company pipeline endpoint (separate discussion)
+✅ All 8 tabs fully wired (Pipeline tab added in 0.6.0)
 ```
 
 ## Governance dashboard
@@ -593,11 +593,36 @@ CREATE TABLE identity.company_auth (
 | Auth | 7 | 7 | Includes company register + login + compliance agreement |
 | Candidate | 22 | 22 | Full profile, matches, appeals, notifications, ghosting, consents, demographics |
 | Jobs | 4 | 4 | |
-| Matches | 1 | 0 | POST /v1/matches not exposed in any UI (pipeline trigger) |
-| Companies | 14 | 13 | `sla-by-stage` still missing |
+| Matches | 1 | 0 | POST /v1/matches not exposed in any UI (pipeline trigger); now also creates active_interaction on 'matched' decision |
+| Companies | 14 | 14 | All tabs wired including Pipeline (0.6.0) and sla-by-stage (0.5.0) |
 | Governance | 10 | 10 | votes POST exists; UI read-only by design |
 | Reference / Ontology | 3 | 3 | skills, domains, rejection-codes |
 | Health | 2 | 0 | Internal |
 | **Total** | **67** | **65** | |
 
 **0 endpoints still needed. 0 UI stubs remaining. All screens fully wired.**
+
+---
+
+# E2E TEST COVERAGE
+
+Full scenario coverage tracked in `tests/e2e/TESTING-SCENARIOS.md`.  
+As of 2026-05-23: **156 of 179 scenarios covered (87%), 188 tests, 24 spec files.**
+
+## Hard gaps remaining (infrastructure required)
+
+| Scenario group | Blocker |
+|---|---|
+| Bias pipeline (10.1–10.11) | Requires running `npm run fairness:job` after seeding a biased selection pattern |
+| Ghosting via SLA expiry (7.5, 8.1, 8.4–8.5) | Requires `sla_deadline < NOW()` — needs DB backdating or `npm run sla:monitor` |
+| Candidate cohorts (13.1–13.2) | Requires demographics + pipeline run + fairness computation |
+| Appeals post-deadline (9.10) | Needs `created_at` backdated 31+ days in DB |
+| Stage invitation notification (5.8) | No `stage_invitation` notification type in pipeline — feature gap |
+
+## Behavioral notes for test authors
+
+- `POST /v1/matches` with `decision=matched` → auto-inserts `active_interaction` (since 0.8.0)
+- Valid rejection codes: `AS-01..AS-03`, `PL-01..PL-04`, `PR-01..PR-04`, `SR-01..SR-04` — seeded in `config.rejection_codes`; use `PR-01` in tests (no `stage_notes` required)
+- `POST /companies/me/fairness/remediation` requires `plan_text` with `minLength: 100`
+- Governance write endpoints use `X-Governance-Api-Key: e2e-test-governance-key` in dev; set in `api/.env`
+- Fastify schema validation runs before preHandler auth — a short body returns 400 even without a token
