@@ -6,13 +6,11 @@ import {
 } from './helpers.js';
 
 async function addSkillViaUI(page: Page, skillName: string): Promise<void> {
-  await page.evaluate((name) => {
-    const skill = (window as any).ALL_SKILLS?.find(
-      (s: any) => s.label.toLowerCase().includes(name.toLowerCase())
-    );
-    if (skill) (window as any).pickSkill(skill.id, skill.label, skill.domain);
-    else (window as any).pickSkill('fhp:skill:custom-test', name, 'Other');
-  }, skillName);
+  // Type into the skill input and pick the first autocomplete suggestion.
+  // This goes through the real filterSkills → pickSkill flow with a valid ontology ID.
+  await page.locator('#skill-inp').fill(skillName);
+  await page.locator('#sugg .sugg-item').first().waitFor({ state: 'visible', timeout: 3_000 });
+  await page.locator('#sugg .sugg-item').first().click();
   await page.waitForTimeout(100);
 }
 
@@ -152,17 +150,25 @@ test.describe('Candidate profile — save and restore', () => {
     await registerCandidate(page, email);
 
     await goToTab(page, 'profile');
+    // Wait for profile section to be visible so loadProfile() has completed
+    await page.locator('#chips-work-mode').waitFor({ state: 'visible' });
 
-    // Deselect all, then select only 'On-site'
-    await page.evaluate(() => {
-      document.querySelectorAll('#chips-work-mode .pch.on').forEach(el => el.classList.remove('on'));
-    });
+    // Deselect any already-active chips via real clicks (goes through toggleChip event handler)
+    const activeChips = await page.locator('#chips-work-mode .pch.on').all();
+    for (const chip of activeChips) {
+      await chip.click();
+    }
+
+    // Select only 'On-site'
     const onsiteChip = page.locator('#chips-work-mode .pch[data-val="on_site"]');
     await onsiteChip.click();
+    // Confirm the chip is actually selected before saving
+    await expect(onsiteChip).toHaveClass(/on/);
 
     await saveProfile(page);
     await reloadAndWait(page);
     await goToTab(page, 'profile');
+    await page.locator('#chips-work-mode').waitFor({ state: 'visible' });
 
     await expect(page.locator('#chips-work-mode .pch[data-val="on_site"]')).toHaveClass(/on/);
     await expect(page.locator('#chips-work-mode .pch[data-val="remote"]')).not.toHaveClass(/on/);

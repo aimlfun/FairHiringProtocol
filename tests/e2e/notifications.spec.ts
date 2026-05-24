@@ -107,9 +107,10 @@ test.describe('Candidate notifications', () => {
     expect(data.notifications.length).toBeGreaterThanOrEqual(1);
     expect(data.unread_count).toBeGreaterThanOrEqual(1);
 
-    const notif = data.notifications.find((n: any) => n.match_id === match.match_id);
-    expect(notif, 'notification must reference the match').toBeDefined();
-    expect(notif.notification_type).toBe('match_result');
+    const notif = data.notifications.find(
+      (n: any) => n.match_id === match.match_id && n.notification_type === 'match_result',
+    );
+    expect(notif, 'match_result notification must reference the match').toBeDefined();
     expect(notif.read_at).toBeNull();
   });
 

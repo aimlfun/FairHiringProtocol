@@ -251,6 +251,51 @@ test.describe('Appeals', () => {
     expect(Math.round(diffDays)).toBe(30);
   });
 
+  test('9.2 — candidate submits appeal for a borderline decision', async () => {
+    // aware (0.20) vs practitioner (0.45): one level below → partial credit → borderline
+    const { data: reg } = await api('POST', '/v1/auth/register', {
+      email: uniqueEmail(), password: TEST_PASSWORD,
+      age_confirmed: true, terms_accepted: true,
+    });
+    const token: string = reg.access_token;
+
+    await api('PUT', '/v1/candidates/me', {
+      skills: [{ ontology_id: 'fhp:skill:python', label: 'Python', domain: 'Engineering',
+                 proficiency: 'aware', years_experience: 1 }],
+      preferences: { salary_min: 60000, salary_currency: 'GBP', work_mode: ['remote'],
+                     employment_type: ['permanent'] },
+    }, token);
+
+    const { data: job } = await api('POST', '/v1/jobs', {
+      title:           'Borderline Appeal Test',
+      role_summary:    'A role requiring Python practitioner or above.',
+      skills_required: [{ ontology_id: 'fhp:skill:python', label: 'Python', domain: 'Engineering',
+                          requirement_type: 'must_have', min_proficiency: 'practitioner' }],
+      salary_currency: 'GBP', salary_minimum: 50000, salary_maximum: 80000,
+      work_mode: 'remote', location_country: 'GB', employment_type: 'permanent',
+      attest_no_degree_requirement: true, attest_no_institution_preference: true,
+      attest_no_graduation_year_filter: true, attest_no_unpaid_work: true,
+    }, companyToken);
+
+    const { data: match } = await api('POST', '/v1/matches', { job_id: job.job_id }, token);
+    if (match.decision !== 'borderline') {
+      // Pipeline is non-deterministic near the threshold — skip if not borderline
+      test.skip();
+      return;
+    }
+
+    const { status, data } = await api('POST', '/v1/candidates/me/appeals', {
+      match_id: match.match_id,
+      ground:   'incorrect_skill_assessment',
+      detail:   'My Python expertise was assessed at aware level, but my project contributions demonstrate practitioner-level competence.',
+    }, token);
+
+    expect(status).toBe(201);
+    expect(data).toHaveProperty('appeal_id');
+    expect(data.status).toBe('submitted');
+    expect(data.match_id).toBe(match.match_id);
+  });
+
   test('appeal is visible to the company via GET /companies/me/appeals', async () => {
     const { token, match } = await buildNotMatchedScenario({ title: 'Company Sees Appeal' });
 

@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  *   - API server on port 3000 (`cd api && npm run dev`)
  *   - Running PostgreSQL with migrations applied
  *
- * Start both with: build.cmd (Windows) or equivalent
+ * Start both with: ./start-dev.ps1 (Windows PowerShell)
  */
 export default defineConfig({
   testDir: '.',

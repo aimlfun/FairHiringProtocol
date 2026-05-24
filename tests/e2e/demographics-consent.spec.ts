@@ -1,5 +1,5 @@
 /**
- * Demographics & consent — scenarios 11.1–11.5, 12.2–12.4 from TESTING-SCENARIOS.md.
+ * Demographics & consent — scenarios 11.1–11.5, 12.1–12.4 from TESTING-SCENARIOS.md.
  *
  * Covers:
  *   GET  /v1/candidates/me/demographics/options — jurisdiction-specific field options
@@ -188,6 +188,43 @@ test.describe('Demographics & consent', () => {
     }, token);
     expect(status).toBeGreaterThanOrEqual(400);
     expect(status).toBeLessThan(500);
+  });
+
+  // ── 12.1: Consent record timestamps created at registration ─────────────
+  // The candidate profile has a created_at timestamp that represents the moment
+  // age and terms consent were given. The data-tab UI uses this to show the
+  // "Job matching service" and "Age confirmation" consent dates.
+
+  test('12.1 — GET /candidates/me returns created_at that represents registration consent timestamp', async () => {
+    const before = new Date();
+    const token  = await registerCandidate();
+    const after  = new Date();
+
+    const { status, data } = await api('GET', '/v1/candidates/me', undefined, token);
+
+    expect(status).toBe(200);
+    expect(data).toHaveProperty('created_at');
+
+    const createdAt = new Date(data.created_at as string);
+    // created_at must be a valid date between registration start and finish
+    expect(createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime() - 5000);
+    expect(createdAt.getTime()).toBeLessThanOrEqual(after.getTime() + 5000);
+    // Must be in the current year, not a hardcoded date
+    expect(createdAt.getFullYear()).toBe(new Date().getFullYear());
+  });
+
+  test('12.1b — GET /candidates/me/consents returns empty array before any explicit consent', async () => {
+    const token = await registerCandidate();
+
+    const { status, data } = await api('GET', '/v1/candidates/me/consents', undefined, token);
+
+    expect(status).toBe(200);
+    expect(Array.isArray(data.consents)).toBe(true);
+    // Registration does not auto-create explicit consent records — those are
+    // created by the user via POST /consents. The age/terms consent is stored
+    // as flags in identity.candidate_auth and surfaced via candidate_profiles.created_at.
+    const fairness = data.consents.find((c: any) => c.consent_type === 'fairness_metrics');
+    expect(fairness).toBeUndefined();
   });
 
 });

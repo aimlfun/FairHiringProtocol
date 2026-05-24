@@ -7,7 +7,8 @@ export function uniqueEmail(): string {
   return `e2e-${++_counter}@fhp-test.local`;
 }
 
-export const TEST_PASSWORD = 'TestPassword123!';
+export const TEST_PASSWORD    = 'TestPassword123!';
+export const TEST_HELPER_KEY  = process.env['TEST_HELPER_KEY'] ?? 'e2e-test-helper-key';
 
 /**
  * Register a new candidate via the landing page UI.

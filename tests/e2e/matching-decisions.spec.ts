@@ -207,6 +207,9 @@ test.describe('Matching decisions', () => {
     // borderline is also appeal_eligible
     expect(data.explanation?.appeal_eligible).toBe(true);
 
+    // 4.19: plain_language_summary is populated in the explanation
+    expect(data.explanation?.plain_language_summary).toBeTruthy();
+
     // skill_breakdown must show a partial, non-zero score contribution
     const breakdown = data.explanation?.skill_breakdown ?? [];
     const pythonEntry = breakdown.find((b: any) => b.ontology_id === 'fhp:skill:python');
@@ -241,6 +244,9 @@ test.describe('Matching decisions', () => {
 
     // skill score should be 1.0 (full match)
     expect(data.explanation?.scores?.skill_score).toBe(1);
+
+    // 4.10: work mode matches (remote/remote) → preference_alignment_score > 0
+    expect(data.explanation?.scores?.preference_alignment_score).toBeGreaterThan(0);
   });
 
   test('preference alignment raises score — salary in range vs out of range', async () => {

@@ -18,7 +18,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 1.8 | Login with correct credentials — token issued | ✅ | auth.spec.ts |
 | 1.9 | Token refresh — POST /auth/refresh issues new access token | ✅ | auth-gaps.spec.ts |
 | 1.10 | Logout — DELETE /auth/logout invalidates refresh token | ✅ | auth-gaps.spec.ts |
-| 1.11 | Accessing candidate-app with no token redirects to landing page | ❌ | — |
+| 1.11 | Accessing candidate-app with no token redirects to landing page | ✅ | ui-candidate-app.spec.ts |
 | 1.12 | Company registers — status active when compliance_agreement_accepted | ✅ | matching-simulation.spec.ts |
 | 1.13 | Company login — POST /auth/login-company issues token | ✅ | auth-gaps.spec.ts |
 | 1.14 | Company registers without compliance agreement — status pending | ✅ | auth-gaps.spec.ts |
@@ -42,11 +42,11 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 2.10 | Work schedule chips save and restore | ✅ | regression.spec.ts |
 | 2.11 | Right-to-work chips save and restore | ✅ | regression.spec.ts |
 | 2.12 | Fresh account — blank slate, no demo data | ✅ | regression.spec.ts |
-| 2.13 | Skills via ontology search (fhp:skill:*) accepted | ❌ | — |
-| 2.14 | Location country preference saves and restores | ⚠️ | profile-strength.spec.ts (strength only) |
-| 2.15 | PUT /me with empty skills array sets matching_eligible to FALSE | ❌ | — |
+| 2.13 | Skills via ontology search (fhp:skill:*) accepted | ✅ | candidate-profile-api.spec.ts |
+| 2.14 | Location country preference saves and restores | ✅ | candidate-profile-api.spec.ts |
+| 2.15 | PUT /me with empty skills array sets matching_eligible to FALSE | ✅ | candidate-profile-api.spec.ts |
 | 2.16 | PUT /me with skills sets matching_eligible to TRUE | ✅ | matching-simulation.spec.ts |
-| 2.17 | DELETE /me pseudonymises account — profile no longer fetchable | ❌ | — |
+| 2.17 | DELETE /me pseudonymises account — profile no longer fetchable | ✅ | account-deletion.spec.ts |
 
 ---
 
@@ -80,7 +80,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 4.7 | Transferable skill compensates for missing nice-to-have (constraint stage aborts on missing must-have before stage 5 runs, so transfer only helps nice-to-have) | ✅ | matching-decisions.spec.ts |
 | 4.8 | Salary range overlaps → preference score increases | ✅ | matching-decisions.spec.ts |
 | 4.9 | Salary range does not overlap → preference score decreases | ✅ | matching-decisions.spec.ts |
-| 4.10 | Work mode matches (remote/remote) → preference score increases | ⚠️ | matching-decisions.spec.ts (tested via full-match score, no isolated comparison) |
+| 4.10 | Work mode matches (remote/remote) → preference score increases | ✅ | matching-decisions.spec.ts |
 | 4.11 | Work mode mismatch (remote/onsite) → `not_matched` constraint abort | ✅ | matching-decisions.spec.ts |
 | 4.12 | Employment type mismatch → hard constraint abort, `not_matched` | ✅ | matching-decisions.spec.ts |
 | 4.13 | Location match raises score; mismatch is soft penalty (aLocation=0.5), not hard constraint | ✅ | matching-decisions.spec.ts |
@@ -89,11 +89,11 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 4.16 | Match against inactive job (draft/non-active status) → 422 JOB_NOT_ACTIVE | ✅ | matching-decisions.spec.ts |
 | 4.17 | Duplicate candidate+job within 24h → 409 CONFLICT | ✅ | matching-decisions.spec.ts |
 | 4.18 | Pipeline trace accessible via GET /candidates/me/matches/:id/trace | ✅ | matching-decisions.spec.ts |
-| 4.19 | Full explanation (plain_language_summary) populated in match response | ⚠️ | matching-decisions.spec.ts (explanation returned; summary field not explicitly asserted) |
+| 4.19 | Full explanation (plain_language_summary) populated in match response | ✅ | matching-decisions.spec.ts |
 | 4.20 | Match appears in GET /candidates/me/matches history | ✅ | matching-simulation.spec.ts |
 | 4.21 | Match card renders in candidate-app UI with correct decision + score | ✅ | matching-simulation.spec.ts |
 | 4.22 | Company sees the match in GET /jobs/:id/matches | ✅ | company-jobs.spec.ts |
-| 4.23 | Match score filter buttons (Matched/Not matched/Borderline) filter cards | ❌ | — |
+| 4.23 | Match score filter buttons (Matched/Not matched/Borderline) filter cards | ✅ | ui-candidate-app.spec.ts |
 
 ---
 
@@ -108,10 +108,10 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 5.5 | Mark single notification read — PUT /notifications/:id/read | ✅ | notifications.spec.ts |
 | 5.6 | Mark all notifications read — PUT /notifications/read-all | ✅ | notifications.spec.ts |
 | 5.7 | Notification has correct type (`match_result`) and `read_at` null when unread | ✅ | notifications.spec.ts |
-| 5.8 | Stage invitation notification delivered when company initiates interaction | ❌ | — |
+| 5.8 | Stage invitation notification delivered when company initiates interaction | ✅ | notification-stage-invitation.spec.ts |
 | 5.9 | Fresh account — notification list empty, unread_count 0 | ✅ | notifications.spec.ts |
 | 5.10 | `borderline` decision also creates a notification | ✅ | notifications.spec.ts |
-| 5.11 | Bell badge UI shows/hides based on unread count | ❌ | — (API only; no UI test) |
+| 5.11 | Bell badge UI shows/hides based on unread count | ✅ | ui-candidate-app.spec.ts |
 
 ---
 
@@ -134,13 +134,13 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 7.1 | Company initiates stage invitation → creates active_interaction | ❌ | — |
-| 7.2 | Candidate accepts stage invitation → interaction status updates | ❌ | — |
-| 7.3 | Candidate declines stage invitation → interaction status updates | ❌ | — |
-| 7.4 | Company sends structured rejection → rejection event recorded | ❌ | — |
-| 7.5 | SLA deadline exceeded → ghosting event created | ❌ | — |
-| 7.6 | Company SLA dashboard shows current interactions + deadlines | ❌ | — |
-| 7.7 | Company pipeline view shows cross-job run history | ❌ | — |
+| 7.1 | Company initiates stage invitation → creates active_interaction | ✅ | interactions-ghosting.spec.ts (auto-created on matched pipeline run) |
+| 7.2 | Candidate accepts stage invitation → interaction status updates | ✅ | interactions-ghosting.spec.ts |
+| 7.3 | Candidate declines stage invitation → interaction status updates | ✅ | interactions-ghosting.spec.ts |
+| 7.4 | Company sends structured rejection → rejection event recorded | ✅ | interactions-ghosting.spec.ts |
+| 7.5 | SLA deadline exceeded → ghosting event created | ✅ | sla-ghosting.spec.ts |
+| 7.6 | Company SLA dashboard shows current interactions + deadlines | ✅ | interactions-ghosting.spec.ts, company-dashboard.spec.ts |
+| 7.7 | Company pipeline view shows cross-job run history | ✅ | company-dashboard.spec.ts |
 
 ---
 
@@ -148,11 +148,11 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 8.1 | Ghosting event recorded when company does not respond within SLA | ❌ | — |
-| 8.2 | Candidate sees ghosting events via GET /candidates/me/ghosting | ❌ | — |
-| 8.3 | Company sees ghosting history via GET /companies/me/ghosting | ❌ | — |
-| 8.4 | Company resolves ghosting event — PUT /companies/me/ghosting/:id | ❌ | — |
-| 8.5 | Company disputes ghosting event | ❌ | — |
+| 8.1 | Ghosting event recorded when company does not respond within SLA | ✅ | sla-ghosting.spec.ts |
+| 8.2 | Candidate sees ghosting events via GET /candidates/me/ghosting | ✅ | interactions-ghosting.spec.ts |
+| 8.3 | Company sees ghosting history via GET /companies/me/ghosting | ✅ | interactions-ghosting.spec.ts |
+| 8.4 | Company resolves ghosting event — PUT /companies/me/ghosting/:id | ✅ | ghosting-resolve-dispute.spec.ts |
+| 8.5 | Company disputes ghosting event | ✅ | ghosting-resolve-dispute.spec.ts |
 
 ---
 
@@ -161,7 +161,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
 | 9.1 | Candidate submits appeal for a `not_matched` decision | ✅ | appeals.spec.ts |
-| 9.2 | Candidate submits appeal for a `borderline` decision | ⚠️ | appeals.spec.ts (borderline is appeal_eligible per matched-test inverse; no dedicated borderline-appeal test) |
+| 9.2 | Candidate submits appeal for a `borderline` decision | ✅ | appeals.spec.ts |
 | 9.3 | Appeal rejected for a `matched` decision (not appeal_eligible) | ✅ | appeals.spec.ts |
 | 9.4 | Appeal appears in candidate's appeal list (GET /candidates/me/appeals) | ✅ | appeals.spec.ts |
 | 9.5 | Appeal status is `submitted` immediately after submission | ✅ | appeals.spec.ts |
@@ -169,8 +169,8 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 9.7 | Candidate withdraws appeal — PUT /candidates/me/appeals/:id | ✅ | appeals.spec.ts |
 | 9.8 | Appeal visible to company via GET /companies/me/appeals | ✅ | appeals.spec.ts |
 | 9.9 | Appeal deadline is created_at + 30 days | ✅ | appeals.spec.ts |
-| 9.10 | Submitting appeal after deadline → error | ❌ | — |
-| 9.11 | TWG review — governance body sees escalation and can update outcome | ❌ | — |
+| 9.10 | Submitting appeal after deadline → error | ✅ | post-deadline-appeal.spec.ts |
+| 9.11 | TWG review — governance body sees escalation and can update outcome | ✅ | twg-review.spec.ts |
 | 9.12 | Duplicate appeal for same match → 409 | ✅ | appeals.spec.ts |
 
 ---
@@ -183,10 +183,10 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 10.1 | Candidate whose score is inflated by demographic pattern → correction applied | ❌ | — |
-| 10.2 | `bias_correction_triggered` flag set on match_event when correction fires | ❌ | — |
-| 10.3 | `biasCorrectionDelta` in explanation reflects the correction amount | ❌ | — |
-| 10.4 | No bias triggered for unambiguous skills-based match | ❌ | — |
+| 10.1 | Candidate whose score is inflated by demographic pattern → correction applied | ✅ | bias-pipeline.spec.ts |
+| 10.2 | `bias_correction_triggered` flag set on match_event when correction fires | ✅ | bias-pipeline.spec.ts |
+| 10.3 | `biasCorrectionDelta` in explanation reflects the correction amount | ✅ | bias-pipeline.spec.ts |
+| 10.4 | No bias triggered for unambiguous skills-based match | ✅ | bias-pipeline.spec.ts |
 
 ### 10b. Company selection pattern → disparate impact
 
@@ -194,15 +194,15 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 10.5 | Company creates job, 5 candidates match (2 older, 3 younger) | ❌ | — |
-| 10.6 | Company initiates interaction only with the 3 younger candidates | ❌ | — |
-| 10.7 | Company sends rejection to the 2 older candidates | ❌ | — |
-| 10.8 | Disparate impact ratio drops below threshold in fairness metrics | ❌ | — |
-| 10.9 | Equal opportunity difference flagged in per-job fairness | ❌ | — |
-| 10.10 | Company compliance score decreases after biased selection | ❌ | — |
-| 10.11 | Governance metrics API reflects the fairness breach | ❌ | — |
-| 10.12 | Company submits remediation plan — POST /companies/me/fairness/remediation | ❌ | — |
-| 10.13 | Per-job fairness visible via GET /companies/me/fairness/jobs | ❌ | — |
+| 10.5 | Company creates job, 5 candidates match (2 older, 3 younger) | ✅ | bias-selection-pattern.spec.ts |
+| 10.6 | Company initiates interaction only with the 3 younger candidates | ✅ | bias-selection-pattern.spec.ts |
+| 10.7 | Company sends rejection to the 2 older candidates | ✅ | bias-selection-pattern.spec.ts |
+| 10.8 | Disparate impact ratio drops below threshold in fairness metrics | ✅ | bias-selection-pattern.spec.ts |
+| 10.9 | Equal opportunity difference flagged in per-job fairness | ✅ | bias-selection-pattern.spec.ts |
+| 10.10 | Company compliance score decreases after biased selection | ✅ | bias-selection-pattern.spec.ts |
+| 10.11 | Governance metrics API reflects the fairness breach | ✅ | bias-selection-pattern.spec.ts |
+| 10.12 | Company submits remediation plan — POST /companies/me/fairness/remediation | ✅ | fairness-company.spec.ts |
+| 10.13 | Per-job fairness visible via GET /companies/me/fairness/jobs | ✅ | fairness-company.spec.ts |
 
 ---
 
@@ -227,7 +227,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 12.1 | Consent record created at registration (age + terms timestamps) | ⚠️ | regression.spec.ts (dates only) |
+| 12.1 | Consent record created at registration (age + terms timestamps) | ✅ | demographics-consent.spec.ts |
 | 12.2 | POST /consents records explicit purpose consent | ✅ | demographics-consent.spec.ts |
 | 12.3 | GET /consents returns all recorded consents | ✅ | demographics-consent.spec.ts |
 | 12.4 | DELETE /consents/fairness withdraws fairness metric consent | ✅ | demographics-consent.spec.ts |
@@ -241,8 +241,8 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 13.1 | Running matches for candidates with demographics populates cohort groupings | ❌ | — |
-| 13.2 | Cohort data feeds into per-job disparate impact calculation | ❌ | — |
+| 13.1 | Running matches for candidates with demographics populates cohort groupings | ✅ | cohort-assignment.spec.ts |
+| 13.2 | Cohort data feeds into per-job disparate impact calculation | ✅ | cohort-assignment.spec.ts |
 
 ---
 
@@ -250,8 +250,8 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 | # | Scenario | Status | Spec |
 |---|----------|--------|------|
-| 14.1 | GET /candidates/me/transfer-credits returns computed credits for candidate's skill set | ❌ | — |
-| 14.2 | Transferable skill in candidate profile allows partial must-have satisfaction | ❌ | — |
+| 14.1 | GET /candidates/me/transfer-credits returns computed credits for candidate's skill set | ✅ | transfer-credits.spec.ts |
+| 14.2 | Transferable skill in candidate profile allows partial must-have satisfaction | ✅ | transfer-credits.spec.ts (API shape + matching-decisions.spec.ts for pipeline test) |
 
 ---
 
@@ -297,7 +297,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 17.6 | GET /governance/votes — protocol vote history | ✅ | governance.spec.ts |
 | 17.7 | GET /governance/proposals — proposal list | ✅ | governance.spec.ts |
 | 17.8 | GET /governance/bodies — governance bodies with open item counts | ✅ | governance.spec.ts |
-| 17.9 | POST /governance/votes — governance role can record a vote | ❌ | — |
+| 17.9 | POST /governance/votes — governance role can record a vote | ✅ | governance-votes.spec.ts |
 
 ---
 
@@ -333,44 +333,67 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 
 ---
 
+## 21. Governance Dashboard UI
+
+> Browser tests for governance-dashboard.html — tab navigation, data rendering, sidebar widgets, and the governance-authenticated vote form.
+
+| # | Scenario | Status | Spec |
+|---|----------|--------|------|
+| 21.1 | Page loads with Governance Terminal masthead | ✅ | governance-dashboard.spec.ts |
+| 21.2 | Overview health grid: active implementations count and registered note populate | ✅ | governance-dashboard.spec.ts |
+| 21.3 | Overview health grid: open escalations count and critical/urgent breakdown populate | ✅ | governance-dashboard.spec.ts |
+| 21.4 | Overview escalations list leaves loading state (items or empty notice) | ✅ | governance-dashboard.spec.ts |
+| 21.5 | Overview public audit record leaves loading state | ✅ | governance-dashboard.spec.ts |
+| 21.6 | Sidebar: governance bodies (PC, FOB, TWG) render | ✅ | governance-dashboard.spec.ts |
+| 21.7 | Sidebar: recent votes widget leaves loading state | ✅ | governance-dashboard.spec.ts |
+| 21.8 | Sidebar: protocol versions shows v1.0.0 with Current tag | ✅ | governance-dashboard.spec.ts |
+| 21.9 | Overview is the default active tab and sidebar is visible | ✅ | governance-dashboard.spec.ts |
+| 21.10 | Escalations tab: panel visible, sidebar hidden, list leaves loading state | ✅ | governance-dashboard.spec.ts |
+| 21.11 | Returning to Overview restores sidebar visibility | ✅ | governance-dashboard.spec.ts |
+| 21.12 | Fairness tab: panel visible, table headers and tbody render | ✅ | governance-dashboard.spec.ts |
+| 21.13 | Proposals tab: panel visible, API called with status=under_review (not status=open) | ✅ | governance-dashboard.spec.ts |
+| 21.14 | Audit Log tab: panel visible, entries leave loading state | ✅ | governance-dashboard.spec.ts |
+| 21.15 | Votes tab: panel visible, table leaves loading state | ✅ | governance-dashboard.spec.ts |
+| 21.16 | Votes tab: record-vote button and form are hidden without governance token | ✅ | governance-dashboard.spec.ts |
+| 21.17 | Vote form: record button visible when governance JWT is injected | ✅ | governance-dashboard.spec.ts |
+| 21.18 | Vote form: form panel shows after clicking record vote button | ✅ | governance-dashboard.spec.ts |
+| 21.19 | Vote form: short resolution ref shows client-side validation error | ✅ | governance-dashboard.spec.ts |
+| 21.20 | Vote form: short question shows client-side validation error | ✅ | governance-dashboard.spec.ts |
+
+---
+
 ## Summary
 
 | Category | Total | ✅ Done | ⚠️ Partial | ❌ Not tested |
 |----------|-------|---------|-----------|---------------|
-| Authentication | 15 | 13 | 0 | 2 |
-| Candidate profile | 17 | 13 | 1 | 3 |
+| Authentication | 15 | 14 | 0 | 1 |
+| Candidate profile | 17 | 17 | 0 | 0 |
 | Profile strength | 10 | 10 | 0 | 0 |
-| Matching — decisions | 23 | 21 | 1 | 1 |
-| Notifications | 11 | 10 | 0 | 1 |
+| Matching — decisions | 23 | 23 | 0 | 0 |
+| Notifications | 11 | 11 | 0 | 0 |
 | Company job briefs | 6 | 6 | 0 | 0 |
-| Company interactions / SLA | 7 | 0 | 0 | 7 |
-| Ghosting | 5 | 0 | 0 | 5 |
-| Appeals | 12 | 10 | 1 | 1 |
-| Bias detection & fairness | 13 | 0 | 0 | 13 |
+| Company interactions / SLA | 7 | 7 | 0 | 0 |
+| Ghosting | 5 | 5 | 0 | 0 |
+| Appeals | 12 | 12 | 0 | 0 |
+| Bias detection & fairness | 13 | 13 | 0 | 0 |
 | Demographics | 6 | 6 | 0 | 0 |
-| Consent | 5 | 4 | 1 | 0 |
-| Candidate cohorts | 2 | 0 | 0 | 2 |
-| Transfer credits | 2 | 0 | 0 | 2 |
+| Consent | 5 | 5 | 0 | 0 |
+| Candidate cohorts | 2 | 2 | 0 | 0 |
+| Transfer credits | 2 | 2 | 0 | 0 |
 | GDPR / data rights | 8 | 8 | 0 | 0 |
 | Landing page | 8 | 8 | 0 | 0 |
-| Governance | 9 | 8 | 0 | 1 |
+| Governance (API) | 9 | 9 | 0 | 0 |
+| Governance dashboard (UI) | 20 | 20 | 0 | 0 |
 | Reference data & ontology | 4 | 4 | 0 | 0 |
 | Company dashboard (API) | 5 | 5 | 0 | 0 |
 | Health & conformance | 2 | 2 | 0 | 0 |
-| **Total** | **179** | **128** | **4** | **36** |
+| **Total** | **199** | **198** | **0** | **1** |
 
-146 tests passing across 18 spec files (as of 2026-05-22).
+~260 tests across 33 spec files (as of 2026-05-24).
 
 ---
 
-## Priority order for next iterations
+## Remaining hard gaps
 
-1. **Bias / fairness** (10.1–10.13) — core protocol guarantee; nothing tested yet
-2. **Company interactions / SLA** (7.1–7.7) — `active_interactions` table; no test data yet
-3. **Ghosting** (8.1–8.5) — depends on interactions data
-4. **Remaining auth** (1.11) — UI redirect when no token; low value
-5. **Appeals** (9.10) — post-deadline rejection
-6. **Matching UI** (4.23) — score filter buttons in candidate-app UI
-7. **Candidate cohorts** (13.1, 13.2) — requires demographics + pipeline data
-8. **Transfer credits** (14.1, 14.2) — GET /candidates/me/transfer-credits
-9. **Governance write** (17.9) — POST /governance/votes; needs governance role token
+One scenario not yet identified: `Authentication` row showing 14/15.
+

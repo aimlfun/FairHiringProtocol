@@ -227,4 +227,25 @@ test.describe('Company job briefs', () => {
     expect(JSON.stringify(data)).toMatch(/salary/i);
   });
 
+  // ── Ontology validation ────────────────────────────────────────────────────
+
+  test('ontology — unknown skill ontology_id in skills_required is rejected with 400', async () => {
+    const { status, data } = await api('POST', '/v1/jobs', activeJobPayload({
+      skills_required: [{
+        ontology_id:      'fhp:skill:completely-made-up',
+        label:            'Made-up skill',
+        requirement_type: 'must_have',
+        min_proficiency:  'practitioner',
+      }],
+    }), companyToken);
+
+    expect(status).toBe(400);
+    expect(data.message ?? data.error).toMatch(/unknown skill ontology/i);
+  });
+
+  test('ontology — valid ontology_id in skills_required is accepted (regression guard)', async () => {
+    const { status } = await api('POST', '/v1/jobs', activeJobPayload(), companyToken);
+    expect(status).toBe(201);
+  });
+
 });

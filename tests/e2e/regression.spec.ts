@@ -10,13 +10,9 @@ import {
 } from './helpers.js';
 
 async function addSkillViaUI(page: Page, skillName: string): Promise<void> {
-  await page.evaluate((name) => {
-    const skill = (window as any).ALL_SKILLS?.find(
-      (s: any) => s.label.toLowerCase().includes(name.toLowerCase())
-    );
-    if (skill) (window as any).pickSkill(skill.id, skill.label, skill.domain);
-    else (window as any).pickSkill('fhp:skill:custom-test', name, 'Other');
-  }, skillName);
+  await page.locator('#skill-inp').fill(skillName);
+  await page.locator('#sugg .sugg-item').first().waitFor({ state: 'visible', timeout: 3_000 });
+  await page.locator('#sugg .sugg-item').first().click();
   await page.waitForTimeout(100);
 }
 
