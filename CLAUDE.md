@@ -57,8 +57,8 @@ psql $DATABASE_URL -f db/partitions/create_monthly_partitions.sql
 
 **`/*.html` (project root)** — The live application pages (no framework, vanilla JS). All four are wired to the API:
 - `candidate-app.html` — fully wired (auth, profile, skills, work history, certs, preferences, appeals, demographics, notifications, matches)
-- `company-dashboard.html` — fully wired (8 tabs; Pipeline tab stub pending discussion)
-- `governance-dashboard.html` — fully wired (votes tab read-only; submission mechanism TBD)
+- `company-dashboard.html` — fully wired (all 8 tabs including Pipeline)
+- `governance-dashboard.html` — fully wired (votes tab has governance-auth submission form)
 - `landing-page.html` — candidate and company auth fully wired
 
 **`/mockup-ui/`** — Static design mockups with hardcoded data. These are reference visuals only — do NOT wire them to the API. When a page gets wired, the live version lives at root (`/`) and the mockup in `mockup-ui/` stays frozen as the design reference.
@@ -94,6 +94,33 @@ Each stage receives a `PipelineContext` (governance constants, ontology) and a `
 - `audit` — legal/compliance (audit_log, deletion_records, data_subject_requests)
 - `config` — governance constants and ontology domains
 
+## Security — mandatory, not optional
+
+### Defence-in-depth for user input (OWASP A03)
+
+**Two layers are always required. Neither alone is sufficient.**
+
+| Layer | Where | What | Tool |
+|-------|-------|------|------|
+| Rejection | API route, before DB write | Refuse HTML tags in free-text fields | `rejectHtml(value, 'fieldName')` from `api/src/utils/validation.ts` |
+| Encoding | HTML page, before innerHTML | Escape `< > & " '` in any value rendered into DOM | `h(value)` — defined in each HTML page's Helpers section |
+
+**Rule**: any time you add or modify an API route that writes free-text from user input, you must call `rejectHtml()` on every free-text field before the INSERT/UPDATE. Any time you write a value into innerHTML on a page, you must wrap it in `h()`.
+
+Client-side `hasHtml()` checks are a UX nicety only — they are not a security control. The API is the security boundary.
+
+### Checklist for any change touching user input
+
+1. **New API route / field**: does the route call `rejectHtml()` for every free-text field before writing to the DB?
+2. **New innerHTML render**: does every value from user data or API response go through `h()`?
+3. **SQL**: always use postgres.js tagged-template parameters — never string-concatenate into queries.
+4. **`onclick` attributes in generated HTML**: escape single quotes with `\'` or use `addEventListener` instead of inline handlers.
+
+### Existing implementations
+
+- `api/src/utils/validation.ts` — `rejectHtml(value, field)` throws `ValidationError` on HTML tag pattern
+- `h()` is defined near the top of each `*.html` file's `<script>` block — search for `function h(s)`
+
 ## Critical patterns
 
 **JSONB inserts**: Never use `JSON.stringify(value)::jsonb`. Use `app.db.json(value)`.
@@ -117,8 +144,7 @@ Each stage receives a `PipelineContext` (governance constants, ontology) and a `
 
 ## Known gaps
 
-- `company-dashboard.html` Pipeline tab is a stub (no API endpoint; separate discussion needed)
-- `governance-dashboard.html` Votes tab is read-only (submission mechanism TBD)
 - MMIL (multi-model inference layer) is deferred — spec at `specs/multi-model-inference-spec.md`
-- No integration tests hitting the real API + DB yet
-- Candidate profile: several bugs tracked in `todo.md` (save, data download, profile strength, fairness monitoring UX, skill ontology enforcement)
+- E2E test gaps requiring infrastructure: bias pipeline (scenarios 10.1–10.11), ghosting via SLA timer (7.5, 8.1, 8.4–8.5), candidate cohorts (13.1–13.2), post-deadline appeals (9.10) — see `tests/e2e/TESTING-SCENARIOS.md`
+- No `stage_invitation` notification emitted when active_interaction is created — candidate not notified when matched (scenario 5.8)
+- Candidate profile: skill entry should be constrained to ontology IDs (free-text skills break matching)
