@@ -74,6 +74,11 @@ const MOCK = {
     '00000000-0000-4000-a000-000009000002',
     '00000000-0000-4000-a000-000009000003',
   ],
+
+  strikeIds: [
+    '00000000-0000-4000-a000-000010000001',
+    '00000000-0000-4000-a000-000010000002',
+  ],
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -115,6 +120,7 @@ async function main() {
       // Cannot delete: match_events (trigger-immutable) or job_briefs that match_events reference
       // (ON DELETE RESTRICT). Both are idempotent via ON CONFLICT DO NOTHING.
       // Everything else is safe to delete and re-insert.
+      await db`DELETE FROM matching.company_strikes      WHERE strike_id     = ANY(${MOCK.strikeIds})`;
       await db`DELETE FROM matching.ghosting_events     WHERE ghosting_id   = ANY(${MOCK.ghostingIds})`;
       await db`DELETE FROM matching.appeals             WHERE appeal_id     = ANY(${MOCK.appealIds})`;
       await db`DELETE FROM matching.active_interactions WHERE match_id      = ANY(${MOCK.matchIds})`;
@@ -312,6 +318,27 @@ async function main() {
         ON CONFLICT (ghosting_id) DO NOTHING
       `;
     }
+
+    // ── Company Strikes ────────────────────────────────────────────────────
+    // Two strikes for the two open ghosting events (idx 0 and 1).
+    // Resolved ghosting events (idx 2, 3) do not generate strikes.
+    console.log('Inserting company strikes…');
+    await db`
+      INSERT INTO matching.company_strikes (strike_id, company_id, ghosting_id, recorded_at, expires_at)
+      VALUES (
+        ${MOCK.strikeIds[0]}, ${companyId}, ${MOCK.ghostingIds[0]},
+        ${daysAgo(8)}, ${daysFromNow(357)}
+      )
+      ON CONFLICT (strike_id) DO NOTHING
+    `;
+    await db`
+      INSERT INTO matching.company_strikes (strike_id, company_id, ghosting_id, recorded_at, expires_at)
+      VALUES (
+        ${MOCK.strikeIds[1]}, ${companyId}, ${MOCK.ghostingIds[1]},
+        ${daysAgo(5)}, ${daysFromNow(360)}
+      )
+      ON CONFLICT (strike_id) DO NOTHING
+    `;
 
     // ── Fairness Metrics (company-level) ───────────────────────────────────
     console.log('Inserting fairness metrics…');
@@ -650,6 +677,7 @@ async function main() {
     console.log('  Match events:  12');
     console.log('  Interactions:  12');
     console.log('  Ghosting:      4 (2 open, 2 resolved)');
+    console.log('  Strikes:       2 (one per open ghosting event)');
     console.log('  Appeals:       3');
     console.log('  Escalations:   5 (PC×2, FOB×2, TWG×1)');
     console.log('  Proposals:     2');
