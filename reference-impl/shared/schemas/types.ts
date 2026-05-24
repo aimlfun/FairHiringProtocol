@@ -149,9 +149,9 @@ export interface MatchExplanation {
     not_matched_reasons?:  Array<{
       reason_code:           string;
       human_readable:        string;
-      ontology_id?:          string;
-      required_proficiency?: ProficiencyLevel;
-      candidate_proficiency?: ProficiencyLevel | null;
+      ontology_id:           string | undefined;
+      required_proficiency:  ProficiencyLevel | undefined;
+      candidate_proficiency: ProficiencyLevel | null | undefined;
     }>;
   };
   scores: {
@@ -208,7 +208,7 @@ export interface GhostingEvent {
   job_id:         UUID;
   match_id:       UUID;
   stage_name:     GhostingStage;
-  last_contact_at?: string;
+  last_contact_at: string | undefined;
   sla_deadline:   string;
   detected_at:    string;
   overdue_hours?: number;

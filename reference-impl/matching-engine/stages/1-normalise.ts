@@ -3,10 +3,10 @@
  * See: specs/matching-engine-spec.md Stage 1
  */
 
-import type { PipelineContext }  from '../context.ts';
-import type { TraceBuilder }     from '../../shared/logger/trace-builder.ts';
-import { UnknownSkillError }     from '../../shared/errors/index.ts';
-import type { CandidateProfile, JobBrief } from '../../shared/schemas/types.ts';
+import type { PipelineContext }  from '../context.js';
+import type { TraceBuilder }     from '../../shared/logger/trace-builder.js';
+import { UnknownSkillError }     from '../../shared/errors/index.js';
+import type { CandidateProfile, JobBrief } from '../../shared/schemas/types.js';
 
 export function normalise(
   candidate: CandidateProfile,

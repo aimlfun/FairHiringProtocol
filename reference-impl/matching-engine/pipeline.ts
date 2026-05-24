@@ -9,20 +9,20 @@
  */
 
 import { v4 as uuidv4 }         from 'uuid';
-import type { PipelineContext }  from './context.ts';
-import { normalise }             from './stages/1-normalise.ts';
-import { expandSemantics, checkConstraints, scoreSkills, applyTransfer } from './stages/2-5-stages.ts';
-import { scorePreferences, detectBias, applyBiasCorrection, generateExplanations } from './stages/6-9-stages.ts';
-import { TraceBuilder }          from '../shared/logger/trace-builder.ts';
-import { redistributeWeights }   from './utils/proficiency.ts';
-import { PipelineStageError }    from '../shared/errors/index.ts';
+import type { PipelineContext }  from './context.js';
+import { normalise }             from './stages/1-normalise.js';
+import { expandSemantics, checkConstraints, scoreSkills, applyTransfer } from './stages/2-5-stages.js';
+import { scorePreferences, detectBias, applyBiasCorrection, generateExplanations } from './stages/6-9-stages.js';
+import { TraceBuilder }          from '../shared/logger/trace-builder.js';
+import { redistributeWeights }   from './utils/proficiency.js';
+import { PipelineStageError }    from '../shared/errors/index.js';
 import type {
   CandidateProfile,
   JobBrief,
   MatchExplanation,
   PipelineTrace,
   MatchDecision,
-} from '../shared/schemas/types.ts';
+} from '../shared/schemas/types.js';
 
 export interface PipelineResult {
   matchId:                 string;

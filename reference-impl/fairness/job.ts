@@ -13,7 +13,7 @@
  */
 
 import { v4 as uuidv4 }   from 'uuid';
-import { GOVERNANCE }     from '../shared/config/governance.ts';
+import { GOVERNANCE }     from '../shared/config/governance.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,8 +49,8 @@ interface ComputedFairnessRecord {
   computed_at:        string;
   pipeline_version:   string;
   scope_level:        'job' | 'company' | 'platform';
-  scope_job_id?:      string;
-  scope_company_id?:  string;
+  scope_job_id:       string | undefined;
+  scope_company_id:   string | undefined;
   window_from:        string;
   window_to:          string;
   cohort_stats:       CohortStats[];

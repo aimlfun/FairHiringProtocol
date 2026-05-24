@@ -12,8 +12,8 @@
  */
 
 import { v4 as uuidv4 }        from 'uuid';
-import { GOVERNANCE }          from '../shared/config/governance.ts';
-import type { GhostingEvent, GhostingStage, GhostingSeverity, UUID } from '../shared/schemas/types.ts';
+import { GOVERNANCE }          from '../shared/config/governance.js';
+import type { GhostingEvent, GhostingStage, GhostingSeverity, UUID } from '../shared/schemas/types.js';
 
 // ── Store interfaces ──────────────────────────────────────────────────────────
 

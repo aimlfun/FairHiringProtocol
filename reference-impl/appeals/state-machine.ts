@@ -9,9 +9,9 @@
  */
 
 import { v4 as uuidv4 }        from 'uuid';
-import { GOVERNANCE }          from '../shared/config/governance.ts';
-import { AppealIneligibleError, NotFoundError } from '../shared/errors/index.ts';
-import type { Appeal, AppealGround, AppealStatus, AppealOutcome, UUID } from '../shared/schemas/types.ts';
+import { GOVERNANCE }          from '../shared/config/governance.js';
+import { AppealIneligibleError, NotFoundError } from '../shared/errors/index.js';
+import type { Appeal, AppealGround, AppealStatus, AppealOutcome, UUID } from '../shared/schemas/types.js';
 
 // ── Store interface ───────────────────────────────────────────────────────────
 

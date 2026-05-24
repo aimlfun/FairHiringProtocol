@@ -5,10 +5,10 @@
  * Built once per run and passed to every stage. Stages must not modify it.
  */
 
-import type { ResolvedOntology }     from '../ontology/loader.ts';
-import type { FairnessMetricsStore } from '../fairness/store.ts';
-import type { CohortService }        from '../bias/cohort.ts';
-import { GOVERNANCE }                from '../shared/config/governance.ts';
+import type { ResolvedOntology }     from '../ontology/loader.js';
+import type { FairnessMetricsStore } from '../fairness/store.js';
+import type { CohortService }        from '../bias/cohort.js';
+import { GOVERNANCE }                from '../shared/config/governance.js';
 
 export interface PipelineContext {
   /** Pinned ontology version for this run */

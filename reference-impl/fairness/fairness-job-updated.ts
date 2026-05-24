@@ -14,8 +14,8 @@
  */
 
 import { v4 as uuidv4 }                                    from 'uuid';
-import { GOVERNANCE }                                       from '../shared/config/governance.ts';
-import type { CohortService, FairnessCharacteristic }       from '../bias/cohort-service.ts';
+import { GOVERNANCE }                                       from '../shared/config/governance.js';
+import type { CohortService, FairnessCharacteristic }       from '../bias/cohort-service.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,8 +76,8 @@ export interface FairnessComputationResult {
   computed_at:                string;
   pipeline_version:           string;
   scope_level:                'job' | 'company' | 'platform';
-  scope_job_id?:              string;
-  scope_company_id?:          string;
+  scope_job_id:               string | undefined;
+  scope_company_id:           string | undefined;
   window_from:                string;
   window_to:                  string;
   total_candidates_evaluated: number;
@@ -320,8 +320,8 @@ async function computeDimensionMetrics(
 
   // Sort by total desc — largest cohort is reference
   const sorted   = [...validCohorts].sort((a, b) => b.total - a.total);
-  const refCohort  = sorted[0];
-  const compCohort = sorted[1];
+  const refCohort  = sorted[0]!;
+  const compCohort = sorted[1]!;
 
   // DIR
   const refRate  = refCohort.matched / refCohort.total;
@@ -431,7 +431,7 @@ function emptyResult(
 }
 
 // Export GOVERNANCE extension for demographics
-declare module '../shared/config/governance.ts' {
+declare module '../shared/config/governance.js' {
   interface GovernanceConstants {
     DEMOGRAPHICS_MIN_DISCLOSURE_RATE: number;
   }

@@ -3,9 +3,9 @@
  * See: specs/matching-engine-spec.md Stage 6 / specs/scoring-spec.md §6
  */
 
-import type { PipelineContext }  from '../context.ts';
-import type { TraceBuilder }     from '../../shared/logger/trace-builder.ts';
-import type { CandidateProfile, JobBrief } from '../../shared/schemas/types.ts';
+import type { PipelineContext }  from '../context.js';
+import type { TraceBuilder }     from '../../shared/logger/trace-builder.js';
+import type { CandidateProfile, JobBrief } from '../../shared/schemas/types.js';
 
 export function scorePreferences(
   candidate: CandidateProfile,
@@ -65,8 +65,8 @@ export function scorePreferences(
  * See: specs/matching-engine-spec.md Stage 7 / specs/bias-correction-spec.md §4
  */
 
-import type { CohortMembership, CorrectionCandidate } from '../../bias/cohort.ts';
-import { computeCorrectionMagnitude, cohortIsUnderRepresented } from '../../bias/correction.ts';
+import type { CohortMembership, CorrectionCandidate } from '../../bias/cohort.js';
+import { computeCorrectionMagnitude, cohortIsUnderRepresented } from '../../bias/correction.js';
 
 export async function detectBias(
   candidateId: string,
@@ -118,7 +118,7 @@ export async function detectBias(
  * See: specs/matching-engine-spec.md Stage 8 / specs/bias-correction-spec.md §5
  */
 
-import { clamp }      from '../utils/proficiency.ts';
+import { clamp }      from '../utils/proficiency.js';
 // BiasAssessment imported via shared types
 
 export function applyBiasCorrection(
@@ -149,12 +149,14 @@ export function applyBiasCorrection(
   const biasAssessment: BiasAssessment = {
     triggered:        triggered.length > 0,
     metricsEvaluated: ['disparate_impact_ratio', 'equal_opportunity_difference', 'score_distribution_skew'],
-    correctionApplied: applied ? {
-      metric:        applied.metric.toLowerCase().replace('DIR', 'disparate_impact_ratio').replace('EOD', 'equal_opportunity_difference').replace('SDS', 'score_distribution_skew') as any,
-      direction:     applied.direction,
-      magnitude:     applied.magnitude,
-      humanReadable: `Bias correction applied (${applied.metric}): score adjusted ${applied.direction} by ${(applied.magnitude * 100).toFixed(1)} percentage points.`,
-    } : undefined,
+    ...(applied ? {
+      correctionApplied: {
+        metric:        applied.metric.toLowerCase().replace('DIR', 'disparate_impact_ratio').replace('EOD', 'equal_opportunity_difference').replace('SDS', 'score_distribution_skew') as any,
+        direction:     applied.direction,
+        magnitude:     applied.magnitude,
+        humanReadable: `Bias correction applied (${applied.metric}): score adjusted ${applied.direction} by ${(applied.magnitude * 100).toFixed(1)} percentage points.`,
+      },
+    } : {}),
   };
 
   trace.recordStage('bias_correction', 'completed', {
@@ -172,9 +174,9 @@ export function applyBiasCorrection(
  */
 
 import { v4 as uuidv4 }   from 'uuid';
-import type { MatchExplanation, MatchDecision, BiasAssessment, SkillBreakdown } from '../../shared/schemas/types.ts';
-import type { SkillBreakdownEntry } from './2-5-stages.ts';
-import type { ConstraintFailure }   from './2-5-stages.ts';
+import type { MatchExplanation, MatchDecision, BiasAssessment, SkillBreakdown } from '../../shared/schemas/types.js';
+import type { SkillBreakdownEntry } from './2-5-stages.js';
+import type { ConstraintFailure }   from './2-5-stages.js';
 
 interface OutcomeInput {
   decision:       MatchDecision;

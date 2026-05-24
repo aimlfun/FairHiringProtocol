@@ -22,13 +22,13 @@ import {
   type DemographicsStore,
   type CohortMembership,
   type FairnessCharacteristic,
-}                                           from '../bias/cohort-service.ts';
+}                                           from '../../bias/cohort-service.ts';
 import {
   runFairnessJob,
   type MatchEventRecord,
   type MatchEventStore,
   type FairnessComputationResult,
-}                                           from '../fairness/fairness-job-updated.ts';
+}                                           from '../../fairness/fairness-job-updated.ts';
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 
@@ -338,7 +338,7 @@ describe('Fairness computation — with real demographic cohorts', () => {
 
     // Seed only 5 of the 100 candidates
     for (let i = 0; i < 5; i++) {
-      const candidateId = matches[i].candidate_id;
+      const candidateId = matches[i]!.candidate_id;
       cohortService.seed(candidateId, [{
         characteristic: 'sex_group',
         cohortId:       'cohort:sex_group:A',
@@ -474,23 +474,23 @@ describe('Fairness computation — with real demographic cohorts', () => {
 
     // 30 + 30 on sex dimension (sufficient and clean)
     for (let i = 0; i < 30; i++) {
-      cohortService.seed(matches[i].candidate_id, [{
+      cohortService.seed(matches[i]!.candidate_id, [{
         characteristic: 'sex_group', cohortId: 'cohort:sex_group:A', dimension: 'Sex',
       }]);
     }
     for (let i = 30; i < 60; i++) {
-      cohortService.seed(matches[i].candidate_id, [{
+      cohortService.seed(matches[i]!.candidate_id, [{
         characteristic: 'sex_group', cohortId: 'cohort:sex_group:B', dimension: 'Sex',
       }]);
     }
 
     // Only 2 candidates have religion data (insufficient)
-    cohortService.seed(matches[0].candidate_id, [
-      ...cohortService['cohorts'].get(matches[0].candidate_id) ?? [],
+    cohortService.seed(matches[0]!.candidate_id, [
+      ...cohortService['cohorts'].get(matches[0]!.candidate_id) ?? [],
       { characteristic: 'religion_group', cohortId: 'cohort:religion_group:B', dimension: 'Religion' },
     ]);
-    cohortService.seed(matches[1].candidate_id, [
-      ...cohortService['cohorts'].get(matches[1].candidate_id) ?? [],
+    cohortService.seed(matches[1]!.candidate_id, [
+      ...cohortService['cohorts'].get(matches[1]!.candidate_id) ?? [],
       { characteristic: 'religion_group', cohortId: 'cohort:religion_group:F', dimension: 'Religion' },
     ]);
 
@@ -613,7 +613,7 @@ describe('Data insufficiency — does not cause false escalations', () => {
     // Only 40 of 100 candidates provide sex data — above 20% threshold but
     // with only one cohort (all male) there are not enough cohorts to compare
     for (let i = 0; i < 40; i++) {
-      cohortService.seed(matches[i].candidate_id, [{
+      cohortService.seed(matches[i]!.candidate_id, [{
         characteristic: 'sex_group', cohortId: 'cohort:sex_group:A', dimension: 'Sex',
       }]);
     }

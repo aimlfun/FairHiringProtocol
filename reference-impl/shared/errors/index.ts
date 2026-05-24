@@ -7,7 +7,7 @@
 
 export class FHPError extends Error {
   readonly code: string;
-  readonly context?: Record<string, unknown>;
+  readonly context: Record<string, unknown> | undefined;
 
   constructor(message: string, code: string, context?: Record<string, unknown>) {
     super(message);

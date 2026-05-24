@@ -3,17 +3,17 @@
  * See: specs/matching-engine-spec.md Stage 2
  */
 
-import type { PipelineContext }  from '../context.ts';
-import type { TraceBuilder }     from '../../shared/logger/trace-builder.ts';
-import type { JobBrief }         from '../../shared/schemas/types.ts';
-import type { ProficiencyLevel } from '../../shared/config/governance.ts';
+import type { PipelineContext }  from '../context.js';
+import type { TraceBuilder }     from '../../shared/logger/trace-builder.js';
+import type { JobBrief }         from '../../shared/schemas/types.js';
+import type { ProficiencyLevel } from '../../shared/config/governance.js';
 
 export interface ExpandedRequirement {
   canonicalId:        string;
   synonyms:           string[];
   requirementLevel:   'must_have' | 'nice_to_have';
   minimumProficiency: ProficiencyLevel;
-  context?:           string;
+  context:            string | undefined;
 }
 
 export function expandSemantics(
@@ -52,8 +52,8 @@ export function expandSemantics(
  * See: specs/matching-engine-spec.md Stage 3
  */
 
-import { computeSkillScore } from '../utils/proficiency.ts';
-import type { CandidateProfile } from '../../shared/schemas/types.ts';
+import { computeSkillScore } from '../utils/proficiency.js';
+import type { CandidateProfile } from '../../shared/schemas/types.js';
 
 export type ConstraintFailureCode =
   | 'missing_must_have_skill'
@@ -175,7 +175,7 @@ export function checkConstraints(
  * See: specs/matching-engine-spec.md Stage 4 / specs/scoring-spec.md §4
  */
 
-import { mean } from '../utils/proficiency.ts';
+import { mean } from '../utils/proficiency.js';
 
 export interface SkillBreakdownEntry {
   ontologyId:          string;
@@ -248,8 +248,8 @@ export function scoreSkills(
  * See: specs/matching-engine-spec.md Stage 5 / specs/scoring-spec.md §5
  */
 
-import { clamp } from '../utils/proficiency.ts';
-import { toNumeric } from '../utils/proficiency.ts';
+import { clamp } from '../utils/proficiency.js';
+import { toNumeric } from '../utils/proficiency.js';
 
 export function applyTransfer(
   candidate: CandidateProfile,

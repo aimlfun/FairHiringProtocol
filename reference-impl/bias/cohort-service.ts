@@ -181,7 +181,7 @@ export class FHPCohortService implements CohortService {
     if (demographics.sex && demographics.sex in SEX_COHORTS) {
       memberships.push({
         characteristic: 'sex_group',
-        cohortId:       SEX_COHORTS[demographics.sex],
+        cohortId:       SEX_COHORTS[demographics.sex]!,
         dimension:      DIMENSION_LABELS.sex_group,
       });
     }
@@ -190,7 +190,7 @@ export class FHPCohortService implements CohortService {
     if (demographics.ethnicity && demographics.ethnicity in ETHNICITY_COHORTS) {
       memberships.push({
         characteristic: 'ethnicity_group',
-        cohortId:       ETHNICITY_COHORTS[demographics.ethnicity],
+        cohortId:       ETHNICITY_COHORTS[demographics.ethnicity]!,
         dimension:      DIMENSION_LABELS.ethnicity_group,
       });
     }
@@ -199,7 +199,7 @@ export class FHPCohortService implements CohortService {
     if (demographics.religion && demographics.religion in RELIGION_COHORTS) {
       memberships.push({
         characteristic: 'religion_group',
-        cohortId:       RELIGION_COHORTS[demographics.religion],
+        cohortId:       RELIGION_COHORTS[demographics.religion]!,
         dimension:      DIMENSION_LABELS.religion_group,
       });
     }
@@ -217,7 +217,7 @@ export class FHPCohortService implements CohortService {
     if (demographics.education_level && demographics.education_level in EDUCATION_COHORTS) {
       memberships.push({
         characteristic: 'education_group',
-        cohortId:       EDUCATION_COHORTS[demographics.education_level],
+        cohortId:       EDUCATION_COHORTS[demographics.education_level]!,
         dimension:      DIMENSION_LABELS.education_group,
       });
     }

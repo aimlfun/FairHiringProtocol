@@ -1,4 +1,4 @@
-import { GOVERNANCE, type ProficiencyLevel } from '../../shared/config/governance.ts';
+import { GOVERNANCE, type ProficiencyLevel } from '../../shared/config/governance.js';
 
 const ORDERED_LEVELS: ProficiencyLevel[] = [
   'aware', 'practitioner', 'proficient', 'expert', 'authority',

@@ -10,8 +10,8 @@
 
 import { createHash }          from 'node:crypto';
 import { v4 as uuidv4 }        from 'uuid';
-import { GOVERNANCE }          from '../config/governance.ts';
-import type { PipelineContext } from '../../matching-engine/context.ts';
+import { GOVERNANCE }          from '../config/governance.js';
+import type { PipelineContext } from '../../matching-engine/context.js';
 
 interface StageRecord {
   stage_name:    string;
@@ -20,10 +20,10 @@ interface StageRecord {
   started_at:    string;
   completed_at?: string;
   duration_ms?:  number;
-  input_snapshot?:  Record<string, unknown>;
-  output_snapshot?: Record<string, unknown>;
-  decisions?:    Array<{ decision_type: string; value: unknown; rationale: string; confidence?: number }>;
-  warnings?:     Array<{ code: string; message: string }>;
+  input_snapshot:  Record<string, unknown> | undefined;
+  output_snapshot: Record<string, unknown> | undefined;
+  decisions:     Array<{ decision_type: string; value: unknown; rationale: string; confidence?: number }> | undefined;
+  warnings:      Array<{ code: string; message: string }> | undefined;
 }
 
 const STAGE_ORDER: Record<string, number> = {
