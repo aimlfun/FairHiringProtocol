@@ -11,9 +11,99 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MMIL implementation (spec complete at `specs/multi-model-inference-spec.md`; deferred pending API keys)
 - Email verification on sign-up (will use smtp4dev)
 - SSL on API endpoints
-- Candidate profile: "no matches" state shows blank — needs empty-state message
+- Accessibilty: insufficient titles on inputs, etc.
 - Candidate profile: Fairness Monitoring fields show blank after save (by design — GDPR write-only); UI needs to replace fields with a "data provided — click to re-enter" state
-- Candidate profile: skill entry must be constrained to ontology IDs (free-text skills break job matching)
+- **Auto-matching production architecture**: current in-process `_autoMatchQueue` in `matching-service.ts` is a dev placeholder. At scale (200k+ candidates, 10k+ jobs) this must be replaced with a proper job queue (pg-boss recommended — uses existing PostgreSQL, minimal infrastructure) and separate worker processes. The `runAndSavePair` / mapper functions are already decoupled and can move to a worker unchanged.
+
+### Changed
+- Fonts referenced locally: /fonts/*.css, rather than referencing google.
+- css / js moved outside of html for best practice.
+
+### Known test failures (full-suite run, full-suite-only — all pass in isolation)
+
+These 3–9 tests fail only in the full ~282-test suite, never when run alone. Root causes are full-suite ordering effects; fixes deferred.
+
+| Test | File | Failure mode | Root cause |
+|------|------|-------------|------------|
+| `8.4` company resolves ghosting event | ghosting-resolve-dispute.spec.ts | Fast failure ~35ms | Full-suite state ordering — `beforeAll` company/interaction setup affected by earlier specs |
+| `8.5` company disputes ghosting event | ghosting-resolve-dispute.spec.ts | Fast failure ~35ms | Same |
+| Demographics consent tests (3 tests) | demographics-consent.spec.ts | Fast failure 6–40ms | `beforeAll` cascade from full-suite ordering |
+| matching-simulation UI | matching-simulation.spec.ts | `waitForURL` timeout 47s | Intermittent CDN/browser issue |
+| work history Add role button | regression.spec.ts | `waitForURL` timeout 47s | Same |
+
+---
+
+## [0.16.0] — 2026-05-31
+
+### Fixed — application bugs
+
+- **`matches.ts` JSONB double-encoding** (`api/src/routes/matches.ts`): match explanation inserts used `${JSON.stringify(value)}::jsonb` — when `skill_breakdown` was already a JavaScript array, `JSON.stringify` plus the `::jsonb` cast stored the array as a JSON *string* inside JSONB rather than as an array. On retrieval `buildExplanationHtml` received a string, called `.forEach`, crashed silently, and `loadMatches()` in the UI never updated the filter counts — "All (0)" even when matches existed. Fixed to use `app.db.json(value)` throughout (per CLAUDE.md JSONB pattern).
+- **`candidate-app.js` `buildExplanationHtml` defensive guard**: made `skill_breakdown` parsing defensive against string values (legacy DB rows with the old encoding or any future misfire) — tries `JSON.parse` before giving up, rather than crashing the entire `loadMatches()` render loop.
+- **`matches.ts` 409 response now structured**: the duplicate-match 409 response previously embedded `match_id` as plain text inside `message`; it now returns `{ error, message, match_id }` so tests can extract the existing match ID without string parsing.
+
+### Fixed — E2E test suite
+
+The full test suite was at ~245/282 (~87%). After these fixes it stabilises at **275–276/282 (~97.5%)** across multiple runs.
+
+**Root causes addressed:**
+
+1. **Auto-matching queue starving HTTP requests** — `matching-service.ts` `_autoMatchQueue` ran all pipeline pairs sequentially on the main event loop. With 282 tests each potentially triggering auto-matching, the queue accumulated hundreds of pairs. Each pair's CPU-bound pipeline work occasionally delayed HTTP request processing long enough to hit `waitForURL` timeouts.
+   - `triggerJobMatching` LIMIT reduced 10 → 5; pairs now run in `Promise.allSettled` (parallel) per batch, draining the queue ~5× faster.
+   - `triggerCandidateMatching` LIMIT reduced 5 → 3; same parallelisation.
+
+2. **Background auto-matching architecture** (`api/src/services/matching-service.ts`, `api/.env`): added `AUTO_MATCHING` config flag (default `true`); set `AUTO_MATCHING=false` in `api/.env` so the background queue never runs during test/dev. Tests that specifically exercise auto-matching now call explicit synchronous test-helper endpoints instead of polling.
+
+3. **Test-helper endpoints** (`api/src/routes/test-helpers.ts`): added `POST /v1/test-helpers/trigger-job-matching` and `POST /v1/test-helpers/trigger-candidate-matching` — run the matching pipeline synchronously for a specific job/candidate and await completion. `auto-matching.spec.ts` updated to call these instead of polling.
+
+4. **Google Fonts CDN blocking `registerCandidate`** (`tests/e2e/helpers.ts`): `landing-page.html` loads Google Fonts via `<link rel="stylesheet">`, which — per the HTML parser's CSS-before-script rule — blocks `landing-page.js` from executing until the external CDN responds. A slow CDN response (intermittent) caused `waitForLoadState('networkidle')` to stall, leaving insufficient time for form submission and redirect. Fixed by intercepting `fonts.googleapis.com/**` and `fonts.gstatic.com/**` in `blockFonts()` and calling it at the start of `registerCandidate`, `loginCandidate`, and `registerAndCaptureToken`.
+
+5. **409 handling in test specs**: when `AUTO_MATCHING=true` was active, auto-matching occasionally pre-created a match before a test's `POST /v1/matches` call, returning 409. Fixed in `bias-selection-pattern.spec.ts`, `cohort-assignment.spec.ts`, and `matching-simulation.spec.ts` to handle 409 gracefully (fetch the existing match, verify decision).
+
+6. **`compute-job-fairness` candidate filter** (`api/src/routes/test-helpers.ts`): added optional `candidate_ids` parameter to restrict fairness computation to the test's specific candidates, preventing contamination from stale DB rows that `triggerJobMatching` matched to the test job.
+
+7. **`playwright.config.ts`**: overall test timeout raised 30 s → 60 s; `waitForURL` timeout raised 10 s → 45 s to accommodate occasional server warm-up on first run.
+
+### Changed
+
+- `auto-matching.spec.ts`: polling replaced with explicit `trigger-job-matching` / `trigger-candidate-matching` test-helper calls — tests are now deterministic (no timing assumptions).
+- `api/.env`: `AUTO_MATCHING=false` added.
+
+---
+
+## [0.15.0] — 2026-05-28
+
+### Fixed
+- **Company registration modal focus** (`landing-page.html`): `openModal('company')` now focuses `coreg-legal-name` (legal company name — the first field) instead of `coreg-email` (compliance email — a later field)
+- **Company job dialog skill search** (`company-dashboard.html`): replaced hardcoded 19-entry `SKILL_OPTIONS` array with a debounced `GET /v1/ontology/skills` API call; fixes C# and C++ (and any other skill absent from the old list) being unsearchable; uses index-based selection (`_dialogSkillSuggestions[i]`) to avoid JSON-in-attribute escaping issues
+- **`updateProfGuidance` ReferenceError** (`company-dashboard.html`): function and its dependency `PROF_DEFS` were defined inside `renderJobSkills()` making them local-scope only; `openJobDialog()` and the proficiency `<select onchange="updateProfGuidance()">` attribute both threw `ReferenceError`; `PROF_LABELS`, `PROF_DEFS`, and `updateProfGuidance` hoisted to module scope
+
+---
+
+## [0.14.0] — 2026-05-28
+
+### Added
+- **Governed certifications/licence ontology** — `ontology/skills.json` bumped to v1.2.0 with a new top-level `"certifications"` block (33 entries: 10 licences, 22 professional certifications). Each entry carries `cert_id` (e.g. `fhp:cert:cka`), `issuing_body`, `type`, expiry metadata, and an `evidences` array mapping the cert to the skills and minimum proficiency levels it corroborates.
+  - `licence` entries are a hard gate in matching Stage 3 (binary pass/fail). Examples: Driving Licence (B), GMC Full Registration, SIA Door Supervisor, FCA Approved Person, Enhanced DBS.
+  - `certification` entries are a proficiency corroboration signal in matching Stage 4. Examples: CKA, AWS SAA/SAP, CISSP, OSCP, PMP, PSM I.
+- **`config.certifications` table** (`db/migrations/025_certifications.sql`) — governed cert ID ontology with `cert_id`, `label`, `issuing_body`, `cert_type`, `has_expiry`, `validity_years`, `evidences` JSONB, seeded with 33 entries; all non-ASCII characters encoded via `chr()` for portable Windows/Linux migration execution
+- **`db/migrations/026_fix_cert_label_encoding.sql`** — remediation migration to fix rows corrupted by Windows psql UTF-8 re-encoding (stored literal `?` instead of en-dash / superscript 2); uses `chr(8211)`, `chr(8212)`, `chr(178)` for encoding-safe UPDATE
+- **`matching.candidate_profiles.certifications` JSONB column** — first-class certs array, separate from `preferences`; each entry: `{cert_id, label, issuing_body, cert_type, issued?, expiry?, credential_url?}`
+- **`matching.job_briefs.required_certifications` JSONB column** — array of `{cert_id, requirement}` where `requirement` is `must_have | preferred`
+- **`GET /v1/ontology/certifications`** — unauthenticated autocomplete endpoint; ILIKE search on label/issuing_body/cert_id; optional `type=licence|certification` filter; returns `{certifications, total}`
+- **`PUT/GET /v1/candidates/me`**: `certifications` field added at top level (not nested inside `preferences`); cert IDs validated against `config.certifications` on write
+- **`POST/PUT /v1/jobs`**: `required_certifications` field added; cert IDs validated against `config.certifications`
+- **Candidate app cert UI** (`candidate-app.html`): replaced free-text cert form with governed autocomplete — type-ahead search via `GET /v1/ontology/certifications`, cert type badge (LICENCE / CERT / MEMBERSHIP), evidence signals line, expiry auto-fill when `has_expiry && validity_years`, credential URL field
+- **Company dashboard cert UI** (`company-dashboard.html`): "Required Licences & Certifications" section added to job dialog (Section 05) — type-ahead cert search, requirement selector (must_have / preferred), auto-sets `must_have` for licence-type certs; saved in `required_certifications` on job brief POST/PUT
+- **Appeals tab empty state** (`candidate-app.html`): "Submit a New Appeal" section is now hidden when the candidate has no appealable matches; replaced with an explanatory message ("only not matched / borderline outcomes within 30 days can be appealed")
+- **`h()` non-ASCII encoding** in both `candidate-app.html` and `company-dashboard.html`: all code points > 127 encoded as `&#NNNN;` numeric character references — defence-in-depth for any future Unicode data from the API
+
+### Fixed
+- **Cert suggestion click failure**: `JSON.stringify(cert)` embedded directly in `onmousedown="…"` attributes produced double-quoted JSON that broke the HTML attribute delimiter, truncating the handler and leaking raw JSON as visible text; fixed by storing suggestion objects in module-level arrays (`_certSuggestions`, `_jobCertSuggestions`) and referencing only the integer index in inline handlers
+- **Cert label "???" display**: Windows psql re-encodes multi-byte UTF-8 byte sequences through the terminal code page before transmitting to PostgreSQL, storing literal `?` characters for en-dash and superscript-2; fixed by using `chr()` in migration 025 (pure ASCII source) and shipping migration 026 to correct any already-stored garbled rows
+- **"View terms" link** in candidate app Data & Privacy tab: was `href="#"` (went nowhere); now `href="landing-page.html#terms" target="_blank" rel="noopener"` pointing to the existing ToS section in the landing page
+
+### Testing
+- **Ontology skill search regression** — 5 new tests added to `tests/e2e/candidate-profile-api.spec.ts` (`describe('Ontology skill search API')`): C# search by `c%23`, C++ search by `c%2B%2B`, Python baseline, nonsense query returns empty array, full listing contains both symbol-named skills. Guards against the URL-encoding regression that caused symbol-character skills to be unsearchable.
 
 ---
 

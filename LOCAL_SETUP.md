@@ -4,6 +4,38 @@ This gets the API running locally so you can wire the HTML pages to real endpoin
 
 ---
 
+## Quick start (Windows — recommended)
+
+Once prerequisites are met and `api/.env` is configured (see below), a single script handles everything:
+
+```powershell
+.\start-dev.ps1
+```
+
+It will:
+1. Remove and recreate the `fhp-postgres` Docker container (fresh DB)
+2. Run all migrations in filename order
+3. Seed governance users from `api/.env`
+4. Start the static file server on **port 9999** (background)
+5. Start the Fastify API on **port 3000** (foreground)
+
+When it's ready you'll see:
+
+```
+ API server       http://localhost:3000
+ Swagger UI       http://localhost:3000/documentation
+ Landing page     http://localhost:9999/landing-page.html
+ Candidate app    http://localhost:9999/candidate-app.html
+ Company dash     http://localhost:9999/company-dashboard.html
+ Governance dash  http://localhost:9999/governance-dashboard.html
+```
+
+Press **Ctrl+C** to stop both servers.
+
+> **Note:** The script recreates the Docker container on every run — all data is wiped. This is intentional for a clean dev loop. If you want to preserve data between sessions, stop the script with Ctrl+C but leave the container running (`docker stop fhp-postgres` to pause it later), then start the API manually with `cd api && npm run dev`.
+
+---
+
 ## Prerequisites
 
 ### 1. Node.js 20+
@@ -33,9 +65,9 @@ docker ps | grep fhp-postgres
 
 ---
 
-## First-time database setup
+## Manual setup (Linux / macOS / Windows without the script)
 
-Run the 19 migration files in order against the new container. From the `db/migrations/` folder:
+Run all migration files in order against the new container. From the `db/migrations/` folder:
 
 > **Note:** `000_roles.sql` runs first and creates the Postgres roles. The PowerShell/bash loops below pick it up automatically because they sort by filename.
 

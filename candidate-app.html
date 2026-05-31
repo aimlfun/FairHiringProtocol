@@ -4,337 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FHP — Candidate Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --cream:#faf6ef; --cream-d:#f0e8d8; --cream-m:#e8ddc8;
-  --teal:#1a5c5c; --teal-hi:#2a8080; --teal-dim:#e0efef; --teal-faint:#f0f8f8;
-  --ink:#1e1810; --ink-mid:#4a4030; --ink-light:#8a7858; --ink-faint:#c0aa88;
-  --sage:#5a7a5a; --sage-bg:#eaf0ea;
-  --rust:#a03820; --rust-bg:#f8ece8;
-  --gold:#8a6a10; --gold-bg:#fef8e8;
-  --blue:#2050a0; --blue-bg:#eaf0ff;
-  --rule:#d8cbb0;
-  --serif:'Lora',Georgia,serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
-  --sh:0 2px 16px rgba(26,18,10,.08); --sh-lg:0 8px 40px rgba(26,18,10,.12);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh}
-
-/* HEADER */
-.hdr{background:var(--teal);position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.18)}
-.hi{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 20px;gap:10px}
-.logo{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0;text-decoration:none}
-.gem{width:17px;height:17px;background:rgba(255,255,255,.9);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)}
-.wm{font-family:var(--serif);font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
-.wm span{color:rgba(255,255,255,.42);font-weight:400;font-size:12px;margin-left:5px;font-style:italic}
-.hnav{display:flex;gap:2px;flex:1;justify-content:center}
-.nb{font-size:12px;color:rgba(255,255,255,.62);padding:5px 10px;border-radius:4px;cursor:pointer;border:none;background:transparent;font-family:var(--sans);white-space:nowrap;transition:all .15s}
-.nb:hover{background:rgba(255,255,255,.1);color:#fff}
-.nb.active{background:rgba(255,255,255,.16);color:#fff;font-weight:500}
-.hr{display:flex;align-items:center;gap:8px;flex-shrink:0;position:relative}
-
-/* Bell */
-.bell{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
-.bell:hover{background:rgba(255,255,255,.2)}
-.bell-badge{position:absolute;top:0;right:60px;width:9px;height:9px;background:#e03050;border-radius:50%;border:1.5px solid var(--teal);display:none}
-.ndrop{position:absolute;top:42px;right:0;width:340px;background:#fff;border-radius:8px;box-shadow:var(--sh-lg);border:1px solid var(--rule);z-index:200;display:none}
-.ndrop.open{display:block;animation:dropIn .2s ease}
-@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.nh{padding:12px 16px 10px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:center}
-.nh-title{font-family:var(--serif);font-size:14px;font-weight:600}
-.nh-clear{font-size:11px;color:var(--teal);cursor:pointer;font-family:var(--mono)}
-.ni{padding:11px 16px;border-bottom:1px solid var(--rule);cursor:pointer;transition:background .15s}
-.ni:last-child{border-bottom:none}
-.ni:hover{background:var(--cream)}
-.ni.unread{background:var(--teal-faint)}
-.ni-in{display:flex;gap:8px}
-.ni-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:4px}
-.ni-dot.r{background:var(--rule)}
-.ni-body{font-size:12px;color:var(--ink-mid);line-height:1.4;flex:1}
-.ni-body strong{color:var(--ink)}
-.ni-time{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:3px}
-.ni-acts{display:flex;gap:6px;margin-top:8px}
-.na{font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid;font-family:var(--sans);transition:all .15s}
-.na-y{background:var(--teal);color:#fff;border-color:var(--teal)}.na-y:hover{background:var(--teal-hi)}
-.na-n{background:#fff;color:var(--ink-light);border-color:var(--rule)}.na-n:hover{border-color:var(--rust);color:var(--rust)}
-
-.uid{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.3)}
-.avi{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,.75);cursor:pointer;flex-shrink:0}
-.avi:hover{background:rgba(255,255,255,.25)}
-
-/* Hamburger */
-.ham{display:none;width:32px;height:32px;background:rgba(255,255,255,.1);border:none;border-radius:4px;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0}
-.hb{width:16px;height:2px;background:rgba(255,255,255,.8);border-radius:1px}
-.mob-bg{display:none;position:fixed;inset:0;z-index:300;background:rgba(26,18,10,.5)}
-.mob-bg.open{display:flex}
-.mob-panel{background:var(--teal);width:268px;min-height:100%;overflow-y:auto;animation:slideIn .24s ease}
-@keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
-.mob-ph{padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center}
-.mob-ph-t{font-family:var(--serif);font-size:14px;font-weight:600;color:#fff}
-.mob-x{background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:4px}
-.mob-nb{display:flex;align-items:center;gap:10px;padding:13px 18px;font-size:14px;color:rgba(255,255,255,.7);cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06);transition:all .15s;border-left:none;border-right:none;border-top:none;background:transparent;font-family:var(--sans);width:100%;text-align:left}
-.mob-nb:hover{background:rgba(255,255,255,.1);color:#fff}
-.mob-nb.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500}
-.mob-ico{font-size:14px;width:18px;text-align:center}
-
-/* PAGES */
-.pg{display:none;max-width:1200px;margin:0 auto}
-.pg.active{display:block}
-
-/* HERO */
-.hero{background:linear-gradient(135deg,var(--teal) 0%,#124040 100%);padding:36px 20px}
-.hero-in{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
-.h-hed{font-family:var(--serif);font-size:24px;color:#fff;font-weight:400;line-height:1.2;margin-bottom:6px}
-.h-hed em{font-style:italic;color:rgba(255,255,255,.65)}
-.h-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:16px}
-.h-chips{display:flex;gap:6px;flex-wrap:wrap}
-.hc{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,.72)}
-.hcd{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.5)}
-.h-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;min-width:240px}
-.hs{background:rgba(0,0,0,.15);padding:12px 16px;text-align:center}
-.hs:hover{background:rgba(0,0,0,.22)}
-.hs-v{font-family:var(--serif);font-size:24px;font-weight:600;color:#fff;line-height:1;margin-bottom:3px}
-.hs-l{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase}
-
-/* LAYOUT */
-.tc{max-width:1200px;margin:0 auto;padding:22px 20px;display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:start}
-.fc{max-width:1200px;margin:0 auto;padding:22px 20px}
-
-/* SECTION HEADER */
-.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.st{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink)}
-.frow{display:flex;gap:2px;background:var(--cream-d);border-radius:6px;padding:3px}
-.ft{font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;color:var(--ink-light);border:none;background:transparent;font-family:var(--sans);transition:all .15s}
-.ft:hover{color:var(--ink)}
-.ft.active{background:#fff;color:var(--teal);font-weight:500;box-shadow:var(--sh)}
-
-/* MATCH CARDS */
-.mc{background:#fff;border:1px solid var(--rule);border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:var(--sh);transition:box-shadow .2s,transform .2s;animation:cardIn .3s ease both}
-@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.mc:hover{box-shadow:var(--sh-lg);transform:translateY(-1px)}
-.mc-hdr{display:flex;align-items:flex-start;gap:12px;padding:14px 16px 10px;cursor:pointer}
-.mc-badge{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px}
-.b-m{background:var(--sage-bg)}.b-b{background:var(--gold-bg)}.b-n{background:var(--rust-bg)}
-.mc-meta{flex:1;min-width:0}
-.mc-role{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
-.mc-co{font-size:11px;color:var(--ink-light);margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:5px}
-.tb{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;cursor:pointer;white-space:nowrap}
-.tb-g{background:var(--sage-bg);color:var(--sage)}
-.tb-w{background:var(--gold-bg);color:var(--gold)}
-.tb-p{background:var(--rust-bg);color:var(--rust)}
-.chips{display:flex;gap:4px;flex-wrap:wrap}
-.chip{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500}
-.ch-m{background:var(--sage-bg);color:var(--sage)}.ch-b{background:var(--gold-bg);color:var(--gold)}
-.ch-n{background:var(--rust-bg);color:var(--rust)}.ch-x{background:var(--cream-d);color:var(--ink-light)}
-.mc-score{text-align:right;flex-shrink:0}
-.snum{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1}
-.sn-m{color:var(--sage)}.sn-b{color:var(--gold)}.sn-n{color:var(--rust)}
-.slbl{font-size:10px;color:var(--ink-faint);letter-spacing:.05em;text-transform:uppercase}
-.xbar{padding:8px 16px;background:var(--cream);border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;color:var(--teal);font-weight:500;transition:background .15s;user-select:none}
-.xbar:hover{background:var(--teal-dim)}
-.xa{transition:transform .2s;font-size:10px}
-.xa.open{transform:rotate(180deg)}
-.xp{display:none;padding:16px;border-top:1px solid var(--rule);animation:xpIn .2s ease}
-@keyframes xpIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.xp.open{display:block}
-.xsum{font-family:var(--serif);font-size:13px;font-style:italic;color:var(--ink-mid);line-height:1.6;margin-bottom:12px;padding:10px 13px;background:var(--teal-faint);border-left:3px solid var(--teal-hi);border-radius:0 4px 4px 0}
-.elbl{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-light);margin-bottom:7px;margin-top:12px}
-.elbl:first-of-type{margin-top:0}
-.srows{display:flex;flex-direction:column;gap:6px}
-.srow{display:flex;align-items:center;gap:9px}
-.srl{font-size:12px;color:var(--ink-mid);width:155px;flex-shrink:0}
-.sbar{flex:1;height:4px;background:var(--cream-d);border-radius:2px;overflow:hidden}
-.sbf{height:100%;border-radius:2px;transition:width .8s ease}
-.srv{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink);width:30px;text-align:right;flex-shrink:0}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.si{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;font-size:11px;border:1px solid transparent}
-.si-m{background:var(--sage-bg);border-color:rgba(90,122,90,.18)}.si-t{background:var(--teal-faint);border-color:rgba(26,92,92,.18)}
-.si-n{background:var(--rust-bg);border-color:rgba(160,56,32,.18)}
-.si-ico{font-size:12px;flex-shrink:0}.si-name{font-weight:500;color:var(--ink);flex:1}.si-lvl{font-family:var(--mono);font-size:9px;color:var(--ink-light)}
-.rc{background:var(--rust-bg);border:1px solid rgba(160,56,32,.18);border-radius:4px;padding:9px 12px;margin-bottom:6px}
-.rc-code{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--rust);margin-bottom:3px;font-weight:500}
-.rc-text{font-size:12px;color:var(--ink-mid);line-height:1.5}
-.nxt{display:flex;gap:8px;padding:8px 10px;background:var(--teal-faint);border-radius:4px;margin-bottom:5px;font-size:12px;color:var(--ink-mid);line-height:1.5}
-.ni2{color:var(--teal);font-size:12px;flex-shrink:0;padding-top:2px}
-.ar{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.an{font-size:11px;color:var(--ink-light);font-style:italic}
-
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans)}
-.btn-t{background:var(--teal);color:#fff}.btn-t:hover{background:var(--teal-hi)}
-.btn-o{background:transparent;color:var(--teal);border:1px solid var(--teal)}.btn-o:hover{background:var(--teal-faint)}
-.btn-r{background:var(--rust);color:#fff}.btn-r:hover{background:#c04828}
-.btn-g{background:transparent;color:var(--ink-light);border:1px solid var(--rule)}.btn-g:hover{border-color:var(--ink-light);color:var(--ink)}
-.btn-sm{padding:5px 10px;font-size:11px}
-
-/* SIDEBAR */
-.sc{background:#fff;border:1px solid var(--rule);border-radius:8px;overflow:hidden;box-shadow:var(--sh);margin-bottom:14px}
-.sc-h{padding:12px 14px 8px;border-bottom:1px solid var(--rule);font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink)}
-.sc-b{padding:12px 14px}
-.rrow{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.rval{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--teal);line-height:1}
-.rlbl{font-size:11px;color:var(--ink-light)}
-.tip{display:flex;gap:6px;padding:7px 9px;background:var(--gold-bg);border-radius:4px;font-size:11px;color:var(--ink-mid);margin-bottom:5px;line-height:1.4}
-.ti{color:var(--gold);flex-shrink:0}
-.ev-inp{font-size:10px;border:1px solid var(--rule);border-radius:3px;padding:2px 6px;color:var(--ink-light);background:var(--bg);width:120px;min-width:0;outline:none;transition:border-color .15s}
-.ev-inp:focus{border-color:var(--teal-dim)}
-.ev-inp::placeholder{color:var(--ink-faint)}
-.ev-inp.ev-invalid{border-color:var(--rust);color:var(--rust)}
-.rr{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:12px;color:var(--ink-mid);line-height:1.4}
-.rr:last-child{border-bottom:none}
-.rck{color:var(--teal);font-size:12px;flex-shrink:0;padding-top:1px}
-.rr strong{color:var(--ink);font-weight:600}
-
-/* PROFILE CARDS */
-.pc{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:20px;box-shadow:var(--sh);margin-bottom:14px}
-.pct{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:8px}
-/* Skills editor */
-.skill-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--rule)}
-.skill-row:last-of-type{border-bottom:none}
-.sn2{flex:1;font-size:13px;font-weight:500;color:var(--ink)}
-.sd{font-family:var(--mono);font-size:9px;color:var(--ink-light);padding:2px 5px;background:var(--cream-d);border-radius:2px;white-space:nowrap}
-.pdots{display:flex;gap:3px}
-.pdot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--rule);cursor:pointer;transition:all .15s}
-.pdot.on{background:var(--teal);border-color:var(--teal)}
-.pdot:hover{border-color:var(--teal)}
-.plvl{font-family:var(--mono);font-size:9px;color:var(--ink-light);min-width:72px}
-.sdel{background:none;border:none;color:var(--ink-faint);font-size:13px;cursor:pointer;transition:color .15s}
-.sdel:hover{color:var(--rust)}
-.add-row{display:flex;gap:7px;margin-top:10px;position:relative}
-.add-inp{flex:1;padding:8px 11px;border:1.5px solid var(--rule);border-radius:5px;font-size:13px;font-family:var(--sans);color:var(--ink);outline:none;transition:border-color .15s;background:#fff}
-.add-inp:focus{border-color:var(--teal)}
-.sugg{display:none;position:absolute;top:100%;left:0;right:48px;background:#fff;border:1px solid var(--rule);border-radius:5px;margin-top:3px;max-height:150px;overflow-y:auto;box-shadow:var(--sh-lg);z-index:20}
-.sugg-item{padding:7px 11px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center}
-.sugg-item:last-child{border-bottom:none}
-.sugg-item:hover{background:var(--teal-faint)}
-/* Transfer credits */
-.xi{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--teal-faint);border-radius:5px;border:1px solid rgba(26,92,92,.13);margin-bottom:5px}
-.xi-lbl{flex:1;font-size:12px;font-weight:500;color:var(--ink)}
-.xi-sub{font-family:var(--mono);font-size:10px;color:var(--ink-light);margin-top:2px}
-.xi-sc{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--teal)}
-/* Cert items */
-.cert-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--rule)}
-.cert-item:last-of-type{border-bottom:none}
-.cname{flex:1;font-size:13px;font-weight:500;color:var(--ink)}
-.cdet{font-family:var(--mono);font-size:10px;color:var(--ink-light)}
-/* Role items */
-.role-item{padding:10px 12px;background:var(--cream);border-radius:5px;border:1px solid var(--rule);margin-bottom:7px}
-.role-desc{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px}
-.role-meta{font-family:var(--mono);font-size:10px;color:var(--ink-light)}
-/* Preference rows */
-.pref-row{display:grid;grid-template-columns:155px 1fr;align-items:start;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule)}
-.pref-row:last-child{border-bottom:none}
-.pref-lbl{font-size:12px;color:var(--ink-light);font-weight:500;line-height:1.3;padding-top:4px}
-.pref-note{font-size:10px;color:var(--ink-faint);font-weight:400;margin-top:2px}
-.pfld{padding:7px 10px;border:1.5px solid var(--rule);border-radius:4px;font-size:13px;font-family:var(--sans);color:var(--ink);background:#fff;outline:none;width:100%;transition:border-color .15s}
-.pfld:focus{border-color:var(--teal)}
-.pchips{display:flex;gap:5px;flex-wrap:wrap}
-.pch{padding:4px 11px;border-radius:20px;font-size:11px;cursor:pointer;border:1.5px solid var(--rule);color:var(--ink-mid);transition:all .15s;background:#fff;white-space:nowrap}
-.pch.on{background:var(--teal-dim);border-color:var(--teal);color:var(--teal);font-weight:500}
-.loc-list{display:flex;flex-direction:column;gap:6px}
-.loc-entry{display:grid;grid-template-columns:88px 1fr auto;gap:6px;align-items:center}
-.sal-row{display:flex;gap:6px;align-items:center}
-/* Form elements */
-.fg{margin-bottom:12px}
-.flbl{display:block;font-size:10px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px}
-.finp,.fsel,.fta{width:100%;padding:8px 11px;border:1.5px solid var(--rule);border-radius:4px;font-size:13px;font-family:var(--sans);color:var(--ink);background:#fff;outline:none;transition:border-color .15s}
-.finp:focus,.fsel:focus,.fta:focus{border-color:var(--teal)}
-.fta{min-height:80px;resize:vertical;line-height:1.5}
-.fhint{font-size:11px;color:var(--ink-faint);margin-top:4px;line-height:1.4}
-.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.role-form{background:#fff;border:1.5px solid var(--teal-dim);border-radius:6px;padding:16px;margin-top:8px;display:none}
-.rfh{font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:12px;color:var(--ink)}
-
-/* Education notice */
-.edu-notice{background:var(--teal-faint);border:1px solid rgba(26,92,92,.2);border-radius:5px;padding:10px 13px;font-size:12px;color:var(--ink-mid);line-height:1.5;margin-bottom:12px}
-.edu-notice strong{color:var(--teal)}
-
-/* APPEALS */
-.ac{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:18px;box-shadow:var(--sh);margin-bottom:12px}
-.ac-sr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.asbadge{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding:3px 7px;border-radius:3px}
-.asb-twg{background:var(--gold-bg);color:var(--gold)}.asb-res{background:var(--sage-bg);color:var(--sage)}
-.act{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px}
-.acs{font-size:12px;color:var(--ink-light);margin-bottom:12px}
-.tl{display:flex;flex-direction:column;gap:0;margin-bottom:12px;position:relative}
-.tl::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--rule)}
-.ts{display:flex;align-items:flex-start;gap:12px;padding:7px 0;position:relative}
-.td{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;z-index:1;border:2px solid #fff}
-.td-d{background:var(--sage);color:#fff}.td-a{background:var(--gold);color:#fff}.td-p{background:#fff;border-color:var(--rule);color:var(--ink-faint)}
-.tc2{padding-top:1px}
-.tlbl{font-size:12px;font-weight:500;color:var(--ink)}.tdet{font-size:11px;color:var(--ink-light);margin-top:1px}
-
-/* DATA & PRIVACY */
-.gdpr-c{padding:12px 14px;background:var(--cream);border-radius:6px;border:1px solid var(--rule);margin-bottom:10px}
-.gdpr-t{font-weight:600;font-size:13px;margin-bottom:4px}
-.gdpr-b{font-size:12px;color:var(--ink-light);line-height:1.5;margin-bottom:9px}
-.con-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule)}
-.con-row:last-child{border-bottom:none}
-.ct2{font-size:13px;font-weight:500;color:var(--ink)}
-.cs2{font-size:11px;color:var(--ink-faint);margin-top:2px;line-height:1.4}
-.toggle{width:32px;height:17px;border-radius:9px;background:var(--teal);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;margin-top:2px}
-.toggle.off{background:var(--cream-m)}
-.toggle::after{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.toggle:not(.off)::after{transform:translateX(15px)}
-
-/* RIGHTS PAGE */
-.rp{max-width:840px;margin:0 auto;padding:36px 20px}
-.ri{font-family:var(--serif);font-size:17px;color:var(--ink-mid);line-height:1.7;margin-bottom:30px;font-style:italic;padding-bottom:20px;border-bottom:2px solid var(--ink)}
-.rb{padding:22px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:44px 1fr;gap:18px;align-items:start}
-.rb:last-of-type{border-bottom:none}
-.rnum{font-family:var(--serif);font-size:36px;font-weight:700;color:var(--teal);line-height:1;opacity:.2}
-.rtitle{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:-.01em}
-.rbody{font-size:13px;color:var(--ink-mid);line-height:1.7;margin-bottom:9px}
-.rlegal{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.05em;padding:4px 9px;background:var(--cream-d);border-radius:3px;display:inline-block}
-.rlegal a{color:var(--teal);text-decoration:none}
-.rgov{margin-top:26px;padding:16px;background:var(--teal-faint);border:1px solid rgba(26,92,92,.2);border-radius:6px;font-size:13px;color:var(--ink-mid);line-height:1.6}
-.rgov a{color:var(--teal);font-weight:500;text-decoration:none}
-.reg-links{margin-top:18px;padding:14px;background:var(--cream-d);border-radius:6px;border:1px solid var(--rule)}
-.reg-links-t{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-light);margin-bottom:9px}
-.reg-links-g{display:flex;flex-wrap:wrap;gap:6px}
-.rl{color:var(--teal);text-decoration:none;padding:4px 10px;background:#fff;border:1px solid var(--rule);border-radius:3px;font-size:12px}
-.rl:hover{background:var(--teal-faint)}
-
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(30,24,16,.55);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
-.overlay.open{display:flex}
-.modal{background:var(--cream);width:100%;max-width:500px;border-radius:8px;overflow:hidden;box-shadow:var(--sh-lg);animation:mIn .22s ease;max-height:90vh;overflow-y:auto}
-@keyframes mIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.mhdr{padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);background:var(--cream);position:sticky;top:0}
-.mtitle{font-family:var(--serif);font-size:17px;font-weight:600}
-.mx{width:26px;height:26px;border-radius:50%;background:var(--cream-d);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-light)}
-.mx:hover{background:var(--rule);color:var(--ink)}
-.mbody{padding:16px 20px 20px}
-
-/* FOOTER */
-.footer{background:var(--teal);color:rgba(255,255,255,.4);padding:18px;text-align:center;font-size:11px;font-family:var(--mono);letter-spacing:.05em;margin-top:60px}
-.footer a{color:rgba(255,255,255,.55);text-decoration:none;margin:0 8px}
-.footer a:hover{color:rgba(255,255,255,.85)}
-
-/* RESPONSIVE */
-@media(max-width:800px){
-  .hnav,.uid{display:none!important}
-  .ham{display:flex!important}
-  .hero-in{grid-template-columns:1fr}
-  .h-stats{display:none}
-  .tc{grid-template-columns:1fr}
-  .tc aside{display:none}
-  .sgrid{grid-template-columns:1fr}
-  .form-row2{grid-template-columns:1fr}
-  .pref-row{grid-template-columns:1fr;gap:4px}
-  .loc-entry{grid-template-columns:80px 1fr auto}
-  .rb{grid-template-columns:36px 1fr;gap:12px}
-  .rnum{font-size:28px}
-}
-@media(max-width:480px){
-  .ar{flex-direction:column;align-items:flex-start}
-  .frow{flex-wrap:wrap}
-  .sal-row{flex-wrap:wrap}
-}
-</style>
+<link rel="stylesheet" href="/fonts/google-fonts-c.css"><!-- https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap -->
+<link rel="stylesheet" href="/css/candidate-app.css">
 </head>
 <body>
 <header class="hdr">
@@ -408,7 +79,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
   </div>
   <div class="tc">
     <div>
-      <div class="sh" style="margin-bottom:14px">
+      <div class="sh">
         <div class="st">Recent Matches</div>
         <button class="btn btn-o btn-sm" onclick="go('matches')">View all &#8594;</button>
       </div>
@@ -419,7 +90,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="sc-h">Profile Strength</div>
         <div class="sc-b">
           <div class="rrow">
-            <svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0">
+            <svg width="54" height="54" viewBox="0 0 54 54">
               <circle cx="27" cy="27" r="21" fill="none" stroke="var(--cream-d)" stroke-width="5"/>
               <circle class="strength-arc" cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="131.9" stroke-linecap="round" transform="rotate(-90 27 27)"/>
             </svg>
@@ -444,7 +115,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
 </div>
 <div id="pg-matches" class="pg">
   <div class="fc">
-    <div class="sh" style="margin-bottom:14px">
+    <div class="sh">
       <div class="st">Match History</div>
       <div class="frow">
         <button class="ft active" data-decision="" onclick="setFilter(this)">All (0)</button>
@@ -461,8 +132,8 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
     <div>
       <!-- SKILLS -->
       <div class="pc">
-        <div class="pct">Skills <span style="font-size:11px;color:var(--ink-light);font-weight:400;font-family:var(--mono)">FHP ontology v1.0</span></div>
-        <div style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Proficiency: <strong>aware</strong> &middot; <strong>practitioner</strong> &middot; <strong>proficient</strong> &middot; <strong>expert</strong> &middot; <strong>authority</strong>. Click dots to set level.</div>
+        <div class="pct">Skills <span style="font-size:11px;color:var(--ink-light);font-weight:400;font-family:var(--mono)">FHP ontology v1.1</span></div>
+        <div style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Proficiency: <strong>aware</strong> &middot; <strong>practitioner</strong> &middot; <strong>proficient</strong> &middot; <strong>expert</strong> &middot; <strong>authority</strong>. Click dots to set level &mdash; click the level name to see what each level means.</div>
         <div id="skills-list"></div>
         <div class="add-row">
           <input class="add-inp" id="skill-inp" type="text" placeholder="Search skills (e.g. python, kubernetes)&#8230;" oninput="filterSkills(this.value)" onfocus="filterSkills(this.value)">
@@ -489,7 +160,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="pc">
         <div class="pct">Work History <button class="btn btn-o btn-sm" onclick="toggleRoleForm()">+ Add role</button></div>
         <p style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Role descriptions only &mdash; no employer names stored or used in matching. Your identity is protected at all times.</p>
-        <div id="role-list"><div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="role-empty">No roles added yet.</div></div>
+        <div id="role-list"><div class="text-faint-sm" id="role-empty">No roles added yet.</div></div>
         <div class="role-form" id="role-form">
           <div class="rfh">Add role</div>
           <div class="fg">
@@ -523,35 +194,30 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="pc">
         <div class="pct">Licences &amp; Certifications <button class="btn btn-o btn-sm" onclick="toggleCertForm()">+ Add</button></div>
         <p style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.5">Legally required licences (driving, medical, FCA authorisation, SIA badge) and professional certifications. These can be required in job briefs and are checked in Stage 3 constraint satisfaction alongside salary and location. Unlike education level, specific certifications are often genuine legal requirements to perform a role.</p>
-        <div id="cert-list"><div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="cert-empty">No licences or certifications added yet.</div></div>
+        <div id="cert-list"><div class="text-faint-sm" id="cert-empty">No licences or certifications added yet.</div></div>
         <!-- Cert inline form — toggled by + Add button -->
         <div id="cert-form" style="display:none;margin-top:14px;padding:14px;background:var(--cream);border-radius:6px;border:1px solid var(--rule)">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-mid);margin-bottom:12px">ADD LICENCE / CERTIFICATION</div>
-          <div class="fg" style="margin-bottom:10px">
-            <label class="flbl">Name <span style="color:var(--rust)">*</span></label>
-            <input class="finp" id="cert-name" placeholder="e.g. AWS Solutions Architect — Associate">
+          <div class="fg" style="margin-bottom:10px;position:relative">
+            <label class="flbl">Search <span style="color:var(--rust)">*</span></label>
+            <input class="finp" id="cert-search" placeholder="e.g. AWS, driving licence, CISSP&hellip;" oninput="filterCerts(this.value)" autocomplete="off">
+            <div id="cert-suggestions" style="display:none;position:absolute;left:0;right:0;top:100%;border:1px solid var(--rule);border-top:none;border-radius:0 0 5px 5px;max-height:190px;overflow-y:auto;background:var(--cream);z-index:200"></div>
+            <div style="font-size:11px;color:var(--ink-faint);margin-top:4px">Select from the FHP certification ontology. Type to search.</div>
           </div>
-          <div class="fg" style="margin-bottom:10px">
-            <label class="flbl">Issuing body <span style="color:var(--rust)">*</span></label>
-            <input class="finp" id="cert-issuer" placeholder="e.g. Amazon Web Services">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div id="cert-preview" style="display:none;margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--rule);border-radius:4px;font-size:12px;line-height:1.5"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
             <div class="fg">
-              <label class="flbl">Reference / credential ID</label>
-              <input class="finp" id="cert-ref" placeholder="e.g. SAA-C03">
+              <label class="flbl">Issued (YYYY-MM)</label>
+              <input class="finp" type="month" id="cert-issued">
             </div>
             <div class="fg">
-              <label class="flbl">Expiry (YYYY-MM, blank if none)</label>
+              <label class="flbl">Expiry (YYYY-MM, blank if permanent)</label>
               <input class="finp" type="month" id="cert-expiry">
             </div>
           </div>
           <div class="fg" style="margin-bottom:12px">
-            <label class="flbl">Type</label>
-            <select class="fsel" id="cert-type">
-              <option value="certification">Professional certification</option>
-              <option value="licence">Legal / regulatory licence</option>
-              <option value="membership">Professional membership</option>
-            </select>
+            <label class="flbl">Credential ID / reference (optional)</label>
+            <input class="finp" id="cert-ref" placeholder="e.g. SAA-C03-12345">
           </div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-t" onclick="saveCert()">Add</button>
@@ -607,9 +273,9 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="pref-row">
           <div class="pref-lbl">Salary minimum<div class="pref-note">Hard constraint in matching</div></div>
           <div class="sal-row">
-            <select class="pfld" id="pref-currency" style="max-width:72px"><option value="GBP">GBP &#163;</option><option value="USD">USD &#36;</option><option value="EUR">EUR &#8364;</option><option value="AUD">AUD &#36;</option></select>
-            <input class="pfld" id="pref-salary-min" type="number" value="" style="max-width:110px" oninput="recalcStrength()">
-            <select class="pfld" id="pref-salary-period" style="max-width:95px"><option value="annual">/ year</option><option value="daily">/ day</option><option value="hourly">/ hour</option><option value="weekly">/ week</option><option value="monthly">/ month</option></select>
+            <select title="Enter the 3 letter ISO currency code e.g. USD" class="pfld" id="pref-currency" style="max-width:72px"><option value="GBP">GBP &#163;</option><option value="USD">USD &#36;</option><option value="EUR">EUR &#8364;</option><option value="AUD">AUD &#36;</option></select>
+            <input title="Enter the desired salary" class="pfld" id="pref-salary-min" type="number" value="" style="max-width:110px" oninput="recalcStrength()">
+            <select title="Enter the salary period (annual/monthly/weekly/daily/hourly)" class="pfld" id="pref-salary-period" style="max-width:95px"><option value="annual">/ year</option><option value="daily">/ day</option><option value="hourly">/ hour</option><option value="weekly">/ week</option><option value="monthly">/ month</option></select>
           </div>
         </div>
         <div class="pref-row">
@@ -640,10 +306,10 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
             <div class="pchips" id="chips-rtw" style="margin-bottom:6px">
               <div class="pch" data-val="GB" onclick="toggleChip(this)">UK</div>
               <div class="pch" data-val="EU" onclick="toggleChip(this)">EU / EEA</div>
-              <div class="pch"    data-val="US" onclick="toggleChip(this)">US</div>
-              <div class="pch"    data-val="CA" onclick="toggleChip(this)">Canada</div>
-              <div class="pch"    data-val="AU" onclick="toggleChip(this)">Australia</div>
-              <div class="pch"    data-val="AE" onclick="toggleChip(this)">UAE</div>
+              <div class="pch" data-val="US" onclick="toggleChip(this)">US</div>
+              <div class="pch" data-val="CA" onclick="toggleChip(this)">Canada</div>
+              <div class="pch" data-val="AU" onclick="toggleChip(this)">Australia</div>
+              <div class="pch" data-val="AE" onclick="toggleChip(this)">UAE</div>
             </div>
             <div style="font-size:11px;color:var(--ink-faint);line-height:1.4">Verifying right to work before employment is a legal obligation in most countries. FHP uses this in Stage 3 constraint satisfaction &mdash; roles requiring sponsorship are flagged, not excluded automatically.</div>
           </div>
@@ -656,7 +322,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         <div class="sc-h">Profile Strength</div>
         <div class="sc-b">
           <div class="rrow">
-            <svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0">
+            <svg width="54" height="54" viewBox="0 0 54 54">
               <circle cx="27" cy="27" r="21" fill="none" stroke="var(--cream-d)" stroke-width="5"/>
               <circle class="strength-arc" cx="27" cy="27" r="21" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="131.9" stroke-dashoffset="131.9" stroke-linecap="round" transform="rotate(-90 27 27)"/>
             </svg>
@@ -688,7 +354,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div style="font-size:13px;color:var(--ink-light);margin-top:4px">Every not_matched outcome is appealable within 30 days. Human review by the Technical Working Group and Protocol Council is guaranteed &mdash; your right under the Equality Act 2010 and UK GDPR Article 22.</div>
     </div>
     <div id="appeals-list"><div style="font-size:13px;color:var(--ink-faint);padding:12px 0">Loading appeals&#8230;</div></div>
-    <div style="margin-top:22px;max-width:580px">
+    <div id="appeal-new-section" style="margin-top:22px;max-width:580px">
       <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px">Submit a New Appeal</div>
       <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:18px;box-shadow:var(--sh)">
         <div class="fg"><label class="flbl">Match ID to appeal</label>
@@ -701,7 +367,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
           <select class="fsel"><option>Select&hellip;</option><option>Incorrect skill assessment</option><option>Preference mismatch</option><option>Suspected bias</option></select>
         </div>
         <div class="fg"><label class="flbl">Detail <span style="text-transform:none;letter-spacing:0;font-weight:400">(min 20 chars)</span></label>
-          <textarea class="fta" placeholder="Describe what you believe was incorrect. Reference skill ontology IDs where possible. The TWG will review the full pipeline trace."></textarea>
+          <textarea class="fta" placeholder="Describe what you believe was assessed incorrectly. Mention any skills or experience you feel weren't fairly considered."></textarea>
         </div>
         <button class="btn btn-t">Submit appeal</button>
         <div style="margin-top:10px;font-size:11px;color:var(--ink-faint)">Free and unconditional. Response within 20 business days.</div>
@@ -712,7 +378,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
 <div id="pg-data" class="pg">
   <div class="tc">
     <div>
-      <div class="st" style="margin-bottom:14px">Data &amp; Privacy</div>
+      <div class="st">Data &amp; Privacy</div>
       <div class="pc">
         <div class="pct">Your Data Rights</div>
         <div class="gdpr-c">
@@ -925,11 +591,11 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="sc">
         <div class="sc-h">Links</div>
         <div class="sc-b" style="display:flex;flex-direction:column;gap:9px">
-          <a href="landing-page.html" style="font-size:12px;color:var(--teal);text-decoration:none">&#8599; About FHP</a>
-          <a href="#" style="font-size:12px;color:var(--teal);text-decoration:none">&#8599; FHP specification</a>
-          <a href="#" style="font-size:12px;color:var(--teal);text-decoration:none">&#8599; How FHP meets regulations<br><span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint)">GDPR &middot; EU AI Act &middot; Equality Act &middot; NYC LL144</span></a>
-          <a href="governance-dashboard.html" style="font-size:12px;color:var(--teal);text-decoration:none">&#8599; Governance dashboard &mdash; company records</a>
-          <a href="#" style="font-size:12px;color:var(--teal);text-decoration:none">&#8599; Privacy policy</a>
+          <a href="landing-page.html" class="link-sm-teal">&#8599; About FHP</a>
+          <a href="#" class="link-sm-teal">&#8599; FHP specification</a>
+          <a href="#" class="link-sm-teal">&#8599; How FHP meets regulations<br><span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint)">GDPR &middot; EU AI Act &middot; Equality Act &middot; NYC LL144</span></a>
+          <a href="governance-dashboard.html" class="link-sm-teal">&#8599; Governance dashboard &mdash; company records</a>
+          <a href="#" class="link-sm-teal">&#8599; Privacy policy</a>
         </div>
       </div>
     </aside>
@@ -939,7 +605,84 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
   <div class="rp">
     <p class="ri">FHP was built around your rights. Not as a legal formality &mdash; as the actual reason it exists. Every technical decision in the protocol traces back to one of these thirteen commitments.</p>
 
-    <div class="rb"><div class="rnum">01</div><div><div class="rtitle">The right to a fair match</div><div class="rbody">Your match score is computed by a deterministic, public formula applied consistently to every candidate. No arbitrary filters. No credential proxies. No black box. You can read the formula in the specification and verify it yourself.</div><span class="rlegal">Equality Act 2010 &middot; EU Equal Treatment Directives &middot; <a href="#">FHP Scoring Spec</a></span></div></div>
+    <div class="rb"><div class="rnum">01</div><div><div class="rtitle">The right to a fair match</div><div class="rbody">Your match score is computed by a deterministic, public formula applied consistently to every candidate. No arbitrary filters. No credential proxies. No black box.</div>
+      <details style="margin-top:12px">
+        <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--teal);letter-spacing:0.03em;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
+          <span class="det-ico">&#9654;</span> How your score is calculated
+        </summary>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:18px;font-size:13px;line-height:1.65;color:var(--ink-mid)">
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">Three components, fixed weights</div>
+            Your score is the weighted sum of three signals. The weights are set by the FHP governance body and apply identically to every candidate on the platform.
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:baseline;gap:10px;padding:7px 10px;background:var(--cream);border-radius:4px;border-left:3px solid var(--teal)">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);min-width:36px">55%</span>
+                <span><strong>Must-have skills</strong> — skills the role requires you to have</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;padding:7px 10px;background:var(--cream);border-radius:4px;border-left:3px solid var(--teal)">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);min-width:36px">25%</span>
+                <span><strong>Nice-to-have skills</strong> — skills the role prefers but doesn&rsquo;t require. If the role lists none, this weight is redistributed to must-have skills.</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;padding:7px 10px;background:var(--cream);border-radius:4px;border-left:3px solid var(--teal)">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);min-width:36px">20%</span>
+                <span><strong>Preferences</strong> — how well your salary expectation, preferred work mode, and location align with the role</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">How skill scores work</div>
+            For each required skill, the system compares your declared proficiency level against what the role needs:
+            <ul style="margin:8px 0 0 18px;padding:0;display:flex;flex-direction:column;gap:4px">
+              <li>You meet or exceed the required level &rarr; <strong>full credit</strong></li>
+              <li>You are exactly one level below &rarr; <strong>partial credit</strong> (your level &divide; required level)</li>
+              <li>You are two or more levels below, or don&rsquo;t have the skill &rarr; <strong>no credit</strong></li>
+            </ul>
+            <div style="margin-top:8px;font-size:12px;color:var(--ink-light)">Proficiency levels in order: <strong>Aware &rarr; Practitioner &rarr; Proficient &rarr; Expert &rarr; Authority</strong></div>
+          </div>
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">How preference scores work</div>
+            Three signals are averaged into a single preference score:
+            <ul style="margin:8px 0 0 18px;padding:0;display:flex;flex-direction:column;gap:4px">
+              <li><strong>Salary</strong> &mdash; full credit if the role&rsquo;s maximum meets your minimum; zero if your minimum is above the role&rsquo;s maximum; neutral (0.5) if you haven&rsquo;t set a salary preference</li>
+              <li><strong>Work mode</strong> &mdash; full credit if the role&rsquo;s mode (remote / hybrid / on-site) is in your preferences; zero if not; neutral if no preference set</li>
+              <li><strong>Location</strong> &mdash; full credit if the role&rsquo;s location matches your preferences, or if the role is fully remote; neutral otherwise (location is never a hard block)</li>
+            </ul>
+          </div>
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">Fairness adjustment</div>
+            After scoring, the system checks whether demographic groups you belong to are being systematically under-scored across the platform. If so, your score may be adjusted upward. This is always disclosed in your match explanation &mdash; you&rsquo;ll see it in the breakdown if it applied to you.
+          </div>
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">Decision thresholds</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--sage);min-width:60px">0.60 +</span>
+                <span><strong>Matched</strong> &mdash; the employer sees your profile and the hiring process begins</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--gold);min-width:60px">0.50 &ndash; 0.59</span>
+                <span><strong>Borderline</strong> &mdash; you can appeal; the employer may optionally engage</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--rust);min-width:60px">Below 0.50</span>
+                <span><strong>Not matched</strong> &mdash; you can appeal within 30 days; no notification is sent to the employer</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-weight:600;color:var(--ink);margin-bottom:5px">What &ldquo;deterministic&rdquo; means for you</div>
+            The same profile against the same job always produces the same score. There is no randomness. The employer cannot influence your score. Two candidates with identical profiles and the same job would receive identical scores. The formula does not change between runs, and every change to the formula requires a public governance vote.
+          </div>
+
+        </div>
+      </details>
+      <span class="rlegal" style="display:block;margin-top:10px">Equality Act 2010 &middot; EU Equal Treatment Directives</span></div></div>
 
     <div class="rb"><div class="rnum">02</div><div><div class="rtitle">The right to an explanation</div><div class="rbody">Every match outcome comes with a plain-language explanation automatically &mdash; you never have to request it. It tells you which skills matched, which did not, what transferred, and what you could do differently. The explanation is generated at the moment of matching and is permanent.</div><span class="rlegal">UK GDPR Article 22 &middot; EU GDPR Article 22 &middot; EU AI Act Article 13</span></div></div>
 
@@ -1000,7 +743,7 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
       <div class="fg"><label class="flbl">Ground</label>
         <select class="fsel" id="appeal-ground"><option value="incorrect_skill_assessment">Incorrect skill assessment</option><option value="preference_mismatch">Preference mismatch</option><option value="suspected_bias">Suspected bias</option></select></div>
       <div class="fg"><label class="flbl">Detail</label>
-        <textarea class="fta" id="appeal-detail" placeholder="Be specific. Reference skill ontology IDs where relevant. The TWG will review the full pipeline trace."></textarea></div>
+        <textarea class="fta" id="appeal-detail" placeholder="Describe what you think was assessed incorrectly. The more specific you are, the better — mention any skills or experience you feel weren't fairly considered. A reviewer will examine the full record of how the decision was made."></textarea></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-g" onclick="closeModal()">Cancel</button>
         <button class="btn btn-t" onclick="(async () => {
@@ -1011,13 +754,17 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
         if (!matchId) { showError('Please select a match to appeal.', 'Match required'); return; }
         if (!ground)  { showError('Please select a ground for the appeal.', 'Ground required'); return; }
         if (!detail)  { showError('Please provide detail for your appeal.', 'Detail required'); return; }
+        if (hasHtml(detail)) { showError('Appeal detail must not contain HTML tags.', 'Invalid input'); return; }
         const result = await api('POST', '/candidates/me/appeals', { match_id: matchId, ground, detail });
         if (result) {
           showError('Appeal submitted. Reference: ' + (result.appeal_id || 'Pending'), 'Appeal submitted');
           loadAppealableMatches();
           closeModal();
         } else {
-          showError('Appeal could not be submitted. Check that the match ID is valid.', 'Submission failed');
+          var msg = (window._lastApiError && window._lastApiError.message)
+            ? window._lastApiError.message
+            : 'Appeal could not be submitted. Please try again.';
+          showError(msg, 'Submission failed');
         }
       })()">Submit appeal</button>
       </div>
@@ -1072,1182 +819,18 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
   </div>
 </div>
 
-<script>
-// ── NAVIGATION ──────────────────────────────────────────────────────────────────
-const PAGES = ['dashboard','matches','profile','appeals','data','rights'];
-function go(p) {
-  PAGES.forEach(x => {
-    ['pg-','nav-','mob-'].forEach(pre => {
-      const el = document.getElementById(pre + x);
-      if (el) el.classList.toggle('active', x === p);
-    });
-  });
-  window.scrollTo(0, 0);
-  if (p === 'dashboard') loadMatches();
-  if (p === 'matches')   loadMatches();
-  if (p === 'appeals')   { loadAppeals(); loadAppealableMatches(); }
-  if (p === 'data')      loadConsentRecord();
-}
-
-// ── ERROR DIALOG ────────────────────────────────────────────────────────────────
-function showError(msg, title) {
-  document.getElementById('err-modal-title').textContent = title || 'Cannot continue';
-  document.getElementById('err-modal-msg').textContent   = msg;
-  document.getElementById('err-modal').classList.add('open');
-}
-function closeErrModal() {
-  document.getElementById('err-modal').classList.remove('open');
-}
-
-// ── MOBILE MENU ─────────────────────────────────────────────────────────────────
-function openMenu()  { document.getElementById('mob-bg').classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeMenu() { document.getElementById('mob-bg').classList.remove('open'); document.body.style.overflow = ''; }
-
-// ── NOTIFICATIONS ───────────────────────────────────────────────────────────────
-let NOTIFS = [];
-
-async function loadNotifications() {
-  const data = await api('GET', '/candidates/me/notifications?limit=20');
-  if (!data) return;
-  NOTIFS = (data.notifications || []).map(function(n) {
-    var d = new Date(n.created_at);
-    var now = new Date();
-    var diffMs = now - d;
-    var diffH = diffMs / 3600000;
-    var time = diffH < 1 ? 'Just now'
-             : diffH < 24 ? Math.floor(diffH) + 'h ago'
-             : diffH < 48 ? 'Yesterday'
-             : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-    return {
-      id:             n.notification_id,
-      interaction_id: n.interaction_id || null,
-      unread:         n.read_at === null,
-      body:           n.body || n.title || '',
-      time:           time,
-      job:            n.title || '',
-      actions:        !!(n.actions && n.interaction_id),
-    };
-  });
-  renderNotifs();
-}
-
-function renderNotifs() {
-  const list  = document.getElementById('nlist');
-  const badge = document.getElementById('bbadge');
-  const unread = NOTIFS.filter(n => n.unread).length;
-  badge.style.display = unread > 0 ? 'block' : 'none';
-  list.innerHTML = NOTIFS.map(n => `
-    <div class="ni ${n.unread ? 'unread' : ''}">
-      <div class="ni-in">
-        <div class="ni-dot ${n.unread ? '' : 'r'}"></div>
-        <div style="flex:1">
-          <div class="ni-body">${n.body}</div>
-          <div class="ni-time">${n.time}</div>
-          ${n.actions ? `<div class="ni-acts">
-            <button class="na na-y" onclick="respond(${n.id},'accept')">Accept</button>
-            <button class="na na-n" onclick="respond(${n.id},'decline')">Decline</button>
-          </div>` : ''}
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-async function toggleNotif(e) {
-  e.stopPropagation();
-  document.getElementById('ndrop').classList.toggle('open');
-}
-async function clearNotifs() {
-  NOTIFS.forEach(n => n.unread = false);
-  renderNotifs();
-  await api('PUT', '/candidates/me/notifications/read-all', {});
-}
-async function respond(id, action) {
-  const n = NOTIFS.find(x => x.id === id);
-  if (n) {
-    n.unread = false;
-    n.body = (action === 'accept' ? '&#10003; Accepted' : '&#10007; Declined') + ' &mdash; ' + n.job;
-    n.actions = false;
-    renderNotifs();
-    await api('PUT', '/candidates/me/notifications/' + id + '/read', {});
-    if (n.interaction_id) {
-      await api('PUT', '/candidates/me/interactions/' + n.interaction_id, { action });
-    }
-  }
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('#ndrop') && !e.target.closest('.bell'))
-    document.getElementById('ndrop').classList.remove('open');
-});
-
-// ── MATCH CARDS ─────────────────────────────────────────────────────────────────
-
-async function loadMatches() {
-  var c = document.getElementById('mh-cards');
-  if (!c) return;
-  c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">Loading matches…</div>';
-  var data = await api('GET', '/candidates/me/matches?limit=50');
-  var fts = document.querySelectorAll('#pg-matches .ft');
-  function updateFilterCounts(all, matched, notMatched, borderline) {
-    if (fts.length >= 4) {
-      fts[0].textContent = 'All (' + all + ')';
-      fts[1].textContent = 'Matched (' + matched + ')';
-      fts[2].textContent = 'Not matched (' + notMatched + ')';
-      fts[3].textContent = 'Borderline (' + borderline + ')';
-    }
-  }
-  if (!data || !data.matches || !data.matches.length) {
-    c.innerHTML = '<div style="padding:20px;color:var(--ink-faint)">No matches yet. Complete your profile and enable matching to get started.</div>';
-    updateFilterCounts(0, 0, 0, 0);
-    return;
-  }
-  c.innerHTML = '';
-  var matchedCount = 0, notMatchedCount = 0, borderlineCount = 0;
-  data.matches.forEach(function(m, i) {
-    var dec   = m.decision || 'not_matched';
-    if (dec === 'matched') matchedCount++;
-    else if (dec === 'borderline') borderlineCount++;
-    else notMatchedCount++;
-    var score = parseFloat(m.composite_score || m.overall_score || 0);
-    var date  = m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
-    var adDate = m.appeal_deadline ? new Date(m.appeal_deadline).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '30 days';
-
-    var card = document.createElement('div');
-    card.className = 'mc';
-    card.style.animationDelay = (i * 0.06) + 's';
-    card.dataset.decision = dec;
-
-    var badgeCls = dec === 'matched' ? 'mc-badge-m' : (dec === 'borderline' ? 'mc-badge-b' : 'mc-badge-n');
-    var badgeIco = dec === 'matched' ? '✓' : (dec === 'borderline' ? '▲' : '✕');
-    var scoreCls = dec === 'matched' ? 'snum-m' : (dec === 'borderline' ? 'snum-b' : 'snum-n');
-    var summary  = m.plain_language_summary || (m.explanation && m.explanation.plain_language_summary) || 'No explanation available.';
-
-    var hdr = document.createElement('div');
-    hdr.className = 'mc-hdr';
-    hdr.setAttribute('onclick', 'toggleExp(this)');
-    hdr.innerHTML = '<div class="mc-badge ' + badgeCls + '">' + badgeIco + '</div>'
-      + '<div class="mc-meta">'
-      + '<div class="mc-role">' + h(m.job_title || 'Role') + '</div>'
-      + '<div class="mc-co">' + h(m.company_name || '') + '</div>'
-      + '<div class="chips"><span class="chip">' + dec.replace('_',' ') + '</span>'
-      + '<span class="chip ch-x">' + date + '</span></div>'
-      + '</div>'
-      + '<div class="mc-score"><div class="snum ' + scoreCls + '">' + score.toFixed(2) + '</div><div class="slbl">score</div></div>';
-
-    var xbar = document.createElement('div');
-    xbar.className = 'xbar';
-    xbar.setAttribute('onclick', 'toggleXbar(this)');
-    xbar.innerHTML = '<span>Read full explanation</span><span class="xa">▾</span>';
-
-    var xp = document.createElement('div');
-    xp.className = 'xp';
-
-    var ar = document.createElement('div');
-    ar.className = 'ar';
-
-    var an = document.createElement('span');
-    an.className = 'an';
-    an.textContent = (dec === 'matched' ? 'Matched' : 'Not matched') + ' ' + date + ' · appealable until ' + adDate;
-
-    var btns = document.createElement('div');
-    btns.style.display = 'flex';
-    btns.style.gap = '6px';
-
-    var traceBtn = document.createElement('button');
-    traceBtn.className = 'btn btn-o btn-sm';
-    traceBtn.textContent = 'Trace ↗';
-    var matchId = m.match_id;
-    traceBtn.addEventListener('click', function() {
-      api('GET', '/candidates/me/matches/' + matchId + '/trace').then(function(t) {
-        if (t) { alert('Trace: ' + ((t.stages && t.stages.length) || 0) + ' stages'); console.log(t); }
-      });
-    });
-    btns.appendChild(traceBtn);
-
-    if (dec !== 'matched' && m.appeal_eligible !== false) {
-      var appealBtn = document.createElement('button');
-      appealBtn.className = 'btn btn-r btn-sm';
-      appealBtn.textContent = 'Appeal →';
-      var jobTitle = m.job_title || 'Role';
-      appealBtn.addEventListener('click', function() { openAppeal(jobTitle, matchId); });
-      btns.appendChild(appealBtn);
-    }
-
-    ar.appendChild(an);
-    ar.appendChild(btns);
-    xp.innerHTML = '<div class="xsum">' + h(summary) + '</div>';
-    xp.appendChild(ar);
-
-    card.appendChild(hdr);
-    card.appendChild(xbar);
-    card.appendChild(xp);
-    c.appendChild(card);
-  });
-  updateFilterCounts(data.matches.length, matchedCount, notMatchedCount, borderlineCount);
-}
-
-function toggleExp(hdr) {
-  const mc = hdr.closest('.mc'), xp = mc.querySelector('.xp'), xa = mc.querySelector('.xa');
-  const bar = mc.querySelector('.xbar span:first-child');
-  const open = xp.classList.toggle('open');
-  if (xa)  xa.classList.toggle('open', open);
-  if (bar) bar.textContent = open ? 'Close explanation' : 'Read full explanation';
-}
-function toggleXbar(bar) {
-  const mc = bar.closest('.mc'), xp = mc.querySelector('.xp'), xa = bar.querySelector('.xa');
-  const open = xp.classList.toggle('open');
-  xa.classList.toggle('open', open);
-  bar.querySelector('span:first-child').textContent = open ? 'Close explanation' : 'Read full explanation';
-}
-function setFilter(tab) {
-  document.querySelectorAll('#pg-matches .ft').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  var dec = tab.dataset.decision;
-  document.querySelectorAll('#mh-cards .mc').forEach(function(card) {
-    card.style.display = (!dec || card.dataset.decision === dec) ? '' : 'none';
-  });
-}
-
-// ── HTML ESCAPE ───────────────────────────────────────────────────────────────────
-function h(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function hasHtml(s) { return /<[a-z\/]/i.test(String(s ?? '')); }
-
-// ── SKILLS EDITOR ────────────────────────────────────────────────────────────────
-const PROF = ['aware','practitioner','proficient','expert','authority'];
-const PC   = ['#b07030','#7a8030','#307060','#205050','#103838'];
-const ALL_SKILLS = [
-  {id:'fhp:skill:python',   label:'Python',           domain:'Software Eng'},
-  {id:'fhp:skill:data-eng', label:'Data Engineering', domain:'Data & Analytics'},
-  {id:'fhp:skill:sql',      label:'Analytical SQL',   domain:'Data & Analytics'},
-  {id:'fhp:skill:spark',    label:'Apache Spark',      domain:'Data & Analytics'},
-  {id:'fhp:skill:dbt',      label:'dbt',              domain:'Data & Analytics'},
-  {id:'fhp:skill:docker',   label:'Docker',           domain:'Infrastructure'},
-  {id:'fhp:skill:aws',      label:'AWS',              domain:'Infrastructure'},
-  {id:'fhp:skill:k8s',      label:'Kubernetes',       domain:'Infrastructure'},
-  {id:'fhp:skill:ts',       label:'TypeScript',       domain:'Software Eng'},
-  {id:'fhp:skill:go',       label:'Go',               domain:'Software Eng'},
-  {id:'fhp:skill:ml',       label:'Machine Learning', domain:'Data & Analytics'},
-  {id:'fhp:skill:tf',       label:'Terraform',        domain:'Infrastructure'},
-  {id:'fhp:skill:react',    label:'React',            domain:'Software Eng'},
-];
-const TRANSFERS = [
-  {from:'fhp:skill:docker', to:'Kubernetes',          weight:70, fromLabel:'Docker'},
-  {from:'fhp:skill:spark',  to:'Data Pipeline Design', weight:80, fromLabel:'Apache Spark'},
-  {from:'fhp:skill:sql',    to:'Data Modelling',      weight:70, fromLabel:'Analytical SQL'},
-  {from:'fhp:skill:dbt',    to:'ELT Pipeline Design', weight:90, fromLabel:'dbt'},
-];
-
-let skills = [];
-
-function renderSkills() {
-  const el = document.getElementById('skills-list');
-  if (!el) return;
-  el.innerHTML = skills.map((s, i) => `
-    <div class="skill-row">
-      <div class="sn2">${s.label}</div>
-      <span class="sd">${s.domain}</span>
-      <div class="pdots" title="${PROF[s.level]}">
-        ${PROF.map((_, li) => `<div class="pdot ${li <= s.level ? 'on' : ''}"
-          onclick="setLvl(${i},${li})" title="${PROF[li]}"
-          style="${li <= s.level ? 'background:' + PC[s.level] + ';border-color:' + PC[s.level] : ''}"></div>`).join('')}
-      </div>
-      <span class="plvl">${PROF[s.level]}</span>
-      <input class="ev-inp" type="text" placeholder="Evidence URL" value="${h(s.evidence_url || '')}"
-        oninput="skills[${i}].evidence_url=this.value;validateEvUrl(this);recalcStrength()"
-        title="Link to portfolio, cert, or work sample">
-      <button class="sdel" onclick="removeSkill(${i})">&#10005;</button>
-    </div>`).join('');
-  renderTransfers();
-  document.querySelectorAll('#skills-list .ev-inp').forEach(validateEvUrl);
-  recalcStrength();
-}
-
-function setLvl(i, l)  { skills[i].level = l; renderSkills(); }
-function removeSkill(i) { skills.splice(i, 1); renderSkills(); }
-
-function renderTransfers() {
-  const el = document.getElementById('xfer-list');
-  if (!el) return;
-  const active = TRANSFERS.filter(t =>
-    skills.find(s => s.id === t.from) &&
-    !skills.find(s => s.label === t.to));
-  if (!active.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0">No transfer credits identified for your current skill set.</div>';
-    return;
-  }
-  el.innerHTML = active.map(t => {
-    const src = skills.find(s => s.id === t.from);
-    const credit = Math.round((src.level / 4) * t.weight);
-    return `<div class="xi">
-      <span style="font-size:13px;color:var(--teal-hi)">\u27f3</span>
-      <div class="xi-lbl">${t.fromLabel} \u2192 ${t.to}
-        <div class="xi-sub">Transfer weight: ${t.weight}% of your ${t.fromLabel} (${PROF[src.level]}) level</div>
-      </div>
-      <span class="xi-sc">+${credit}% credit</span>
-    </div>`;
-  }).join('');
-}
-
-function filterSkills(val) {
-  const el = document.getElementById('sugg');
-  if (!val || val.length < 2) { el.style.display = 'none'; return; }
-  const matches = ALL_SKILLS.filter(s =>
-    s.label.toLowerCase().includes(val.toLowerCase()) && !skills.find(x => x.id === s.id));
-  if (!matches.length) { el.style.display = 'none'; return; }
-  el.style.display = 'block';
-  el.innerHTML = matches.map(s => `
-    <div class="sugg-item" onmousedown="pickSkill('${s.id}','${s.label}','${s.domain}')">
-      <span style="font-size:13px;font-weight:500">${s.label}</span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--ink-light)">${s.domain}</span>
-    </div>`).join('');
-}
-
-function pickSkill(id, label, domain) {
-  skills.push({ id, label, domain, level: 1 });
-  renderSkills();
-  document.getElementById('skill-inp').value = '';
-  document.getElementById('sugg').style.display = 'none';
-}
-
-function addSkill() {
-  const v = document.getElementById('skill-inp').value.trim();
-  if (!v) return;
-  // Require selection from ontology suggestions — free-text skills break matching
-  const match = ALL_SKILLS.find(s => s.label.toLowerCase() === v.toLowerCase());
-  if (match) {
-    pickSkill(match.id, match.label, match.domain);
-  } else {
-    const el = document.getElementById('sugg');
-    el.style.display = 'block';
-    el.innerHTML = '<div style="padding:7px 11px;font-size:12px;color:var(--rust)">Please select a skill from the suggestions list.</div>';
-  }
-}
-
-// ── WORK HISTORY ─────────────────────────────────────────────────────────────────
-let workHistory = [];
-let certifications = [];
-
-function toggleRoleForm() {
-  const f = document.getElementById('role-form');
-  const hidden = getComputedStyle(f).display === 'none';
-  f.style.display = hidden ? 'block' : 'none';
-}
-
-function renderRoles() {
-  const list  = document.getElementById('role-list');
-  const empty = document.getElementById('role-empty');
-  if (!list) return;
-  if (!workHistory.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0" id="role-empty">No roles added yet.</div>';
-    recalcStrength();
-    return;
-  }
-  list.innerHTML = workHistory.map((r, i) => `
-    <div class="role-item">
-      <div style="flex:1">
-        <div class="role-desc">&#8220;${h(r.description)}&#8221;</div>
-        <div class="role-meta">${h(r.from || '?')} &#8594; ${h(r.to || 'Present')} &middot; ${h(r.seniority || '')} &middot; ${h(r.skills_context || '')}</div>
-      </div>
-      <button class="sdel" onclick="removeRole(${i})" style="flex-shrink:0">&#10005;</button>
-    </div>`).join('');
-  recalcStrength();
-}
-
-function removeRole(i) {
-  workHistory.splice(i, 1);
-  renderRoles();
-}
-
-function saveRole() {
-  const desc = document.getElementById('rd').value.trim();
-  const from = document.getElementById('rf').value;
-  const to   = document.getElementById('rt').value;
-  const sen  = document.getElementById('rs').value;
-  const sk   = document.getElementById('rk').value;
-  if (!desc) { showError('Please enter a role description.', 'Role description required'); return; }
-  if ([desc, from, to, sen, sk].some(hasHtml)) { showError('Role fields must not contain HTML or script tags.', 'Invalid input'); return; }
-  workHistory.unshift({ description: desc, from, to, seniority: sen, skills_context: sk });
-  renderRoles();
-  ['rd','rf','rt','rk'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('rs').value = '';
-  toggleRoleForm();
-}
-
-// ── LICENCES & CERTIFICATIONS ─────────────────────────────────────────────────────
-function toggleCertForm() {
-  const f = document.getElementById('cert-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
-}
-
-function renderCerts() {
-  const list = document.getElementById('cert-list');
-  if (!list) return;
-  if (!certifications.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0">No licences or certifications added yet.</div>';
-    return;
-  }
-  const now = new Date();
-  list.innerHTML = certifications.map((c, i) => {
-    const expDate  = c.expiry ? new Date(c.expiry + '-01') : null;
-    const expired  = expDate && expDate < now;
-    const expiring = expDate && !expired && (expDate - now) < 90 * 86400 * 1000;
-    const badge    = expired  ? '<span style="font-family:var(--mono);font-size:9px;background:var(--rust-bg,#fde);color:var(--rust);padding:2px 6px;border-radius:2px">expired</span>'
-                   : expiring ? '<span style="font-family:var(--mono);font-size:9px;background:var(--gold-bg);color:var(--gold);padding:2px 6px;border-radius:2px">expiring</span>'
-                   :            '<span style="font-family:var(--mono);font-size:9px;background:var(--sage-bg);color:var(--sage);padding:2px 6px;border-radius:2px">active</span>';
-    return `<div class="cert-item">
-      <div style="flex:1">
-        <div class="cname">${h(c.name)}</div>
-        <div class="cdet">${h(c.issuer)}${c.ref ? ' &middot; ' + h(c.ref) : ''}${c.expiry ? ' &middot; Expires ' + h(c.expiry) : ''}</div>
-      </div>
-      ${badge}
-      <button class="sdel" onclick="removeCert(${i})" style="margin-left:8px">&#10005;</button>
-    </div>`;
-  }).join('');
-  recalcStrength();
-}
-
-function removeCert(i) {
-  certifications.splice(i, 1);
-  renderCerts();
-}
-
-function saveCert() {
-  const name   = document.getElementById('cert-name')?.value.trim();
-  const issuer = document.getElementById('cert-issuer')?.value.trim();
-  const ref    = document.getElementById('cert-ref')?.value.trim();
-  const expiry = document.getElementById('cert-expiry')?.value;
-  const type   = document.getElementById('cert-type')?.value;
-  if (!name || !issuer) { showError('Name and issuing body are both required before saving.', 'Missing required fields'); return; }
-  if ([name, issuer, ref].some(hasHtml)) { showError('Certificate fields must not contain HTML or script tags.', 'Invalid input'); return; }
-  certifications.push({ name, issuer, ref, expiry, type });
-  ['cert-name','cert-issuer','cert-ref'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('cert-expiry').value = '';
-  renderCerts();
-  toggleCertForm();
-}
-
-// Legacy stub — replaced by toggleCertForm
-function addCert() { toggleCertForm(); }
-
-// ── LOCATIONS ─────────────────────────────────────────────────────────────────────
-function addLoc() {
-  const list = document.getElementById('loc-list');
-  const div  = document.createElement('div');
-  div.className = 'loc-entry';
-  div.innerHTML = `
-    <select class="pfld" style="font-size:12px">
-      <option>UK</option><option>US</option><option>DE</option><option>FR</option>
-      <option>NL</option><option>IE</option><option>AU</option><option>CA</option>
-    </select>
-    <input class="pfld" type="text" placeholder="City 1, City 2\u2026">
-    <button class="btn btn-g btn-sm" onclick="this.closest('.loc-entry').remove();recalcStrength()">&#10005;</button>`;
-  list.appendChild(div);
-  recalcStrength();
-}
-
-
-// ── MODAL ─────────────────────────────────────────────────────────────────────────
-function openAppeal(job, matchId) {
-  document.getElementById('amod-ctx').textContent = 'Match: ' + matchId + ' — ' + job;
-  document.getElementById('appeal-match-id').value = matchId || '';
-  document.getElementById('appeal-ground').selectedIndex = 0;
-  document.getElementById('appeal-detail').value = '';
-  document.getElementById('amodal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal() {
-  document.getElementById('amodal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-async function loadAppeals() {
-  const list = document.getElementById('appeals-list');
-  if (!list) return;
-
-  const data = await api('GET', '/candidates/me/appeals?limit=20');
-  if (!data) {
-    list.innerHTML = '<div style="font-size:13px;color:var(--ink-faint);padding:12px 0">Could not load appeals.</div>';
-    return;
-  }
-  if (!data.appeals || data.appeals.length === 0) {
-    list.innerHTML = '<div style="font-size:13px;color:var(--ink-faint);padding:12px 0">You have no appeals on record.</div>';
-    return;
-  }
-
-  const STATUS_BADGE = {
-    submitted:        '<span class="asbadge" style="background:var(--cream-d);color:var(--ink-mid)">Submitted</span>',
-    twg_review:       '<span class="asbadge asb-twg">TWG Review</span>',
-    pc_review:        '<span class="asbadge asb-a">PC Review</span>',
-    resolved:         '<span class="asbadge asb-d">Resolved</span>',
-    withdrawn:        '<span class="asbadge" style="background:var(--cream-d);color:var(--ink-faint)">Withdrawn</span>',
-  };
-  const GROUND_LABELS = {
-    incorrect_skill_assessment: 'Incorrect skill assessment',
-    preference_mismatch:        'Preference mismatch',
-    suspected_bias:             'Suspected bias',
-
-  };
-  var withdrawable = ['submitted', 'twg_review'];
-
-  function stepHtml(s, i, steps) {
-    var firstPending = steps.findIndex(function(x) { return !x.done; });
-    var cls  = s.done ? 'td-d' : (i === firstPending ? 'td-a' : 'td-p');
-    var icon = s.done ? '&#10003;' : (i === firstPending ? '&#9679;' : String(i + 1));
-    var det  = s.detail ? '<div class="tdet">' + s.detail + '</div>' : '';
-    return '<div class="ts"><div class="td ' + cls + '">' + icon + '</div>'
-         + '<div class="tc2"><div class="tlbl">' + s.label + '</div>' + det + '</div></div>';
-  }
-
-  list.innerHTML = data.appeals.map(function(a) {
-    var badge    = STATUS_BADGE[a.status] || a.status;
-    var ground   = GROUND_LABELS[a.ground] || a.ground;
-    var subDate  = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
-    var deadline = a.deadline_twg_review ? new Date(a.deadline_twg_review).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '';
-    var steps = [
-      { label: 'Submitted',           done: true,                                           detail: subDate },
-      { label: 'TWG Technical Review', done: ['pc_review','resolved'].includes(a.status), detail: deadline ? 'Deadline ' + deadline : '' },
-      { label: 'Protocol Council',     done: a.status === 'resolved',                      detail: '' },
-      { label: 'Resolution',           done: a.status === 'resolved',                      detail: a.outcome || '' },
-    ];
-    var timeline = steps.map(function(s, i) { return stepHtml(s, i, steps); }).join('');
-    var withdrawBtn = withdrawable.includes(a.status)
-      ? '<button class="btn btn-g btn-sm" onclick="withdrawAppeal(this)">Withdraw appeal</button>'
-      : '';
-    var twgNote = a.twg_notes
-      ? '<div class="acs" style="color:var(--teal-hi);margin-top:4px">TWG note: ' + h(a.twg_notes) + '</div>'
-      : '';
-    var dueSpan = deadline
-      ? '<span style="font-size:11px;color:var(--ink-light);margin-left:auto">Due ' + deadline + '</span>'
-      : '';
-    return '<div class="ac" data-appeal-id="' + a.appeal_id + '">'
-         + '<div class="ac-sr">'
-         + '<span class="appeal-status">' + badge + '</span>'
-         + '<span style="font-size:11px;color:var(--ink-light);font-family:var(--mono)">' + a.appeal_id.substring(0,8) + '&hellip;</span>'
-         + dueSpan
-         + '</div>'
-         + '<div class="act">' + h(a.job_title || 'Role') + '</div>'
-         + '<div class="acs">Ground: ' + h(ground) + ' &middot; Submitted ' + subDate + '</div>'
-         + twgNote
-         + '<div class="tl">' + timeline + '</div>'
-         + withdrawBtn
-         + '</div>';
-  }).join('');
-}
-
-
-async function loadAppealableMatches() {
-  const select = document.getElementById('appeal-match-select');
-  if (!select) return;
-  const data = await api('GET', '/candidates/me/matches?limit=50');
-  if (!data || !data.matches) return;
-
-  // Only show not_matched or borderline within 30 days
-  const now = Date.now();
-  const appealable = data.matches.filter(m => {
-    const eligible = m.decision === 'not_matched' || m.decision === 'borderline';
-    const within30 = m.appeal_deadline ? new Date(m.appeal_deadline) > new Date() : true;
-    return eligible && within30 && m.appeal_eligible !== false;
-  });
-
-  select.innerHTML = '<option value="">Select a match&#8230;</option>' +
-    appealable.map(m =>
-      `<option value="${m.match_id}">${m.match_id.substring(0, 8)}&#8230; &mdash; ${m.decision} &mdash; ${new Date(m.created_at).toLocaleDateString('en-GB')}</option>`
-    ).join('');
-
-  if (!appealable.length) {
-    select.innerHTML = '<option value="">No appealable matches in the last 30 days</option>';
-  }
-}
-
-
-async function withdrawAppeal(btn) {
-  // Find the appeal ID from the closest appeal card
-  const card = btn.closest('[data-appeal-id]');
-  const appealId = card?.dataset?.appealId;
-  if (!appealId) {
-    showError('Could not identify this appeal. Please refresh and try again.', 'Error');
-    return;
-  }
-  if (!confirm('Withdraw this appeal? This cannot be undone once it reaches Protocol Council review.')) return;
-  btn.disabled = true;
-  const result = await api('PUT', '/candidates/me/appeals/' + appealId, { action: 'withdraw' });
-  if (result) {
-    card.style.opacity = '0.5';
-    const statusEl = card.querySelector('.appeal-status');
-    if (statusEl) statusEl.textContent = 'withdrawn';
-    btn.textContent = 'Withdrawn';
-  } else {
-    btn.disabled = false;
-    showError('Could not withdraw appeal — it may already be at Protocol Council stage.', 'Cannot withdraw');
-  }
-}
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeMenu(); }
-});
-
-// ── DEMOGRAPHICS ─────────────────────────────────────────────────────────────────
-async function activateDemographicsConsent() {
-  const check = document.getElementById('demo-consent-check');
-  if (!check || !check.checked) {
-    showError('Please tick the consent checkbox to continue.', 'Consent required');
-    return;
-  }
-  // In production: POST to /v1/candidates/me/consents with consent_type=fairness_metrics
-  document.getElementById('demo-consent-gate').style.display = 'none';
-  document.getElementById('demo-form').style.display = 'block';
-  document.getElementById('demo-status-badge').textContent = 'consent given';
-  document.getElementById('demo-status-badge').style.background = 'var(--sage-bg)';
-  document.getElementById('demo-status-badge').style.color = 'var(--sage)';
-  const result = await api('POST', '/candidates/me/consents', {
-    consent_type: 'fairness_metrics',
-    legal_basis: 'GDPR Art. 9(2)(a) — explicit consent',
-  });
-  if (!result && result !== null) {
-    showError('Could not record consent — please try again.', 'Error saving consent');
-    return;
-  }
-}
-
-async function saveDemographics() {
-  const fields = {};
-  const sex       = document.getElementById('demo-sex').value;
-  const ethnicity = document.getElementById('demo-ethnicity').value;
-  const religion  = document.getElementById('demo-religion').value;
-  const birthYear = document.getElementById('demo-birthyear').value;
-  const education = document.getElementById('demo-education').value;
-  if (sex)       fields.sex             = sex;
-  if (ethnicity) fields.ethnicity       = ethnicity;
-  if (religion)  fields.religion        = religion;
-  if (birthYear) fields.birth_year      = parseInt(birthYear);
-  if (education) fields.education_level = education;
-  const fieldsSet = Object.keys(fields);
-  if (fieldsSet.length === 0) {
-    showError('No fields filled in — please complete at least one field before saving.', 'Nothing to save');
-    return;
-  }
-  document.getElementById('demo-status-badge').textContent = fieldsSet.length + ' field' + (fieldsSet.length > 1 ? 's' : '') + ' provided';
-  document.getElementById('demo-status-badge').style.background = 'var(--teal-dim)';
-  document.getElementById('demo-status-badge').style.color = 'var(--teal)';
-  const saved = await api('PUT', '/candidates/me/demographics', fields);
-  if (saved !== null) {
-    var count = Object.keys(fields).length;
-    sessionStorage.setItem('fhp_demo_fields_count', String(count));
-    document.getElementById('demo-status-badge').textContent = count + ' field(s) provided';
-    document.getElementById('demo-save-confirm').style.display = 'inline';
-    setTimeout(function() { document.getElementById('demo-save-confirm').style.display = 'none'; }, 2500);
-  } else {
-    showError('Could not save demographic data. Check that you have given fairness consent first.', 'Save failed');
-  }
-}
-
-async function deleteDemographics() {
-  if (!confirm('Remove all demographic data? This removes your cohort memberships but does not withdraw consent.')) return;
-  document.getElementById('demo-status-badge').textContent = 'not provided';
-  document.getElementById('demo-status-badge').style.background = 'var(--cream-d)';
-  document.getElementById('demo-status-badge').style.color = 'var(--ink-light)';
-  ['demo-sex','demo-ethnicity','demo-religion','demo-education'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('demo-birthyear').value = '';
-  const del = await api('DELETE', '/candidates/me/demographics');
-  if (del) {
-    document.getElementById('demo-status-badge').textContent = 'not provided';
-    document.getElementById('demo-status-badge').style.background = 'var(--cream-d)';
-    document.getElementById('demo-status-badge').style.color = 'var(--ink-light)';
-    ['demo-sex','demo-ethnicity','demo-religion','demo-education'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('demo-birthyear').value = '';
-  }
-}
-
-// ── API ───────────────────────────────────────────────────────────────────────────
-const API = 'http://localhost:3000/v1';
-let _token = sessionStorage.getItem('fhp_access_token');
-
-// Redirect to landing page if no token
-if (!_token) {
-  // Allow viewing without token during development — just show a banner
-  console.warn('No access token — API calls will fail. Login via landing-page.html first.');
-}
-
-function authHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + (_token || ''),
-  };
-}
-
-// ── DOWNLOAD MY DATA ─────────────────────────────────────────────────────────────
-function _triggerDownload(data, filename, type) {
-  filename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-  var blob = new Blob([data], { type: type });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function() { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 0);
-}
-
-async function downloadMyData(btn) {
-  const label = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Preparing download…';
-  try {
-    const res = await fetch(API + '/candidates/me/export', {
-      headers: { Authorization: 'Bearer ' + (_token || '') },
-    });
-    if (!res.ok) throw new Error('Export failed: ' + res.status);
-    const text = await res.text();
-    _triggerDownload(
-      text,
-      'fhp-export-' + new Date().toISOString().slice(0, 10) + '.json',
-      'application/json'
-    );
-  } catch(e) {
-    btn.style.color = 'var(--rust)';
-    btn.textContent = 'Download failed — please try again';
-    setTimeout(() => { btn.style.color = ''; btn.textContent = label; btn.disabled = false; }, 3000);
-    return;
-  }
-  btn.disabled = false;
-  btn.textContent = label;
-}
-
-// ── DELETE ACCOUNT MODAL ──────────────────────────────────────────────────────────
-function openDelModal() {
-  document.getElementById('del-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeDelModal() {
-  document.getElementById('del-modal').classList.remove('open');
-  document.body.style.overflow = '';
-  const btn = document.getElementById('del-confirm-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'Delete my account permanently'; }
-}
-async function confirmDeleteAccount() {
-  const btn = document.getElementById('del-confirm-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
-  const result = await api('DELETE', '/candidates/me');
-  if (result) {
-    sessionStorage.clear();
-    window.location.href = 'landing-page.html';
-  } else {
-    if (btn) { btn.disabled = false; btn.textContent = 'Delete my account permanently'; }
-  }
-}
-
-function isValidEvidenceUrl(url) {
-  if (!url || !url.trim()) return true; // empty is fine
-  try {
-    const u = new URL(url.trim());
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch { return false; }
-}
-function validateEvUrl(input) {
-  const ok = isValidEvidenceUrl(input.value);
-  input.classList.toggle('ev-invalid', !ok && input.value.trim() !== '');
-  input.title = (!ok && input.value.trim() !== '')
-    ? 'Must be a valid http:// or https:// URL'
-    : 'Link to portfolio, cert, or work sample';
-  return ok || input.value.trim() === '';
-}
-
-let _lastApiError = null;
-async function api(method, path, body) {
-  _lastApiError = null;
-  try {
-    const res = await fetch(API + path, {
-      method,
-      headers: authHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (res.status === 401) {
-      sessionStorage.clear();
-      window.location.href = 'landing-page.html';
-      return null;
-    }
-    if (!res.ok) {
-      try { _lastApiError = await res.json(); } catch { _lastApiError = { message: 'Request failed (' + res.status + ')' }; }
-      console.error('API error:', method, path, _lastApiError);
-      return null;
-    }
-    return await res.json();
-  } catch (e) {
-    console.error('API error:', method, path, e);
-    return null;
-  }
-}
-
-// ── Dashboard — load real data ─────────────────────────────────────────────────
-async function loadDashboard() {
-  // Notifications unread count
-  const notifs = await api('GET', '/candidates/me/notifications?unread_only=true&limit=1');
-  if (notifs) {
-    const badge = document.getElementById('notif-badge');
-    if (badge && notifs.unread_count > 0) {
-      badge.textContent = notifs.unread_count;
-      badge.style.display = 'inline-flex';
-    }
-  }
-
-  // Match history summary
-  const matches = await api('GET', '/candidates/me/matches?limit=3');
-  const elTotal   = document.getElementById('kpi-active-matches');
-  const elMatched = document.getElementById('kpi-matched');
-  if (matches && matches.matches) {
-    const matchedCount = matches.matches.filter(m => m.decision === 'matched').length;
-    if (elTotal)   elTotal.textContent   = matches.total ?? matches.matches.length;
-    if (elMatched) elMatched.textContent = matchedCount;
-  } else {
-    if (elTotal)   elTotal.textContent   = 0;
-    if (elMatched) elMatched.textContent = 0;
-  }
-
-  // Ghosting events
-  const ghosting = await api('GET', '/candidates/me/ghosting?status=open');
-  if (ghosting) {
-    const el = document.getElementById('kpi-ghosts');
-    if (el) el.textContent = ghosting.open_count ?? 0;
-  }
-}
-
-
-async function loadConsentRecord() {
-  var tbody = document.getElementById('consent-record-body');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="4" style="padding:12px 0;color:var(--ink-faint)">Loading…</td></tr>';
-
-  var me = await api('GET', '/candidates/me');
-  var consentsData = await api('GET', '/candidates/me/consents');
-  if (!me) { tbody.innerHTML = ''; return; }
-
-  var regDate = me.created_at
-    ? new Date(me.created_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
-    : '—';
-
-  var fairness = consentsData && consentsData.consents
-    && consentsData.consents.find(function(c) { return c.consent_type === 'fairness_metrics' && !c.withdrawn_at; });
-  var fairnessDate = fairness
-    ? new Date(fairness.given_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
-    : null;
-
-  var cellStyle = 'padding:8px 0;';
-  var bdStyle = 'border-bottom:1px solid var(--rule);';
-  var givenCell = function(d) {
-    return '<td style="' + cellStyle + 'color:var(--sage);font-family:var(--mono);font-size:10px">✓ ' + d + '</td>';
-  };
-  var notGivenCell = '<td style="' + cellStyle + 'color:var(--ink-faint);font-family:var(--mono);font-size:10px">Not given</td>';
-
-  var rows = '';
-  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Job matching service</td>'
-    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Contract — necessary to provide the service</td>'
-    + givenCell(regDate)
-    + '<td style="' + cellStyle + 'font-size:11px;color:var(--ink-faint)">Delete account</td></tr>';
-
-  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Age confirmation (18+)</td>'
-    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Legal obligation — minimum age required</td>'
-    + givenCell(regDate)
-    + '<td style="' + cellStyle + 'font-size:11px;color:var(--ink-faint)">Irrevocable</td></tr>';
-
-  rows += '<tr style="' + bdStyle + '"><td style="' + cellStyle + '">Fairness metric contribution</td>'
-    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Explicit consent — special category demographic data</td>'
-    + (fairnessDate ? givenCell(fairnessDate) : notGivenCell)
-    + '<td style="' + cellStyle + '">'
-    + (fairness
-        ? '<button class="btn btn-g btn-sm" style="font-size:10px" onclick="showError(\'Withdrawing consent is not yet available. Please contact support.\',\'Not available\')">Withdraw</button>'
-        : '<span style="font-size:11px;color:var(--ink-faint)">N/A</span>')
-    + '</td></tr>';
-
-  rows += '<tr><td style="' + cellStyle + '">Platform terms</td>'
-    + '<td style="' + cellStyle + 'padding:8px 10px;color:var(--ink-light)">Contract</td>'
-    + givenCell(regDate)
-    + '<td style="' + cellStyle + '"><a href="#" style="font-size:11px;color:var(--teal)">View terms</a></td></tr>';
-
-  tbody.innerHTML = rows;
-}
-
-async function loadConsentAndDemographics() {
-  // Check DB for active fairness consent
-  const consents = await api('GET', '/candidates/me/consents');
-  if (!consents) return;
-
-  const fairness = consents.consents && consents.consents.find(function(c) {
-    return c.consent_type === 'fairness_metrics' && !c.withdrawn_at;
-  });
-  if (!fairness) return;
-
-  // Consent is active — show the form, hide the gate
-  document.getElementById('demo-consent-gate').style.display = 'none';
-  document.getElementById('demo-consent-check').checked = true;
-  document.getElementById('demo-form').style.display = 'block';
-
-  // Fetch options — this tells us consent_active and jurisdiction-appropriate field list
-  // Raw demographic values are write-only (special category data) so we cannot fetch them back.
-  // We show how many fields were provided, stored in sessionStorage when saved.
-  const opts = await api('GET', '/candidates/me/demographics/options');
-  const badge = document.getElementById('demo-status-badge');
-  if (!badge) return;
-
-  if (opts && opts.consent_active) {
-    // Check sessionStorage for count set at save time
-    var storedCount = sessionStorage.getItem('fhp_demo_fields_count');
-    if (storedCount && parseInt(storedCount) > 0) {
-      badge.textContent = storedCount + ' field(s) provided';
-    } else {
-      // Consent is active but we don't know count (e.g. saved in a previous session)
-      // The DB has the data — we just can't read it back. Show "data provided".
-      badge.textContent = 'data provided';
-    }
-    badge.style.background = 'var(--sage-bg)';
-    badge.style.color = 'var(--sage)';
-  }
-}
-
-
-// ── PROFILE PERSISTENCE ───────────────────────────────────────────────────────────
-const PROF_KEYS = ['aware','practitioner','proficient','expert','authority'];
-
-async function saveProfile() {
-  const btn = document.getElementById('profile-save-btn');
-  const ok  = document.getElementById('profile-save-status');
-  const err = document.getElementById('profile-save-error');
-  if (btn) btn.disabled = true;
-  if (ok)  ok.style.display  = 'none';
-  if (err) err.style.display = 'none';
-
-  const badUrls = skills.filter(s => s.evidence_url && !isValidEvidenceUrl(s.evidence_url));
-  if (badUrls.length > 0) {
-    if (err) { err.textContent = 'Fix invalid evidence URL(s) before saving.'; err.style.display = 'inline'; }
-    if (btn) btn.disabled = false;
-    return;
-  }
-
-  // Build skills payload
-  const skillsPayload = skills.map(s => ({
-    ontology_id:     s.id,
-    label:           s.label,
-    domain:          s.domain,
-    proficiency:     PROF_KEYS[s.level] || 'practitioner',
-    evidence_url:    s.evidence_url || null,
-    years_experience: null,
-  }));
-
-  // Read preferences from UI
-  const chipVals = (groupId) => {
-    const chips = document.querySelectorAll('#' + groupId + ' .pch.on');
-    return Array.from(chips).map(c => c.dataset.val || c.textContent.trim().toLowerCase());
-  };
-  const locEntries = [...document.querySelectorAll('#loc-list .loc-entry')].map(e => {
-    const sel = e.querySelector('select');
-    const inp = e.querySelector('input');
-    return { country: sel?.value || '', cities: inp?.value || '' };
-  }).filter(l => l.country);
-
-  const prefsPayload = {
-    certifications,
-    job_types:       chipVals('chips-job-type'),
-    work_modes:      chipVals('chips-work-mode'),
-    work_schedules:  chipVals('chips-schedule'),
-    right_to_work:   chipVals('chips-rtw'),
-    locations:       locEntries,
-    salary_minimum: parseFloat(document.getElementById('pref-salary-min')?.value || '0'),
-    salary_currency: document.getElementById('pref-currency')?.value || 'GBP',
-    salary_period:  document.getElementById('pref-salary-period')?.value || 'annual',
-    notice_period: {
-      value: parseInt(document.getElementById('np-n')?.value || '0'),
-      unit:  document.getElementById('np-u')?.value || 'weeks',
-    },
-  };
-
-  const result = await api('PUT', '/candidates/me', {
-    skills:       skillsPayload,
-    work_history: workHistory,
-    preferences:  prefsPayload,
-  });
-
-  if (btn) btn.disabled = false;
-  if (result) {
-    if (ok)  { ok.style.display = 'inline'; setTimeout(() => { ok.style.display = 'none'; }, 2500); }
-  } else {
-    if (err) { err.textContent = (_lastApiError && _lastApiError.message) ? _lastApiError.message : 'Save failed — please try again.'; err.style.display = 'inline'; }
-  }
-}
-
-async function loadProfile() {
-  const profile = await api('GET', '/candidates/me');
-  if (!profile) return;
-
-  // Restore skills
-  if (profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0) {
-    skills = profile.skills.map(s => ({
-      id:           s.ontology_id  || s.id || 'fhp:skill:unknown',
-      label:        s.label        || s.ontology_id || 'Unknown',
-      domain:       s.domain       || 'Other',
-      level:        PROF_KEYS.indexOf(s.proficiency) >= 0 ? PROF_KEYS.indexOf(s.proficiency) : 1,
-      evidence_url: s.evidence_url || '',
-    }));
-    renderSkills();
-  }
-
-  // Restore work history
-  if (profile.work_history && Array.isArray(profile.work_history) && profile.work_history.length > 0) {
-    workHistory = profile.work_history;
-    renderRoles();
-  }
-
-  // Restore preferences
-  if (profile.preferences) {
-    const p = profile.preferences;
-
-    // Certifications
-    if (Array.isArray(p.certifications)) {
-      certifications = p.certifications;
-      renderCerts();
-    }
-
-    // Salary
-    if (p.salary_minimum) {
-      const salEl = document.getElementById('pref-salary-min');
-      if (salEl) salEl.value = p.salary_minimum;
-    }
-    if (p.salary_currency) {
-      const curEl = document.getElementById('pref-currency');
-      if (curEl) curEl.value = p.salary_currency;
-    }
-    if (p.salary_period) {
-      const perEl = document.getElementById('pref-salary-period');
-      if (perEl) perEl.value = p.salary_period;
-    }
-
-    // Notice period
-    if (p.notice_period) {
-      const npN = document.getElementById('np-n');
-      const npU = document.getElementById('np-u');
-      if (npN) npN.value = p.notice_period.value;
-      if (npU) npU.value = p.notice_period.unit;
-    }
-
-    // Chips — job types
-    if (Array.isArray(p.job_types)) {
-      document.querySelectorAll('#chips-job-type .pch').forEach(chip => {
-        chip.classList.toggle('on', p.job_types.includes(chip.dataset.val));
-      });
-    }
-
-    // Chips — work modes
-    if (Array.isArray(p.work_modes)) {
-      document.querySelectorAll('#chips-work-mode .pch').forEach(chip => {
-        chip.classList.toggle('on', p.work_modes.includes(chip.dataset.val));
-      });
-    }
-
-    // Chips — work schedules
-    if (Array.isArray(p.work_schedules)) {
-      document.querySelectorAll('#chips-schedule .pch').forEach(chip => {
-        chip.classList.toggle('on', p.work_schedules.includes(chip.dataset.val));
-      });
-    }
-
-    // Chips — right to work
-    if (Array.isArray(p.right_to_work)) {
-      document.querySelectorAll('#chips-rtw .pch').forEach(chip => {
-        chip.classList.toggle('on', p.right_to_work.includes(chip.dataset.val));
-      });
-    }
-
-    recalcStrength();
-  }
-  renderEligibility(profile.skills);
-}
-
-// ── MATCHING ELIGIBILITY ──────────────────────────────────────────────────────────
-function renderEligibility(profileSkills) {
-  var w = document.getElementById('eligibility-widget');
-  if (!w) return;
-  var hasSkills  = Array.isArray(profileSkills) && profileSkills.length > 0;
-  var eligible   = hasSkills; // age + terms always true for registered users
-  var iconColor  = eligible ? 'var(--sage)' : 'var(--gold)';
-  var icon       = eligible ? '&#10003;' : '&#9888;';
-  var label      = eligible ? 'Eligible for matching' : 'Not yet eligible';
-  var labelColor = eligible ? 'var(--sage)' : 'var(--gold)';
-  var checks = [
-    { met: true,      text: 'Age confirmed' },
-    { met: true,      text: 'Terms accepted' },
-    { met: hasSkills, text: hasSkills ? skills.length + ' skill' + (skills.length === 1 ? '' : 's') + ' on profile' : 'Add at least 1 skill' },
-  ];
-  w.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-    + '<span style="font-size:17px;color:' + iconColor + '">' + icon + '</span>'
-    + '<div style="font-size:13px;color:' + labelColor + ';font-weight:500">' + label + '</div>'
-    + '</div>'
-    + '<div style="font-size:11px;color:var(--ink-light);line-height:1.8">'
-    + checks.map(function(c) {
-        return '<span style="color:' + (c.met ? 'var(--sage)' : 'var(--rust)') + '">'
-          + (c.met ? '&#10003;' : '&#10007;') + '</span> ' + c.text;
-      }).join(' &middot; ')
-    + '</div>';
-}
-
-// ── PROFILE STRENGTH ─────────────────────────────────────────────────────────────
-function toggleChip(el) { el.classList.toggle('on'); recalcStrength(); }
-
-function recalcStrength() {
-  const CIRC = 131.9;
-  const components = [
-    { weight: 20, met: skills.length > 0,
-      tip: 'Add at least one skill to enable matching.' },
-    { weight: 15, met: workHistory.length > 0,
-      tip: 'Add a work history role to improve match quality.' },
-    { weight: 15, met: parseFloat(document.getElementById('pref-salary-min')?.value || '0') > 0,
-      tip: 'Set a salary minimum — it\'s a hard constraint in matching.' },
-    { weight: 10, met: document.querySelectorAll('#chips-rtw .pch.on').length > 0,
-      tip: 'Set your right-to-work countries.' },
-    { weight: 10, met: document.querySelectorAll('#loc-list .loc-entry').length > 0,
-      tip: 'Add at least one preferred location.' },
-    { weight: 10, met: document.querySelectorAll('#chips-job-type .pch.on').length > 0,
-      tip: 'Select your preferred job type (permanent, contract…).' },
-    { weight: 10, met: document.querySelectorAll('#chips-work-mode .pch.on').length > 0,
-      tip: 'Select your preferred work mode (remote, hybrid…).' },
-    { weight: 10, met: skills.some(s => s.evidence_url && isValidEvidenceUrl(s.evidence_url)),
-      tip: 'Add a valid evidence URL (http/https) to at least one skill claim.' },
-  ];
-
-  const pct = components.reduce((sum, c) => sum + (c.met ? c.weight : 0), 0);
-  const offset = CIRC * (1 - pct / 100);
-  const tips = components.filter(c => !c.met).map(c =>
-    `<div class="tip"><span class="ti">&#128161;</span>${c.tip}</div>`).join('');
-
-  document.querySelectorAll('.strength-arc').forEach(el => {
-    el.setAttribute('stroke-dashoffset', offset.toFixed(1));
-  });
-  document.querySelectorAll('.strength-pct').forEach(el => {
-    el.textContent = pct + '%';
-  });
-  document.querySelectorAll('.strength-tips').forEach(el => {
-    el.innerHTML = tips;
-  });
-  renderEligibility(skills);
-}
-
-// ── INIT ─────────────────────────────────────────────────────────────────────────
-renderSkills();
-renderRoles();
-renderCerts();
-loadNotifications();
-loadMatches();
-loadDashboard();
-loadConsentAndDemographics();
-loadProfile();
-
-const _startTab = window.location.hash.replace('#', '');
-if (_startTab && document.getElementById('pg-' + _startTab)) {
-  go(_startTab);
-  history.replaceState(null, '', window.location.pathname);
-}
-
-</script>
+<!-- Trace viewer dialog -->
+<div class="overlay" id="trace-modal" onclick="if(event.target===this)closeTraceModal()">
+  <div class="modal" style="max-width:560px">
+    <div class="mhdr">
+      <h2 class="mtitle" id="trace-modal-title">Pipeline trace</h2>
+      <button class="mx" onclick="closeTraceModal()">&#10005;</button>
+    </div>
+    <div class="mbody" id="trace-modal-body" style="font-size:12px;line-height:1.6"></div>
+  </div>
+</div>
+
+<div id="crit-popup" role="tooltip" aria-live="polite"></div>
+<script src="js/candidate-app.js"></script>
 </body>
 </html>

@@ -165,6 +165,14 @@ Write-Host ''
 Write-Host '------------------------------------------------' -ForegroundColor DarkGray
 Write-Host ' FHP Development Environment' -ForegroundColor White
 Write-Host '------------------------------------------------' -ForegroundColor DarkGray
+Write-Host ' To insert a realistic set of mock records so every dashboard tab renders'
+Write-Host ' with data rather than empty states (note the extra -- before flags when using npm run):'
+Write-Host ''
+Write-Host ' npm run seed:mock                          # insert (idempotent — safe to re-run)'
+Write-Host ' npm run seed:mock -- --clean               # delete all mock records first, then re-insert'
+Write-Host ' npm run seed:mock -- --company-id <uuid>   # target a specific company (register company > get company-id from DB)'
+Write-Host ''
+Write-Host '------------------------------------------------' -ForegroundColor DarkGray
 Write-Host ' API server       http://localhost:3000'
 Write-Host ' Swagger UI       http://localhost:3000/documentation'
 Write-Host ' Landing page     http://localhost:9999/landing-page.html'
