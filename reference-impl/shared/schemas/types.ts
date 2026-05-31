@@ -159,6 +159,11 @@ export interface MatchExplanation {
     transferable_skill_score:  number;
     preference_alignment_score: number;
     bias_correction_delta:     number;
+    salary_alignment?:         number;
+    work_mode_alignment?:      number;
+    location_alignment?:       number;
+    weight_skill?:             number;
+    weight_preference?:        number;
   };
   skill_breakdown:    SkillBreakdown[];
   bias_assessment:    BiasAssessment;
