@@ -36,6 +36,7 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
             fhp_version:       { type: 'string' },
             skills:            { type: 'array' },
             work_history:      { type: 'array' },
+            certifications:    { type: 'array' },
             preferences:       { type: 'object', additionalProperties: true },
             privacy:           { type: 'object', additionalProperties: true },
             matching_eligible: { type: 'boolean' },
@@ -51,7 +52,7 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
 
     const rows = await app.db`
       SELECT
-        candidate_id, fhp_version, skills, work_history,
+        candidate_id, fhp_version, skills, work_history, certifications,
         preferences, privacy, status, matching_eligible,
         profile_strength, created_at, updated_at
       FROM matching.candidate_profiles
@@ -78,20 +79,22 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         type: 'object',
         additionalProperties: false,
         properties: {
-          skills:       { type: 'array' },
-          work_history: { type: 'array' },
-          preferences:  { type: 'object' },
-          privacy:      { type: 'object' },
+          skills:          { type: 'array' },
+          work_history:    { type: 'array' },
+          certifications:  { type: 'array' },
+          preferences:     { type: 'object' },
+          privacy:         { type: 'object' },
         },
       },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const candidateId = (request.user as any).candidateId as string;
     const body        = request.body as {
-      skills?:       unknown[];
-      work_history?: unknown[];
-      preferences?:  Record<string, unknown>;
-      privacy?:      Record<string, unknown>;
+      skills?:          unknown[];
+      work_history?:    unknown[];
+      certifications?:  unknown[];
+      preferences?:     Record<string, unknown>;
+      privacy?:         Record<string, unknown>;
     };
 
     // Validate skill ontology IDs against config.skills
@@ -108,6 +111,20 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
+    // Validate certification IDs against the governed ontology
+    if (body.certifications && body.certifications.length > 0) {
+      const certIds = (body.certifications as any[]).map((c: any) => c.cert_id).filter(Boolean) as string[];
+      if (certIds.length !== body.certifications.length) {
+        throw new ValidationError('Each certification must include a cert_id');
+      }
+      const validCerts = await app.db`SELECT cert_id FROM config.certifications WHERE cert_id = ANY(${certIds}) AND active = TRUE`;
+      const validCertSet = new Set(validCerts.map((r: any) => r.cert_id as string));
+      const invalidCerts = certIds.filter(id => !validCertSet.has(id));
+      if (invalidCerts.length > 0) {
+        throw new ValidationError(`Unknown certification ID(s): ${invalidCerts.join(', ')}`);
+      }
+    }
+
     // Validate free-text fields in work_history
     if (body.work_history) {
       for (const entry of body.work_history as any[]) {
@@ -119,10 +136,11 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
     // Build update dynamically — only update provided fields.
     // postgres.js requires JSON values to be wrapped in app.db.json() so the
     // driver sends them with the correct jsonb type binding rather than as text.
-    const skillsVal      = body.skills       ? app.db.json(body.skills       as any) : null;
-    const workHistoryVal = body.work_history ? app.db.json(body.work_history as any) : null;
-    const prefsVal       = body.preferences  ? app.db.json(body.preferences  as any) : null;
-    const privacyVal     = body.privacy      ? app.db.json(body.privacy      as any) : null;
+    const skillsVal        = body.skills          ? app.db.json(body.skills          as any) : null;
+    const workHistoryVal   = body.work_history    ? app.db.json(body.work_history    as any) : null;
+    const certificationsVal= body.certifications  ? app.db.json(body.certifications  as any) : null;
+    const prefsVal         = body.preferences     ? app.db.json(body.preferences     as any) : null;
+    const privacyVal       = body.privacy         ? app.db.json(body.privacy         as any) : null;
 
     // Auto-manage matching_eligible based on skills presence.
     // null = skills not provided in this request → keep current DB value.
@@ -130,22 +148,44 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
       ? (Array.isArray(body.skills) && body.skills.length > 0)
       : null;
 
+    // Read current matching_eligible before the update so we can detect a
+    // false→true transition.  Only trigger auto-matching on that transition —
+    // subsequent saves should not re-scan all active jobs.  New jobs handle
+    // matching for already-eligible candidates via triggerJobMatching instead.
+    const [currentProfile] = await app.db`
+      SELECT matching_eligible FROM matching.candidate_profiles
+      WHERE candidate_id = ${candidateId} AND status != 'deleted'
+    `;
+    const wasEligible = (currentProfile as any)?.matching_eligible ?? false;
+
     const rows = await app.db`
       UPDATE matching.candidate_profiles
       SET
-        skills            = COALESCE(${skillsVal},      skills),
-        work_history      = COALESCE(${workHistoryVal}, work_history),
-        preferences       = COALESCE(${prefsVal},       preferences),
-        privacy           = COALESCE(${privacyVal},     privacy),
-        matching_eligible = COALESCE(${eligibleVal}, matching_eligible),
+        skills            = COALESCE(${skillsVal},          skills),
+        work_history      = COALESCE(${workHistoryVal},     work_history),
+        certifications    = COALESCE(${certificationsVal},  certifications),
+        preferences       = COALESCE(${prefsVal},           preferences),
+        privacy           = COALESCE(${privacyVal},         privacy),
+        matching_eligible = COALESCE(${eligibleVal},        matching_eligible),
         updated_at        = NOW()
       WHERE candidate_id = ${candidateId}
         AND status != 'deleted'
-      RETURNING candidate_id, skills, work_history, preferences, privacy, matching_eligible,
-                profile_strength, updated_at
+      RETURNING candidate_id, skills, work_history, certifications, preferences, privacy,
+                matching_eligible, profile_strength, updated_at
     `;
 
     if (!rows[0]) throw new NotFoundError('Candidate profile', candidateId);
+
+    // Trigger auto-matching only when the candidate first becomes eligible.
+    // If they were already eligible, new jobs will reach them via triggerJobMatching.
+    const nowEligible = (rows[0] as any).matching_eligible;
+    if (nowEligible && !wasEligible) {
+      setTimeout(() => {
+        import('../services/matching-service.ts').then(({ triggerCandidateMatching }) => {
+          triggerCandidateMatching(app, candidateId);
+        });
+      });
+    }
 
     return reply.send(rows[0]);
   });
@@ -388,9 +428,17 @@ export async function candidateRoutes(app: FastifyInstance): Promise<void> {
         jb.salary_minimum,
         jb.salary_maximum,
         jb.salary_currency,
-        expl.plain_language_summary
+        jb.skills_required,
+        c.legal_name AS company_name,
+        c.compliance_score::float AS company_compliance_score,
+        expl.plain_language_summary,
+        expl.skill_breakdown,
+        expl.scores_snapshot,
+        expl.not_matched_reasons,
+        expl.next_steps
       FROM matching.match_events me
       JOIN matching.job_briefs jb ON jb.job_id = me.job_id
+      JOIN matching.companies c ON c.company_id = jb.company_id
       LEFT JOIN matching.match_explanations expl
         ON expl.match_id = me.match_id AND expl.audience = 'candidate'
       WHERE me.candidate_id = ${candidateId}

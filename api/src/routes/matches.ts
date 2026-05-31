@@ -54,10 +54,11 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       LIMIT 1
     `;
     if (recentMatch[0]) {
-      throw new ConflictError(
-        'A match for this job was already run within the last 24 hours. ' +
-        `match_id: ${recentMatch[0].match_id}`
-      );
+      return reply.status(409).send({
+        error:    'CONFLICT',
+        message:  'A match for this job was already run within the last 24 hours.',
+        match_id: recentMatch[0].match_id as string,
+      });
     }
 
     // Run pipeline in-process (reference impl)
@@ -149,11 +150,11 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
             ${expl.explanation_id}, ${result.matchId}, ${candidateId}, ${job_id},
             ${expl.audience},
             ${expl.plain_language_summary ?? ''},
-            ${JSON.stringify(expl.skill_breakdown)}::jsonb,
-            ${JSON.stringify(expl.scores)}::jsonb,
-            ${JSON.stringify(expl.bias_assessment)}::jsonb,
-            ${JSON.stringify(expl.outcome.not_matched_reasons ?? [])}::jsonb,
-            ${JSON.stringify(expl.next_steps ?? [])}::jsonb
+            ${app.db.json(expl.skill_breakdown as any)},
+            ${app.db.json(expl.scores as any)},
+            ${app.db.json(expl.bias_assessment as any)},
+            ${app.db.json((expl.outcome.not_matched_reasons ?? []) as any)},
+            ${app.db.json((expl.next_steps ?? []) as any)}
           )
         `;
       }
@@ -262,11 +263,11 @@ function mapCandidateProfile(row: any) {
       // DB stores salary_min + salary_currency flat; pipeline expects nested salary object
       salary: prefs.salary?.minimum != null
         ? prefs.salary
-        : prefs.salary_min != null
+        : (prefs.salary_minimum ?? prefs.salary_min) != null
           ? {
               currency: prefs.salary_currency ?? 'GBP',
-              minimum:  Number(prefs.salary_min),
-              period:   'annual' as const,
+              minimum:  Number(prefs.salary_minimum ?? prefs.salary_min),
+              period:   (prefs.salary_period ?? 'annual') as 'annual' | 'daily' | 'hourly',
             }
           : undefined,
       notice_period_days:  prefs.notice_period_days,

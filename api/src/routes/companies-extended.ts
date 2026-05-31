@@ -317,6 +317,112 @@ export async function companiesExtendedRoutes(app: FastifyInstance): Promise<voi
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // POST /v1/companies/me/interactions/:interactionId/advance
+  // Move the hiring process to the next stage and reset the SLA clock.
+  // ─────────────────────────────────────────────────────────────────────────
+  const STAGE_SEQUENCE = [
+    'initial_match_acknowledgement',
+    'application_review',
+    'screening_call',
+    'technical_assessment',
+    'interview_stage',
+    'offer_stage',
+    'completed',
+  ] as const;
+
+  const STAGE_SLA_DAYS: Record<string, number> = {
+    application_review:   10,
+    screening_call:        5,
+    technical_assessment:  7,
+    interview_stage:       5,
+    offer_stage:          10,
+  };
+
+  app.post('/me/interactions/:interactionId/advance', {
+    preHandler: [requireCompany],
+    schema: {
+      tags: ['companies'],
+      summary: 'Advance a hiring interaction to the next stage',
+      params: {
+        type: 'object',
+        properties: { interactionId: { type: 'string', format: 'uuid' } },
+      },
+      body: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          stage_notes: { type: 'string', maxLength: 1000 },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const companyId         = (request.user as any).companyId as string;
+    const { interactionId } = request.params as { interactionId: string };
+    const { stage_notes }   = (request.body ?? {}) as { stage_notes?: string };
+
+    if (stage_notes) rejectHtml(stage_notes, 'stage_notes');
+
+    const rows = await app.db`
+      SELECT ai.interaction_id, ai.candidate_id, ai.match_id, ai.job_id,
+             ai.current_stage, ai.status, jb.title AS job_title
+      FROM matching.active_interactions ai
+      JOIN matching.job_briefs jb ON jb.job_id = ai.job_id
+      WHERE ai.interaction_id = ${interactionId}
+        AND ai.company_id     = ${companyId}
+        AND ai.status         = 'active'
+      LIMIT 1
+    `;
+
+    if (!rows[0]) throw new NotFoundError('Interaction', interactionId);
+    const inter = rows[0] as any;
+
+    const currentIdx = STAGE_SEQUENCE.indexOf(inter.current_stage as any);
+    if (currentIdx === -1 || currentIdx >= STAGE_SEQUENCE.length - 1) {
+      throw new ValidationError(
+        `Cannot advance: interaction is at stage '${inter.current_stage}' which has no next stage.`
+      );
+    }
+
+    const nextStage = STAGE_SEQUENCE[currentIdx + 1] as string;
+    const slaDays   = STAGE_SLA_DAYS[nextStage] ?? 5;
+    const isCompleted = nextStage === 'completed';
+
+    await app.db`
+      UPDATE matching.active_interactions SET
+        current_stage   = ${nextStage},
+        status          = ${isCompleted ? 'completed' : 'active'},
+        outcome         = ${isCompleted ? 'hired' : null},
+        sla_deadline    = NOW() + (${slaDays}::int * INTERVAL '1 day'),
+        last_contact_at = NOW(),
+        updated_at      = NOW()
+      WHERE interaction_id = ${interactionId}
+    `;
+
+    if (!isCompleted) {
+      const stageLabel = nextStage.replace(/_/g, ' ');
+      await app.db`
+        INSERT INTO matching.candidate_notifications (
+          candidate_id, notification_type, title, body,
+          match_id, interaction_id, job_id, company_id, actions
+        ) VALUES (
+          ${inter.candidate_id}, 'stage_invitation',
+          ${'Application update: ' + (inter.job_title as string)},
+          ${'Your application has progressed to the ' + stageLabel + ' stage.'},
+          ${inter.match_id}, ${interactionId}, ${inter.job_id}, ${companyId},
+          '[]'::jsonb
+        )
+      `;
+    }
+
+    return reply.send({
+      interaction_id: interactionId,
+      previous_stage: inter.current_stage,
+      current_stage:  nextStage,
+      status:         isCompleted ? 'completed' : 'active',
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // GET /v1/companies/me/ghosting
   // Full ghosting event history — Ghosting Events nav page.
   // ─────────────────────────────────────────────────────────────────────────

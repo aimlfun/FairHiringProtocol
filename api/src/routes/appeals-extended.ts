@@ -205,6 +205,46 @@ export async function ontologyRoutes(app: FastifyInstance): Promise<void> {
   });
 
   /**
+   * GET /v1/ontology/certifications
+   * Certification/licence search for UI autocomplete in profile editor and job brief form.
+   * Unauthenticated — the ontology is public knowledge.
+   */
+  app.get('/certifications', {
+    schema: {
+      tags: ['ontology'],
+      summary: 'Search FHP certification and licence ontology',
+      querystring: {
+        type: 'object',
+        properties: {
+          q:     { type: 'string', minLength: 1, maxLength: 100 },
+          type:  { type: 'string', enum: ['licence', 'certification', 'membership'] },
+          limit: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const q = request.query as { q?: string; type?: string; limit: number };
+
+    const rows = await app.db`
+      SELECT cert_id, label, issuing_body, cert_type, has_expiry, validity_years, evidences
+      FROM config.certifications
+      WHERE active = TRUE
+        ${q.q ? app.db`AND (
+            label        ILIKE ${'%' + q.q + '%'}
+            OR issuing_body ILIKE ${'%' + q.q + '%'}
+            OR cert_id   ILIKE ${'%' + q.q + '%'}
+          )` : app.db``}
+        ${q.type ? app.db`AND cert_type = ${q.type}` : app.db``}
+      ORDER BY
+        CASE WHEN label ILIKE ${(q.q ?? '') + '%'} THEN 0 ELSE 1 END,
+        label
+      LIMIT ${q.limit}
+    `;
+
+    return reply.send({ certifications: rows, total: rows.length });
+  });
+
+  /**
    * GET /v1/ontology/domains
    * List all skill domains — used for the domain filter in the skill editor.
    */

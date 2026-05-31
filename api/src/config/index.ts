@@ -100,6 +100,11 @@ export const config = {
   // Test helpers (dev only) — shared secret required on every request
   testHelperKey: optionalEnv('TEST_HELPER_KEY', ''),
 
+  // Set AUTO_MATCHING=false to disable background auto-matching.
+  // Tests use the /test-helpers/trigger-* endpoints to run matching explicitly.
+  // Production leaves this at the default (true).
+  autoMatchingEnabled: optionalEnv('AUTO_MATCHING', 'true') === 'true',
+
 } as const;
 
 // Validate at module load time — server will refuse to start if invalid

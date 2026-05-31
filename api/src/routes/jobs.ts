@@ -47,6 +47,17 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
           max_notice_period_days:  { type: 'integer', minimum: 0, nullable: true },
           process_stages:          { type: 'array' },
           expires_at:              { type: 'string', format: 'date-time' },
+          required_certifications: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['cert_id', 'requirement'],
+              properties: {
+                cert_id:     { type: 'string', description: 'e.g. fhp:cert:driving-licence-b' },
+                requirement: { type: 'string', enum: ['must_have', 'preferred'] },
+              },
+            },
+          },
         },
       },
     },
@@ -67,6 +78,17 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
 
     rejectHtml(body.title as string,        'title');
     rejectHtml(body.role_summary as string, 'role_summary');
+
+    // Validate certification IDs against config.certifications
+    if (body.required_certifications && (body.required_certifications as any[]).length > 0) {
+      const certIds = (body.required_certifications as any[]).map((c: any) => c.cert_id as string);
+      const validCerts = await app.db`SELECT cert_id FROM config.certifications WHERE cert_id = ANY(${certIds}) AND active = TRUE`;
+      const validCertSet = new Set(validCerts.map((r: any) => r.cert_id as string));
+      const invalidCerts = certIds.filter(id => !validCertSet.has(id));
+      if (invalidCerts.length > 0) {
+        throw new ValidationError(`Unknown certification ID(s): ${invalidCerts.join(', ')}`);
+      }
+    }
 
     // Validate skill ontology IDs against config.skills
     const skillIds = (body.skills_required as any[]).map((s: any) => s.ontology_id as string);
@@ -93,6 +115,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
     const rows = await app.db`
       INSERT INTO matching.job_briefs (
         company_id, fhp_version, title, role_summary, skills_required,
+        required_certifications,
         salary_currency, salary_minimum, salary_maximum,
         salary_period, work_mode, location_country, location_region, location_city,
         employment_type, response_sla_days, max_notice_period_days, process_stages, expires_at,
@@ -102,6 +125,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
       ) VALUES (
         ${companyId}, '1.0.0', ${body.title}, ${body.role_summary},
         ${app.db.json(body.skills_required)},
+        ${app.db.json((body.required_certifications as any) ?? [])},
         ${body.salary_currency}, ${body.salary_minimum}, ${body.salary_maximum},
         ${body.salary_period ?? 'annual'}, ${body.work_mode},
         ${body.location_country}, ${body.location_region ?? null}, ${body.location_city ?? null},
@@ -119,7 +143,22 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
       RETURNING *
     `;
 
-    return reply.status(201).send(rows[0]);
+    const newJob = rows[0];
+
+    // When a brief is immediately active (all attestations provided), kick off
+    // auto-matching against all eligible candidates. Fire-and-forget — the HTTP
+    // response is not held waiting for pipeline runs to complete.
+    // Fire-and-forget: auto-match eligible candidates. The NOT EXISTS guard in
+    // triggerJobMatching means duplicate pairs are skipped idempotently.
+    if (allAttested) {
+      setTimeout(() => {
+        import('../services/matching-service.ts').then(({ triggerJobMatching }) => {
+          triggerJobMatching(app, newJob!.job_id as string, companyId);
+        });
+      });
+    }
+
+    return reply.status(201).send(newJob);
   });
 
   /** GET /v1/jobs/:jobId */
@@ -173,8 +212,9 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
         location_city     = COALESCE(${body.location_city     ?? null}, location_city),
         response_sla_days       = COALESCE(${body.response_sla_days ?? null}, response_sla_days),
         max_notice_period_days  = COALESCE(${body.max_notice_period_days ?? null}, max_notice_period_days),
-        skills_required         = COALESCE(${body.skills_required ? app.db.json(body.skills_required) : null}, skills_required),
-        process_stages          = COALESCE(${body.process_stages ? app.db.json(body.process_stages) : null}, process_stages),
+        skills_required              = COALESCE(${body.skills_required ? app.db.json(body.skills_required) : null}, skills_required),
+        required_certifications      = COALESCE(${body.required_certifications ? app.db.json(body.required_certifications) : null}, required_certifications),
+        process_stages               = COALESCE(${body.process_stages ? app.db.json(body.process_stages) : null}, process_stages),
         attest_no_degree_requirement    = COALESCE(${body.attest_no_degree_requirement    ?? null}, attest_no_degree_requirement),
         attest_no_institution_preference = COALESCE(${body.attest_no_institution_preference ?? null}, attest_no_institution_preference),
         attest_no_graduation_year_filter = COALESCE(${body.attest_no_graduation_year_filter ?? null}, attest_no_graduation_year_filter),
@@ -183,7 +223,28 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
       WHERE job_id = ${jobId} AND company_id = ${companyId}
       RETURNING *
     `;
-    return reply.send(rows[0]);
+    const updatedJob = rows[0];
+
+    // Re-run auto-matching for candidates not yet matched against this job.
+    //
+    // Design decision: on edit we run only for *unmatched* candidates.
+    // Candidates who already have a match record (any decision) keep their
+    // existing result — the pipeline ran against the brief as it was at that
+    // moment, and re-scoring would silently change outcomes they may have
+    // already seen or appealed. If a candidate believes an edit materially
+    // affected their result, the appeal mechanism is the correct remedy.
+    //
+    // We fire on every edit rather than only on matching-relevant field changes
+    // (skills, salary, work_mode) because the cost of an extra pipeline run for
+    // a candidate pool that passes the skill-overlap pre-filter is low, and
+    // conditional logic on which fields changed adds complexity with little gain.
+    setTimeout(() => {
+      import('../services/matching-service.ts').then(({ triggerJobMatching }) => {
+        triggerJobMatching(app, jobId, companyId);
+      });
+    });
+
+    return reply.send(updatedJob);
   });
 
   /** GET /v1/jobs/:jobId/matches — company sees matches for their job */

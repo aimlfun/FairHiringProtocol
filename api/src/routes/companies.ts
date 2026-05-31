@@ -51,10 +51,15 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
         ORDER BY detected_at DESC
       `,
       app.db`
-        SELECT job_id, title, status, expires_at, salary_range_wide
-        FROM matching.job_briefs
-        WHERE company_id = ${companyId} AND status = 'active'
-        ORDER BY activated_at DESC LIMIT 10
+        SELECT jb.job_id, jb.title, jb.status, jb.expires_at,
+               jb.salary_range_wide, jb.response_sla_days,
+               COUNT(DISTINCT me.candidate_id)::int AS total_candidates,
+               COUNT(me.match_id) FILTER (WHERE me.decision = 'matched')::int AS matched_count
+        FROM matching.job_briefs jb
+        LEFT JOIN matching.match_events me ON me.job_id = jb.job_id
+        WHERE jb.company_id = ${companyId} AND jb.status = 'active'
+        GROUP BY jb.job_id
+        ORDER BY jb.activated_at DESC LIMIT 10
       `,
       app.db`
         SELECT event_type, summary, occurred_at

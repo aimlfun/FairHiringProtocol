@@ -10,13 +10,16 @@
  *   POST /v1/test-helpers/create-ghosting-event   — insert a synthetic open ghosting event
  *   POST /v1/test-helpers/expire-interaction-sla  — set active_interaction sla_deadline to 2h ago
  *   POST /v1/test-helpers/run-sla-monitor         — detect SLA breaches, create ghosting events
- *   POST /v1/test-helpers/assign-cohorts          — seed candidate_cohorts for bias detection tests
- *   POST /v1/test-helpers/seed-fairness-breach    — seed analytical.fairness_metrics breach record
- *   POST /v1/test-helpers/compute-job-fairness    — compute engagement-rate fairness for a job
+ *   POST /v1/test-helpers/assign-cohorts                — seed candidate_cohorts for bias detection tests
+ *   POST /v1/test-helpers/seed-fairness-breach          — seed analytical.fairness_metrics breach record
+ *   POST /v1/test-helpers/compute-job-fairness          — compute engagement-rate fairness for a job
+ *   POST /v1/test-helpers/trigger-job-matching          — run auto-matching for a job synchronously
+ *   POST /v1/test-helpers/trigger-candidate-matching    — run auto-matching for a candidate synchronously
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { config } from '../config/index.ts';
+import { runJobMatchingSync, runCandidateMatchingSync } from '../services/matching-service.ts';
 
 function requireTestKey(request: FastifyRequest, reply: FastifyReply, done: () => void): void {
   const key = request.headers['x-test-helper-key'];
@@ -448,18 +451,30 @@ export async function testHelperRoutes(app: FastifyInstance): Promise<void> {
         type: 'object',
         required: ['job_id'],
         properties: {
-          job_id: { type: 'string', format: 'uuid' },
+          job_id:       { type: 'string', format: 'uuid' },
+          candidate_ids: {
+            type: 'array',
+            items: { type: 'string', format: 'uuid' },
+            description: 'Restrict analysis to these specific candidates (avoids DB contamination from previous test runs)',
+          },
         },
       },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { job_id } = request.body as { job_id: string };
+    const { job_id, candidate_ids: candidateIdsFilter } =
+      request.body as { job_id: string; candidate_ids?: string[] };
 
-    // All matched candidates for this job
-    const matchedRows = await app.db`
-      SELECT candidate_id FROM matching.match_events
-      WHERE job_id = ${job_id} AND decision = 'matched'
-    `;
+    // All matched candidates for this job (optionally restricted to a specific set)
+    const matchedRows = candidateIdsFilter?.length
+      ? await app.db`
+          SELECT candidate_id FROM matching.match_events
+          WHERE job_id = ${job_id} AND decision = 'matched'
+            AND candidate_id = ANY(${candidateIdsFilter})
+        `
+      : await app.db`
+          SELECT candidate_id FROM matching.match_events
+          WHERE job_id = ${job_id} AND decision = 'matched'
+        `;
     if (!matchedRows[0]) {
       return reply.status(422).send({
         error: 'NO_MATCHES', message: 'No matched candidates found for this job',
@@ -594,5 +609,60 @@ export async function testHelperRoutes(app: FastifyInstance): Promise<void> {
       total_evaluated:   candidateIds.length,
       characteristic:    bestChar,
     });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // POST /v1/test-helpers/trigger-job-matching
+  // Runs auto-matching for a specific job synchronously (awaited).
+  // Used by auto-matching.spec.ts when AUTO_MATCHING=false disables the
+  // background queue — tests call this instead of polling.
+  // ─────────────────────────────────────────────────────────────────────────
+  app.post('/trigger-job-matching', {
+    preHandler: [requireTestKey],
+    schema: {
+      tags: ['test-helpers'],
+      summary: '[DEV ONLY] Run job auto-matching synchronously',
+      body: {
+        type: 'object',
+        required: ['job_id'],
+        properties: {
+          job_id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { job_id } = request.body as { job_id: string };
+    const jobRow = await app.db`
+      SELECT job_id, company_id FROM matching.job_briefs
+      WHERE job_id = ${job_id} AND status = 'active' LIMIT 1
+    `;
+    if (!jobRow[0]) {
+      return reply.status(404).send({ error: 'NOT_FOUND', message: `Active job ${job_id} not found` });
+    }
+    await runJobMatchingSync(app, job_id, (jobRow[0] as any).company_id as string);
+    return reply.status(200).send({ job_id, triggered: true });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // POST /v1/test-helpers/trigger-candidate-matching
+  // Runs auto-matching for a specific candidate synchronously (awaited).
+  // ─────────────────────────────────────────────────────────────────────────
+  app.post('/trigger-candidate-matching', {
+    preHandler: [requireTestKey],
+    schema: {
+      tags: ['test-helpers'],
+      summary: '[DEV ONLY] Run candidate auto-matching synchronously',
+      body: {
+        type: 'object',
+        required: ['candidate_id'],
+        properties: {
+          candidate_id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { candidate_id } = request.body as { candidate_id: string };
+    await runCandidateMatchingSync(app, candidate_id);
+    return reply.status(200).send({ candidate_id, triggered: true });
   });
 }
