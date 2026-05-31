@@ -24,7 +24,18 @@ db/
 │   ├── 012_rls.sql                ← all Row-Level Security policies
 │   ├── 013_triggers.sql           ← immutability, timestamps, checksums
 │   ├── 014_indexes.sql            ← all indexes (separate for clarity)
-│   └── 015_partitions.sql         ← initial partition setup
+│   ├── 015_partitions.sql         ← initial partition setup
+│   ├── 016_company_auth.sql       ← company authentication tables
+│   ├── 017_candidate_demographics.sql ← demographics (GDPR Art. 9 write-only)
+│   ├── 018_config_and_governance_log.sql ← config schema + governance log
+│   ├── 019_governance_bodies.sql  ← governance bodies reference table
+│   ├── 020_job_notice_period.sql  ← max_notice_period_days on job_briefs
+│   ├── 021_relax_matching_eligibility_trigger.sql ← trigger adjustment
+│   ├── 022_force_rls_on_sensitive_tables.sql ← RLS hardening
+│   ├── 023_protocol_version_history.sql ← version history in config
+│   ├── 024_governance_users.sql   ← governance user accounts (identity schema)
+│   ├── 025_certifications.sql     ← governed cert/licence ontology + candidate/job columns
+│   └── 026_fix_cert_label_encoding.sql ← encoding fix for Windows psql migration
 ├── partitions/
 │   └── create_monthly_partitions.sql  ← script to create future partitions
 └── seeds/
@@ -100,9 +111,11 @@ psql fhp -f db/partitions/create_monthly_partitions.sql
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
-│  Schema: config  (governance constants)                  │
+│  Schema: config  (governance constants and ontology)     │
 │  ─────────────────────────────────────────────────────   │
 │  governance_constants  ontology_domains                  │
+│  skills                skill_transfer_relationships      │
+│  rejection_codes       certifications                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
