@@ -58,7 +58,7 @@ export async function runPipeline(
       const [cExp, eExp, gExp] = generateExplanations(
         normCandidate, normJob, matchId, traceId,
         { decision: 'not_matched', overallScore: 0, preCorrection: 0 },
-        { skillScore: 0, transferableSkillScore: 0, preferenceAlignmentScore: 0, biasCorrectionDelta: 0 },
+        { skillScore: 0, transferableSkillScore: 0, preferenceAlignmentScore: 0, biasCorrectionDelta: 0, salaryAlignment: 0, workModeAlignment: 0, locationAlignment: 0, weightSkill: 0, weightPreference: 0 },
         [],
         { triggered: false, metricsEvaluated: [] },
         constraintResult.failures,
@@ -76,7 +76,7 @@ export async function runPipeline(
       applyTransfer(normCandidate, breakdown, sMust, sNice, ctx, trace);
 
     // ── Stage 6: Preference Alignment ────────────────────────────────────────
-    const sPref = scorePreferences(normCandidate, normJob, ctx, trace);
+    const { sPref, aSalary, aMode, aLocation } = scorePreferences(normCandidate, normJob, ctx, trace);
 
     // ── Composite score ───────────────────────────────────────────────────────
     const g = ctx.governance;
@@ -108,12 +108,18 @@ export async function runPipeline(
     else                                      decision = 'not_matched';
 
     const scores = {
-      skillScore:               (wm * sMustFinal + wn * sNiceEffective) / (wm + wn),
+      skillScore:               (wm * sMustFinal + wn * sNiceEffective) / (wm + wn || 1),
       transferableSkillScore:   breakdownFinal.filter(b => b.matchType === 'transferable')
                                   .reduce((s, b) => s + (b.scoreContribution ?? 0), 0)
                                   / Math.max(breakdownFinal.length, 1),
       preferenceAlignmentScore: sPref,
       biasCorrectionDelta:      delta,
+      salaryAlignment:          aSalary,
+      workModeAlignment:        aMode,
+      locationAlignment:        aLocation,
+      // Effective weights after redistribution — lets the UI show weighted contributions
+      weightSkill:              wm + wn,
+      weightPreference:         wp,
     };
 
     // ── Stage 9: Explanation Generation ──────────────────────────────────────

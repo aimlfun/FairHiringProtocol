@@ -12,7 +12,7 @@ export function scorePreferences(
   job: JobBrief,
   ctx: PipelineContext,
   trace: TraceBuilder,
-): number {
+): { sPref: number; aSalary: number; aMode: number; aLocation: number } {
   const prefs = candidate.preferences;
 
   // ── Salary alignment ──────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ export function scorePreferences(
     output: { sPref, aSalary, aMode, aLocation },
   });
 
-  return sPref;
+  return { sPref, aSalary, aMode, aLocation };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,6 +188,11 @@ interface ScoresInput {
   transferableSkillScore:   number;
   preferenceAlignmentScore: number;
   biasCorrectionDelta:      number;
+  salaryAlignment:          number;
+  workModeAlignment:        number;
+  locationAlignment:        number;
+  weightSkill:              number;
+  weightPreference:         number;
 }
 
 export function generateExplanations(
@@ -229,6 +234,11 @@ export function generateExplanations(
       transferable_skill_score:  scores.transferableSkillScore,
       preference_alignment_score: scores.preferenceAlignmentScore,
       bias_correction_delta:     scores.biasCorrectionDelta,
+      salary_alignment:          scores.salaryAlignment,
+      work_mode_alignment:       scores.workModeAlignment,
+      location_alignment:        scores.locationAlignment,
+      weight_skill:              scores.weightSkill,
+      weight_preference:         scores.weightPreference,
     },
     skill_breakdown: breakdown.map(e => ({
       ontology_id:          e.ontologyId,
