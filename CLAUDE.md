@@ -49,9 +49,9 @@ psql $DATABASE_URL -f db/partitions/create_monthly_partitions.sql
 
 ### Components
 
-**`/api`** — Fastify 4.29.1 REST API (TypeScript, Node 20+, postgres.js). 62 endpoints across 14 route files. The server entry point (`server.ts`) calls `buildApp()` from `app.ts` to keep the app testable without binding a port.
+**`/api`** — Fastify 4.29.1 REST API (TypeScript, Node 20+, postgres.js). 63 endpoints across 14 route files. The server entry point (`server.ts`) calls `buildApp()` from `app.ts` to keep the app testable without binding a port.
 
-**`/db`** — PostgreSQL 16 schema. 21 migration files (000–020 + 009b), run in filename order. 43 tables across 5 schemas. Never edit a committed migration — add a new one.
+**`/db`** — PostgreSQL 16 schema. 27 migration files (000–026 + 009b), run in filename order. 44 tables across 5 schemas. Never edit a committed migration — add a new one.
 
 **`/reference-impl`** — Canonical matching pipeline implementation. Uses SQLite (better-sqlite3) and Express 5, not Fastify/Postgres. Standalone — not imported by the API. Run the conformance tests here to validate protocol compliance.
 
