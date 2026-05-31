@@ -177,12 +177,24 @@ test.describe('Company selection pattern bias (10.5–10.11)', () => {
       const { status, data } = await api('POST', '/v1/matches', { job_id: jobId }, token);
       if (status === 201 && data.decision === 'matched') {
         matched.push({ token, id, matchId: data.match_id, isYoung: true });
+      } else if (status === 409 && data.match_id) {
+        // Auto-matching already ran when the profile was saved; retrieve decision
+        const { data: m } = await api('GET', `/v1/candidates/me/matches/${data.match_id}`, undefined, token);
+        if (m.decision === 'matched') {
+          matched.push({ token, id, matchId: data.match_id as string, isYoung: true });
+        }
       }
     }
     for (const { token, id } of oldTokens) {
       const { status, data } = await api('POST', '/v1/matches', { job_id: jobId }, token);
       if (status === 201 && data.decision === 'matched') {
         matched.push({ token, id, matchId: data.match_id, isYoung: false });
+      } else if (status === 409 && data.match_id) {
+        // Auto-matching already ran when the profile was saved; retrieve decision
+        const { data: m } = await api('GET', `/v1/candidates/me/matches/${data.match_id}`, undefined, token);
+        if (m.decision === 'matched') {
+          matched.push({ token, id, matchId: data.match_id as string, isYoung: false });
+        }
       }
     }
 
@@ -266,10 +278,14 @@ test.describe('Company selection pattern bias (10.5–10.11)', () => {
   // ── 10.8: compute-job-fairness detects DIR breach ─────────────────────────
 
   test('10.8 — disparate impact ratio drops below threshold in per-job fairness metrics', async () => {
+    const matched: Array<{ token: string; id: string; matchId: string; isYoung: boolean }> =
+      (globalThis as any).__biasCandidates ?? [];
+    const candidateIds = matched.map(m => m.id);
+
     const { status, data } = await api(
       'POST',
       '/v1/test-helpers/compute-job-fairness',
-      { job_id: jobId },
+      { job_id: jobId, candidate_ids: candidateIds },
     );
 
     expect(status).toBe(201);

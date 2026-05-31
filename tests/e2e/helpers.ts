@@ -14,7 +14,19 @@ export const TEST_HELPER_KEY  = process.env['TEST_HELPER_KEY'] ?? 'e2e-test-help
  * Register a new candidate via the landing page UI.
  * Returns the email used.
  */
+/**
+ * Intercept Google Fonts CDN requests so pages load without waiting on an
+ * external CDN.  The browser's CSS-before-script rule means a slow font CDN
+ * blocks landing-page.js from executing, which then blocks waitForURL.
+ * Applying this once covers all subsequent navigations on the page.
+ */
+async function blockFonts(page: Page): Promise<void> {
+  await page.route('**/fonts.googleapis.com/**', r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+  await page.route('**/fonts.gstatic.com/**',    r => r.fulfill({ status: 200, contentType: 'font/woff2', body: Buffer.alloc(0) }));
+}
+
 export async function registerCandidate(page: Page, email: string, password = TEST_PASSWORD): Promise<void> {
+  await blockFonts(page);
   await page.goto('/landing-page.html');
   await page.waitForLoadState('networkidle');
 
@@ -30,13 +42,14 @@ export async function registerCandidate(page: Page, email: string, password = TE
   await page.locator('#creg-btn').click();
 
   // Wait for redirect to candidate app
-  await page.waitForURL('**/candidate-app**', { timeout: 10_000 });
+  await page.waitForURL('**/candidate-app**', { timeout: 45_000 });
 }
 
 /**
  * Log in as an existing candidate via the landing page UI.
  */
 export async function loginCandidate(page: Page, email: string, password = TEST_PASSWORD): Promise<void> {
+  await blockFonts(page);
   await page.goto('/landing-page.html');
   await page.waitForLoadState('networkidle');
 
@@ -50,7 +63,7 @@ export async function loginCandidate(page: Page, email: string, password = TEST_
   await page.locator('#clog-password').fill(password);
   await page.locator('#clog-btn').click();
 
-  await page.waitForURL('**/candidate-app**', { timeout: 10_000 });
+  await page.waitForURL('**/candidate-app**', { timeout: 45_000 });
 }
 
 /**
@@ -109,6 +122,7 @@ export async function registerAndCaptureToken(browser: Browser): Promise<string>
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
 
+  await blockFonts(page);
   await page.goto('/landing-page.html');
   await page.waitForLoadState('networkidle');
   await page.locator('button.nav-cta', { hasText: 'Get started' }).click();
@@ -118,7 +132,7 @@ export async function registerAndCaptureToken(browser: Browser): Promise<string>
   await page.locator('#age-confirm').check();
   await page.locator('#terms-confirm').check();
   await page.locator('#creg-btn').click();
-  await page.waitForURL('**/candidate-app**', { timeout: 15_000 });
+  await page.waitForURL('**/candidate-app**', { timeout: 45_000 });
 
   const token = await page.evaluate(() =>
     sessionStorage.getItem('fhp_access_token') ?? ''
@@ -134,17 +148,24 @@ export async function registerAndCaptureToken(browser: Browser): Promise<string>
  * caused when the token was set after navigation).
  */
 export async function injectTokenAndLoad(page: Page, token: string): Promise<void> {
-  await page.addInitScript(([t, r]: [string, string]) => {
+/*  await page.addInitScript(([t, r]: [string, string]) => {
     sessionStorage.setItem('fhp_access_token', t);
     sessionStorage.setItem('fhp_role', r);
   }, [token, 'candidate']);
+*/
+
+  await page.addInitScript((args: string[]) => {
+    const [t] = args;
+    sessionStorage.setItem('fhp_access_token', t);
+    sessionStorage.setItem('fhp_role', 'candidate');
+ }, [token,'candidate']);
 
   const [,] = await Promise.all([
     page.waitForResponse(
       r => r.url().includes('/candidates/me') && r.request().method() === 'GET',
       { timeout: 10_000 }
     ),
-    page.goto('/candidate-app'),
+    page.goto('/candidate-app.html'),
   ]);
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(400);

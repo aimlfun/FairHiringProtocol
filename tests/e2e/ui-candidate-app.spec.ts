@@ -1,9 +1,10 @@
 /**
- * Candidate app UI scenarios — 1.11, 4.23, 5.11 from TESTING-SCENARIOS.md.
+ * Candidate app UI scenarios — 1.11, 4.23, 4.24, 5.11 from TESTING-SCENARIOS.md.
  *
  * Covers:
  *   1.11 — Accessing candidate-app with no token redirects to landing page
  *   4.23 — Match score filter buttons (Matched / Borderline / Not matched) filter cards
+ *   4.24 — Proficiency criteria popup appears when clicking a level name on a skill row
  *   5.11 — Bell badge shows/hides based on unread notification count
  *
  * These require a real browser (playwright page) because they verify DOM behaviour.
@@ -121,10 +122,12 @@ test('4.23 — match score filter buttons filter cards correctly', async ({ brow
   // Load the candidate app with the token
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.addInitScript(([t]: [string]) => {
-    sessionStorage.setItem('fhp_access_token', t);
-    sessionStorage.setItem('fhp_role', 'candidate');
-  }, [candidateToken]);
+  await page.addInitScript((args: string[]) => {
+	const [t] = args;
+	sessionStorage.setItem('fhp_access_token', t);
+	sessionStorage.setItem('fhp_role', 'candidate');
+	}, [candidateToken]);
+
   await page.goto('/candidate-app.html');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(500);
@@ -157,17 +160,91 @@ test('4.23 — match score filter buttons filter cards correctly', async ({ brow
   const allCount = await cards.count();
   expect(allCount).toBeGreaterThanOrEqual(visibleCount);
 
-  // Click "Not matched" — if no not_matched cards, count should show 0 or hide cards
+  // Click "Not matched" — all visible cards must have data-decision="not_matched"
+  // (auto-matching may have created extra not_matched cards for other jobs, so
+  //  we verify the filter works correctly rather than assuming 0 cards total)
   const notMatchedBtn = page.locator('.ft[data-decision="not_matched"]');
   if (await notMatchedBtn.isVisible()) {
     await notMatchedBtn.click();
     await page.waitForTimeout(300);
-    if (decision !== 'not_matched') {
-      // No cards should be visible
-      const nmCards = await page.locator('#mh-cards .mc:visible').count();
-      expect(nmCards).toBe(0);
+    const allCards = await page.locator('#mh-cards .mc').all();
+    for (const card of allCards) {
+      if (await card.isVisible()) {
+        const dec = await card.getAttribute('data-decision');
+        expect(dec, 'visible card after "Not matched" filter must have decision=not_matched').toBe('not_matched');
+      }
     }
   }
+
+  await ctx.close();
+});
+
+// ── 4.24: Proficiency criteria popup ─────────────────────────────────────────
+
+test('4.24 — clicking a skill level name shows the proficiency criteria popup', async ({ browser }) => {
+  const candidateToken = await registerCandidate();
+
+  // Add a skill with a known proficiency level so there is a .plvl element to click
+  await api('PUT', '/v1/candidates/me', {
+    skills: [{
+      ontology_id:      'fhp:skill:python',
+      label:            'Python',
+      proficiency:      'proficient',
+      years_experience: 3,
+    }],
+    preferences: {
+      salary_min:         40000,
+      salary_currency:    'GBP',
+      work_mode:          ['remote'],
+      employment_type:    ['permanent'],
+      location_countries: ['GB'],
+    },
+  }, candidateToken);
+
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  
+  await page.addInitScript((args: string[]) => {
+    const [t] = args;
+    sessionStorage.setItem('fhp_access_token', t);
+    sessionStorage.setItem('fhp_role', 'candidate');
+  }, [candidateToken]);
+
+  await page.goto('/candidate-app.html');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(600);
+
+  // Navigate to the profile tab where skills are shown
+  await page.locator('#nav-profile, [data-tab="profile"], .nav-item[onclick*="profile"]').first().click();
+  await page.waitForTimeout(500);
+
+  // The level label (.plvl) should be visible for the Python skill row
+  const levelLabel = page.locator('.plvl').first();
+  await expect(levelLabel).toBeVisible();
+  await expect(levelLabel).toHaveText('proficient');
+
+  // Click it — the criteria popup should appear
+  await levelLabel.click();
+  await page.waitForTimeout(200);
+
+  const popup = page.locator('#crit-popup');
+  await expect(popup).toBeVisible();
+
+  // Popup must show the level name
+  await expect(popup.locator('.cp-level')).toHaveText('Proficient');
+
+  // Popup must show the first-person ui_prompt (partial match is enough)
+  const promptText = await popup.locator('.cp-prompt').textContent();
+  expect(promptText).toContain('independently');
+
+  // Popup must contain at least one criterion
+  const items = popup.locator('.cp-list li');
+  expect(await items.count()).toBeGreaterThanOrEqual(1);
+
+  // Clicking outside should hide the popup
+  await page.locator('body').click({ position: { x: 10, y: 10 } });
+  await page.waitForTimeout(200);
+  await expect(popup).toBeHidden();
 
   await ctx.close();
 });
@@ -208,10 +285,13 @@ test('5.11 — bell badge appears when there are unread notifications', async ({
 
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.addInitScript(([t]: [string]) => {
+
+  await page.addInitScript((args: string[]) => {
+    const [t] = args;
     sessionStorage.setItem('fhp_access_token', t);
     sessionStorage.setItem('fhp_role', 'candidate');
   }, [candidateToken]);
+
   await page.goto('/candidate-app.html');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(800);

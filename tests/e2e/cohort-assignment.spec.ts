@@ -142,14 +142,25 @@ test.describe('Candidate Cohorts (13.1–13.2)', () => {
     expect(assignStatus).toBe(201);
     expect(assignData.cohorts_assigned).toBe(2);
 
-    // Run pipeline — cohorts are now pre-loaded by matches.ts
-    const { status: matchStatus, data: matchData } = await api(
+    // Run pipeline — cohorts are now pre-loaded by matches.ts.
+    // Auto-matching may have already created this match (409); if so, fetch it.
+    let matchData: any;
+    const { status: matchStatus, data: matchResp } = await api(
       'POST',
       '/v1/matches',
       { job_id: jobId },
       candidateToken,
     );
-    expect(matchStatus).toBe(201);
+    if (matchStatus === 201) {
+      matchData = matchResp;
+    } else if (matchStatus === 409 && matchResp.match_id) {
+      const { data: existing } = await api(
+        'GET', `/v1/candidates/me/matches/${matchResp.match_id}`, undefined, candidateToken,
+      );
+      matchData = existing;
+    } else {
+      expect(matchStatus).toBe(201); // surface unexpected failures
+    }
     expect(matchData).toHaveProperty('match_id');
     // Pipeline ran with real cohort data (no stubs)
     // bias_assessment should mention metrics were evaluated (even if no breach)
@@ -215,12 +226,17 @@ test.describe('Candidate Cohorts (13.1–13.2)', () => {
       });
     }
 
-    // Run matches — try until we get 4 matched decisions
+    // Run matches — handle 409 when auto-matching already ran during buildMatchableProfile
     const matchedWithToken: Array<{ token: string; matchId: string }> = [];
     for (const token of [...youngTokens, ...oldTokens]) {
       const { status, data } = await api('POST', '/v1/matches', { job_id: jobId }, token);
       if (status === 201 && data.decision === 'matched') {
         matchedWithToken.push({ token, matchId: data.match_id });
+      } else if (status === 409 && data.match_id) {
+        const { data: m } = await api('GET', `/v1/candidates/me/matches/${data.match_id}`, undefined, token);
+        if (m.decision === 'matched') {
+          matchedWithToken.push({ token, matchId: data.match_id as string });
+        }
       }
     }
 
@@ -228,11 +244,15 @@ test.describe('Candidate Cohorts (13.1–13.2)', () => {
     // → every pipeline run must return 'matched'
     expect(matchedWithToken.length, '4 candidates with matching profiles must all produce a matched decision').toBe(4);
 
+    // Restrict fairness computation to this test's specific 4 candidates to avoid
+    // contamination from stale candidates matched by triggerJobMatching on job creation.
+    const allCandidateIds = [...youngIds, ...oldIds];
+
     // Compute per-job fairness
     const { status, data } = await api(
       'POST',
       '/v1/test-helpers/compute-job-fairness',
-      { job_id: jobId },
+      { job_id: jobId, candidate_ids: allCandidateIds },
     );
 
     expect(status).toBe(201);

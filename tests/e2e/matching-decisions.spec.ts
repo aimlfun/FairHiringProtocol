@@ -91,7 +91,38 @@ async function createJob(overrides: any = {}): Promise<string> {
 }
 
 async function runMatch(candidateToken: string, jobId: string) {
-  return api('POST', '/v1/matches', { job_id: jobId }, candidateToken);
+  const result = await api('POST', '/v1/matches', { job_id: jobId }, candidateToken);
+  if (result.status === 409) {
+    // Auto-matching beat the manual call — fetch and normalise the existing match.
+    // GET /me/matches returns a flat shape; POST /v1/matches returns a nested
+    // explanation object.  Map the flat shape so test assertions still work.
+    const { data: hist } = await api('GET', '/v1/candidates/me/matches?limit=50', undefined, candidateToken);
+    const m = (hist.matches ?? []).find((m: any) => m.job_id === jobId);
+    if (m) {
+      return {
+        status: 201,
+        data: {
+          match_id: m.match_id,
+          decision: m.decision,
+          score:    m.overall_score ?? m.composite_score ?? 0,
+          explanation: {
+            outcome: {
+              decision:            m.decision,
+              overall_score:       m.overall_score ?? 0,
+              not_matched_reasons: m.not_matched_reasons ?? [],
+            },
+            scores:          m.scores_snapshot ?? {},
+            skill_breakdown: m.skill_breakdown ?? [],
+            next_steps:      m.next_steps ?? [],
+            bias_assessment: m.bias_assessment ?? {},
+            appeal_eligible: m.appeal_eligible,
+            plain_language_summary: m.plain_language_summary,
+          },
+        },
+      };
+    }
+  }
+  return result;
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -320,8 +351,8 @@ test.describe('Matching decisions', () => {
     const { status: s1 } = await runMatch(token, jobId);
     expect(s1).toBe(201);
 
-    // Second run within 24h — must be rejected
-    const { status: s2, data: d2 } = await runMatch(token, jobId);
+    // Second run within 24h — must be rejected (call api() directly; runMatch would absorb the 409)
+    const { status: s2, data: d2 } = await api('POST', '/v1/matches', { job_id: jobId }, token);
     expect(s2).toBe(409);
     expect(d2.error).toBe('CONFLICT');
   });
@@ -431,6 +462,67 @@ test.describe('Matching decisions', () => {
     expect(k8sEntry, 'kubernetes must appear in breakdown').toBeDefined();
     expect(k8sEntry.score_contribution).toBeGreaterThan(0);
     expect(k8sEntry.score_contribution).toBeLessThan(1); // partial, not full credit
+  });
+
+  // ── 4.25: scores_snapshot contains preference sub-scores ─────────────────
+
+  test('4.25 — scores_snapshot includes salary_alignment, work_mode_alignment, location_alignment', async () => {
+    const token = await registerCandidate(
+      [{ ontology_id: 'fhp:skill:python', label: 'Python', domain: 'Engineering',
+         proficiency: 'proficient', years_experience: 3 }],
+      { salary_minimum: 50000, salary_currency: 'GBP', work_modes: ['remote'],
+        employment_types: ['permanent'] },
+    );
+    const jobId = await createJob({ title: 'Sub-scores test' });
+
+    const { data } = await runMatch(token, jobId);
+    const scores = data.explanation?.scores ?? {};
+
+    expect(typeof scores.salary_alignment).toBe('number');
+    expect(typeof scores.work_mode_alignment).toBe('number');
+    expect(typeof scores.location_alignment).toBe('number');
+    // Each sub-score is between 0 and 1 inclusive
+    for (const key of ['salary_alignment', 'work_mode_alignment', 'location_alignment']) {
+      expect(scores[key]).toBeGreaterThanOrEqual(0);
+      expect(scores[key]).toBeLessThanOrEqual(1);
+    }
+  });
+
+  // ── 4.26: scores_snapshot contains effective weights ─────────────────────
+
+  test('4.26 — scores_snapshot includes weight_skill and weight_preference that sum to 1.0', async () => {
+    const token = await registerCandidate(
+      [{ ontology_id: 'fhp:skill:python', label: 'Python', domain: 'Engineering',
+         proficiency: 'proficient', years_experience: 3 }],
+      { salary_minimum: 50000, salary_currency: 'GBP', work_modes: ['remote'],
+        employment_types: ['permanent'] },
+    );
+    const jobId = await createJob({ title: 'Weights test' });
+
+    const { data } = await runMatch(token, jobId);
+    const scores = data.explanation?.scores ?? {};
+
+    expect(typeof scores.weight_skill).toBe('number');
+    expect(typeof scores.weight_preference).toBe('number');
+    expect(scores.weight_skill + scores.weight_preference).toBeCloseTo(1.0, 5);
+  });
+
+  // ── 4.27: salary incompatibility → salary_alignment = 0 ──────────────────
+
+  test('4.27 — salary_alignment is 0 when candidate minimum exceeds job maximum', async () => {
+    // Job max is 80 000; candidate minimum is 150 000 → incompatible
+    const token = await registerCandidate(
+      [{ ontology_id: 'fhp:skill:python', label: 'Python', domain: 'Engineering',
+         proficiency: 'proficient', years_experience: 3 }],
+      { salary_minimum: 150000, salary_currency: 'GBP', work_modes: ['remote'],
+        employment_types: ['permanent'] },
+    );
+    const jobId = await createJob({ title: 'Salary incompatible test' });
+
+    const { data } = await runMatch(token, jobId);
+    const scores = data.explanation?.scores ?? {};
+
+    expect(scores.salary_alignment).toBe(0);
   });
 
   test('location preference match raises score vs mismatch (soft penalty, not hard constraint)', async () => {

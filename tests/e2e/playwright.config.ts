@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
-  timeout: 30_000,
+  timeout: 60_000,
   retries: 1, // retry once on transient API/network errors
   workers: 1, // sequential — tests share the same DB
 

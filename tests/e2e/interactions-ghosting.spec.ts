@@ -111,6 +111,12 @@ async function buildMatchableProfile(candidateToken: string) {
  * Returns the match_id and interaction_id (from company interactions list).
  * Retries with a new candidate if the decision is not_matched/borderline.
  */
+/**
+ * Run the match pipeline until we get a 'matched' decision.
+ * Returns the match_id and interaction_id (from company interactions list).
+ * Retries with a new candidate if the decision is not_matched/borderline.
+ * Handles 409 (auto-matching beat the manual call) by using the existing match.
+ */
 async function runUntilMatched(companyToken: string, jobId: string): Promise<{
   matchId: string;
   interactionId: string;
@@ -120,11 +126,23 @@ async function runUntilMatched(companyToken: string, jobId: string): Promise<{
     const cToken = await registerCandidate();
     await buildMatchableProfile(cToken);
 
+    let matchId: string | undefined;
     const { status, data } = await api('POST', '/v1/matches', { job_id: jobId }, cToken);
-    if (status !== 201) continue;
-    if (data.decision !== 'matched') continue;
 
-    const matchId = data.match_id as string;
+    if (status === 409) {
+      // Auto-matching beat the manual call — use the existing match
+      const { data: hist } = await api('GET', '/v1/candidates/me/matches?limit=50', undefined, cToken);
+      const existing = (hist.matches ?? []).find((m: any) => m.job_id === jobId);
+      if (existing?.decision === 'matched') {
+        matchId = existing.match_id as string;
+      } else {
+        continue;
+      }
+    } else {
+      if (status !== 201) continue;
+      if (data.decision !== 'matched') continue;
+      matchId = data.match_id as string;
+    }
 
     // Give the DB a moment to settle
     await new Promise(r => setTimeout(r, 100));
@@ -136,7 +154,7 @@ async function runUntilMatched(companyToken: string, jobId: string): Promise<{
     );
     if (!interaction) continue; // race — try again
 
-    return { matchId, interactionId: interaction.interaction_id, candidateToken: cToken };
+    return { matchId: matchId as string, interactionId: interaction.interaction_id, candidateToken: cToken };
   }
   throw new Error('Could not obtain a matched interaction after 5 attempts');
 }
@@ -303,6 +321,73 @@ test.describe('Company interactions & ghosting', () => {
   test('8.3b — GET /companies/me/ghosting without auth → 401', async () => {
     const { status } = await api('GET', '/v1/companies/me/ghosting');
     expect(status).toBe(401);
+  });
+
+  // ── 7.8: Advance interaction stage ───────────────────────────────────────
+
+  test('7.8 — POST /interactions/:id/advance moves stage from initial to application_review', async () => {
+    const { interactionId } = await runUntilMatched(companyToken, jobId);
+
+    const { status, data } = await api(
+      'POST',
+      `/v1/companies/me/interactions/${interactionId}/advance`,
+      {},
+      companyToken,
+    );
+
+    expect(status).toBe(200);
+    expect(data.previous_stage).toBe('initial_match_acknowledgement');
+    expect(data.current_stage).toBe('application_review');
+    expect(data.status).toBe('active');
+  });
+
+  // ── 7.9: Advance sends notification ──────────────────────────────────────
+
+  test('7.9 — advancing interaction sends stage_invitation notification to the candidate', async () => {
+    const { interactionId, candidateToken } = await runUntilMatched(companyToken, jobId);
+
+    const before = Date.now();
+
+    const { status } = await api(
+      'POST',
+      `/v1/companies/me/interactions/${interactionId}/advance`,
+      {},
+      companyToken,
+    );
+    expect(status).toBe(200);
+
+    const { data } = await api('GET', '/v1/candidates/me/notifications', undefined, candidateToken);
+    const notifications = (data.notifications ?? []) as any[];
+
+    // Find a stage_invitation created after we called advance
+    const notif = notifications.find((n: any) =>
+      n.notification_type === 'stage_invitation' &&
+      new Date(n.created_at).getTime() >= before - 2000, // 2s tolerance
+    );
+    expect(notif, 'stage_invitation notification must be delivered after advance').toBeDefined();
+  });
+
+  // ── 7.10: Cannot advance a non-active interaction ─────────────────────────
+
+  test('7.10 — advancing an already-rejected interaction → 404', async () => {
+    const { interactionId } = await runUntilMatched(companyToken, jobId);
+
+    // Reject the interaction first
+    await api(
+      'POST',
+      `/v1/companies/me/interactions/${interactionId}/reject`,
+      { reason_code: 'PR-01' },
+      companyToken,
+    );
+
+    // Now try to advance — interaction is no longer active
+    const { status } = await api(
+      'POST',
+      `/v1/companies/me/interactions/${interactionId}/advance`,
+      {},
+      companyToken,
+    );
+    expect(status).toBe(404);
   });
 
 });

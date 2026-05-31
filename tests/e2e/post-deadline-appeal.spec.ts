@@ -58,8 +58,8 @@ async function createJob(companyToken: string) {
     title:           'QA Engineer',
     role_summary:    'Building and maintaining automated quality assurance pipelines.',
     skills_required: [{
-      ontology_id:      'fhp:skill:python',
-      label:            'Python',
+      ontology_id:      'fhp:skill:rust',
+      label:            'Rust',
       domain:           'Engineering',
       requirement_type: 'must_have',
       min_proficiency:  'practitioner',

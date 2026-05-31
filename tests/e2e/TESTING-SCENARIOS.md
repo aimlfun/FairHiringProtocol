@@ -47,6 +47,7 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 2.15 | PUT /me with empty skills array sets matching_eligible to FALSE | ✅ | candidate-profile-api.spec.ts |
 | 2.16 | PUT /me with skills sets matching_eligible to TRUE | ✅ | matching-simulation.spec.ts |
 | 2.17 | DELETE /me pseudonymises account — profile no longer fetchable | ✅ | account-deletion.spec.ts |
+| 2.18 | Saving profile with skills triggers auto-matching against existing active jobs | ✅ | auto-matching.spec.ts |
 
 ---
 
@@ -94,6 +95,10 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 4.21 | Match card renders in candidate-app UI with correct decision + score | ✅ | matching-simulation.spec.ts |
 | 4.22 | Company sees the match in GET /jobs/:id/matches | ✅ | company-jobs.spec.ts |
 | 4.23 | Match score filter buttons (Matched/Not matched/Borderline) filter cards | ✅ | ui-candidate-app.spec.ts |
+| 4.24 | Posting an active job auto-matches eligible candidates with overlapping skills | ✅ | auto-matching.spec.ts |
+| 4.25 | scores_snapshot includes salary_alignment, work_mode_alignment, location_alignment | ✅ | matching-decisions.spec.ts |
+| 4.26 | scores_snapshot includes weight_skill and weight_preference that sum to 1.0 | ✅ | matching-decisions.spec.ts |
+| 4.27 | salary_alignment is 0 when candidate minimum exceeds job maximum | ✅ | matching-decisions.spec.ts |
 
 ---
 
@@ -141,6 +146,9 @@ Status legend: ✅ covered · ❌ not yet tested · ⚠️ partially covered
 | 7.5 | SLA deadline exceeded → ghosting event created | ✅ | sla-ghosting.spec.ts |
 | 7.6 | Company SLA dashboard shows current interactions + deadlines | ✅ | interactions-ghosting.spec.ts, company-dashboard.spec.ts |
 | 7.7 | Company pipeline view shows cross-job run history | ✅ | company-dashboard.spec.ts |
+| 7.8 | Company advances interaction stage via POST /interactions/:id/advance | ✅ | interactions-ghosting.spec.ts |
+| 7.9 | Advancing interaction sends stage_invitation notification to candidate | ✅ | interactions-ghosting.spec.ts |
+| 7.10 | Advancing a non-active (rejected/completed) interaction → 404 | ✅ | interactions-ghosting.spec.ts |
 
 ---
 

@@ -312,7 +312,7 @@ test.describe('Vote form (governance auth)', () => {
 
   async function loadAsGovernance(page: Page): Promise<void> {
     await page.addInitScript((token: string) => {
-      sessionStorage.setItem('fhp_access_token', token);
+      sessionStorage.setItem('fhp_gov_token', token);
     }, makeGovJwt());
     await loadDashboard(page);
     await Promise.all([

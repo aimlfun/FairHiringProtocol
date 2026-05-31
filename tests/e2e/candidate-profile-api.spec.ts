@@ -8,6 +8,11 @@
  *   - skills array with valid entries sets matching_eligible to true
  *   - required field validation
  *
+ *   GET /v1/ontology/skills
+ *   - C# and C++ are searchable by their common symbols (regression: these were absent
+ *     from the hardcoded ALL_SKILLS fallback list in the candidate UI, causing silent
+ *     no-results for a live API that actually has them)
+ *
  * Pure API tests — no browser required.
  */
 
@@ -208,6 +213,60 @@ test.describe('Candidate profile API', () => {
     }, token);
 
     expect(status).toBe(200);
+  });
+
+});
+
+// ── Ontology skill search — GET /v1/ontology/skills ───────────────────────────
+//
+// Regression suite for the skill autocomplete endpoint.  A previous bug caused
+// the candidate UI to silently return no results for C# and C++ because the
+// frontend fell back to a hardcoded list that omitted both symbols.  These tests
+// verify the API itself surfaces every symbol-named skill, so any regression
+// (whether in the API query, the DB seed, or a future hardcoded-list reversion)
+// is caught before it reaches users.
+
+test.describe('Ontology skill search API', () => {
+
+  test('returns C# by symbol search', async () => {
+    const { status, data } = await api('GET', '/v1/ontology/skills?q=c%23');
+    expect(status).toBe(200);
+    expect(Array.isArray(data.skills)).toBe(true);
+    const csharp = data.skills.find((s: any) => s.skill_id === 'fhp:skill:csharp');
+    expect(csharp, 'fhp:skill:csharp must appear when searching "c#"').toBeDefined();
+    expect(csharp.label).toMatch(/c#/i);
+  });
+
+  test('returns C++ by symbol search', async () => {
+    const { status, data } = await api('GET', '/v1/ontology/skills?q=c%2B%2B');
+    expect(status).toBe(200);
+    expect(Array.isArray(data.skills)).toBe(true);
+    const cpp = data.skills.find((s: any) => s.skill_id === 'fhp:skill:cpp');
+    expect(cpp, 'fhp:skill:cpp must appear when searching "c++"').toBeDefined();
+    expect(cpp.label).toMatch(/c\+\+/i);
+  });
+
+  test('returns Python by name (baseline)', async () => {
+    const { status, data } = await api('GET', '/v1/ontology/skills?q=python');
+    expect(status).toBe(200);
+    const python = data.skills.find((s: any) => s.skill_id === 'fhp:skill:python');
+    expect(python, 'fhp:skill:python must appear when searching "python"').toBeDefined();
+  });
+
+  test('returns empty skills array for a nonsense query', async () => {
+    const { status, data } = await api('GET', '/v1/ontology/skills?q=xyzzy_no_such_skill_ever');
+    expect(status).toBe(200);
+    expect(data.skills).toHaveLength(0);
+  });
+
+  test('returns all active skills when no query is given', async () => {
+    const { status, data } = await api('GET', '/v1/ontology/skills?limit=50');
+    expect(status).toBe(200);
+    expect(data.skills.length).toBeGreaterThanOrEqual(10);
+    // Both symbol-named skills must be present in the full listing
+    const ids = data.skills.map((s: any) => s.skill_id);
+    expect(ids).toContain('fhp:skill:csharp');
+    expect(ids).toContain('fhp:skill:cpp');
   });
 
 });
